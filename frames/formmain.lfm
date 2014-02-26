@@ -1,0 +1,57 @@
+object MainForm: TMainForm
+  Left = 380
+  Height = 597
+  Top = 104
+  Width = 954
+  Caption = 'LazRadio'
+  ClientHeight = 597
+  ClientWidth = 954
+  Menu = MainMenu1
+  LCLVersion = '1.2.0.2'
+  object Panel1: TPanel
+    Left = 0
+    Height = 400
+    Top = 0
+    Width = 954
+    Align = alClient
+    Caption = 'Panel1'
+    ClientHeight = 400
+    ClientWidth = 954
+    TabOrder = 0
+    object Button1: TButton
+      Left = 200
+      Height = 25
+      Top = 192
+      Width = 75
+      Caption = 'Button1'
+      OnClick = Button1Click
+      TabOrder = 0
+    end
+  end
+  object Memo1: TMemo
+    Left = 0
+    Height = 192
+    Top = 405
+    Width = 954
+    Align = alBottom
+    Font.Name = 'Consolas'
+    Lines.Strings = (
+      'Memo1'
+    )
+    ParentFont = False
+    TabOrder = 1
+  end
+  object Splitter1: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 5
+    Top = 400
+    Width = 954
+    Align = alBottom
+    ResizeAnchor = akBottom
+  end
+  object MainMenu1: TMainMenu
+    left = 256
+    top = 40
+  end
+end

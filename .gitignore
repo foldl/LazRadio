@@ -1,0 +1,11 @@
+*.exe
+*.dll
+*.obj
+*.mdb
+backup/
+lib/
+release/
+*.swp
+*.~
+~
+
