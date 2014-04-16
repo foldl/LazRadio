@@ -36,7 +36,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="6">
+    <Units Count="11">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -69,10 +69,35 @@
         <UnitName Value="formrtl"/>
       </Unit4>
       <Unit5>
-        <Filename Value="rtlmodule.pas"/>
+        <Filename Value="rm_rtl.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RtlModule"/>
+        <UnitName Value="rm_rtl"/>
       </Unit5>
+      <Unit6>
+        <Filename Value="async.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Async"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="rm_oscillator.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_oscillator"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="radiosystem.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="RadioSystem"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\superobject\superobject.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="superobject"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="rm_spectrum.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_spectrum"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -83,7 +108,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="frames"/>
+      <OtherUnitFiles Value="frames;..\superobject"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

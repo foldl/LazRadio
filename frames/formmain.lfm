@@ -1,13 +1,13 @@
 object MainForm: TMainForm
-  Left = 380
+  Left = 160
   Height = 597
-  Top = 104
+  Top = 337
   Width = 954
   Caption = 'LazRadio'
   ClientHeight = 597
   ClientWidth = 954
   Menu = MainMenu1
-  LCLVersion = '1.2.0.2'
+  LCLVersion = '1.2.0.3'
   object Panel1: TPanel
     Left = 0
     Height = 400

@@ -7,7 +7,8 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, formmain, radiomodule, rtlsdr, formrtl, rtlmodule
+  Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
+  radiosystem, superobject, rm_spectrum
   { you can add units after this };
 
 {$R *.res}

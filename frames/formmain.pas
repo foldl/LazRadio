@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
-  Menus, ExtCtrls, StdCtrls, RtlModule;
+  Menus, ExtCtrls, StdCtrls, RadioSystem;
 
 type
 
@@ -20,7 +20,7 @@ type
     Splitter1: TSplitter;
     procedure Button1Click(Sender: TObject);
   private
-    FRtl: TRtlModule;
+    FSystem: TRadioSystem;
   public
     { public declarations }
   end;
@@ -36,8 +36,12 @@ implementation
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
-  if not Assigned(FRtl) then FRtl := TRtlModule.Create(nil);
-  FRtl.Configure;
+  if not Assigned(FSystem) then
+  begin
+    FSystem := TRadioSystem.Create;
+    FSystem.AddModule('rtl', 'RtlModule');
+  end;
+  FSystem.ConfigModule('rtl');
 end;
 
 end.

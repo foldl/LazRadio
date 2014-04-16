@@ -1,9 +1,9 @@
 object RTLForm: TRTLForm
-  Left = 443
+  Left = 221
   Height = 286
-  Top = 211
+  Top = 75
   Width = 506
-  Caption = 'RTLForm'
+  Caption = 'RTL Device Configuration'
   ClientHeight = 286
   ClientWidth = 506
   LCLVersion = '1.2.0.2'
@@ -21,6 +21,7 @@ object RTLForm: TRTLForm
     Top = 21
     Width = 256
     ItemHeight = 15
+    OnChange = DevListChange
     Style = csDropDownList
     TabOrder = 0
   end
@@ -32,6 +33,7 @@ object RTLForm: TRTLForm
     Caption = '&Go'
     Default = True
     Kind = bkYes
+    OnClick = BtnGoClick
     TabOrder = 1
   end
   object Label2: TLabel
@@ -69,7 +71,7 @@ object RTLForm: TRTLForm
   object AGCMode: TRadioGroup
     Left = 15
     Height = 96
-    Top = 130
+    Top = 136
     Width = 369
     AutoFill = True
     Caption = 'AGC Mode'
@@ -88,6 +90,7 @@ object RTLForm: TRTLForm
       'Manual'
       'Hardware'
     )
+    OnClick = AGCModeClick
     TabOrder = 3
   end
   object ManualGain: TTrackBar
@@ -95,6 +98,7 @@ object RTLForm: TRTLForm
     Height = 25
     Top = 176
     Width = 248
+    OnChange = ManualGainChange
     Position = 0
     TabOrder = 4
   end
@@ -113,6 +117,7 @@ object RTLForm: TRTLForm
     Width = 75
     Caption = '&Refresh'
     Kind = bkRetry
+    OnClick = BtnRefreshClick
     TabOrder = 5
   end
   object BtnStop: TBitBtn
@@ -123,6 +128,7 @@ object RTLForm: TRTLForm
     Cancel = True
     Caption = '&Stop'
     Kind = bkNo
+    OnClick = BtnStopClick
     TabOrder = 6
   end
   object Label4: TLabel
@@ -149,7 +155,7 @@ object RTLForm: TRTLForm
     Caption = 'Samping Mode: '
     ParentColor = False
   end
-  object SamplingRateList1: TComboBox
+  object SamplingMode: TComboBox
     Left = 128
     Height = 23
     Top = 95
