@@ -8,8 +8,8 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
-  radiosystem, superobject, rm_spectrum
-  { you can add units after this };
+  radiosystem, superobject, rm_spectrum, rm_timer, formgui, rm_audio_out, 
+rm_audio_in, rm_filter;
 
 {$R *.res}
 
@@ -18,6 +18,7 @@ begin
   Application.Initialize;
   Application.CreateForm(TMainForm, MainForm);
   Application.CreateForm(TRTLForm, RTLForm);
+  Application.CreateForm(TGUIForm, GUIForm);
   Application.Run;
 end.
 

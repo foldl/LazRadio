@@ -5,19 +5,25 @@ unit formmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs,
-  Menus, ExtCtrls, StdCtrls, RadioSystem;
+  Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
+  Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls, RadioSystem;
 
 type
 
   { TMainForm }
 
   TMainForm = class(TForm)
+    ActionList1: TActionList;
     Button1: TButton;
     MainMenu1: TMainMenu;
     Memo1: TMemo;
+    MenuItem1: TMenuItem;
     Panel1: TPanel;
     Splitter1: TSplitter;
+    StatusBar1: TStatusBar;
+    SynEdit1: TSynEdit;
+    ToolBar1: TToolBar;
+    ToolButton1: TToolButton;
     procedure Button1Click(Sender: TObject);
   private
     FSystem: TRadioSystem;

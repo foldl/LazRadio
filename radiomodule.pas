@@ -18,6 +18,9 @@ const
   // ParamH: Sample rate (1)    ParamL: in samples per second
   // ParamH: Bandwidth   (2)    ParamL: in Hz
   RM_SET_FEATURE     = 2;
+                     RM_FEATURE_FREQ        = 0;
+                     RM_FEATURE_SAMPLE_RATE = 1;
+                     RM_FEATURE_BANDWIDTH   = 2;
 
   // ParamH: RUN   (0)    ParamL: ignore
   // ParamH: PAUSE (1)    ParamL: ignore
@@ -33,7 +36,13 @@ const
   // ParamH: debug   (3)    ParamL: code
   RM_REPORT          = 5;
 
-  RM_USER            = 10000;
+  // ParamH: module id (high) timer id (low)  ParamL: timer interval
+  RM_CREATE_TIMER    = 6;
+
+  // ParamH: module id (high) timer id (low)  ParamL: ignore
+  RM_DELETE_TIMER    = 7;
+
+  RM_USER            = 100;
 
 type
 
@@ -180,14 +189,15 @@ type
 
   TRadioModule = class(TRadioMessageQueue)
   private
-    FDataListeners: TList;
     FDefOutput: TRadioDataStream;
-    FFeatureListeners: TList;
     FName: string;
     FRunning: Boolean;
     FRunQueue: TRadioRunQueue;
     procedure SetName(AValue: string);
   protected
+    FDataListeners: TList;
+    FFeatureListeners: TList;
+
     procedure SetRunning(AValue: Boolean); virtual;
 
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
@@ -197,6 +207,10 @@ type
     procedure RMSetFeature(const Msg: TRadioMessage; var Ret: Integer); virtual;
     procedure RMReport(const Msg: TRadioMessage; var Ret: Integer); virtual;
     procedure RMTimer(const Msg: TRadioMessage; var Ret: Integer); virtual;
+
+    function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; virtual;
+    function RMSetBandwidth(const Msg: TRadioMessage; const Bandwidth: Cardinal): Integer; virtual;
+    function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
 
     procedure DoReset; virtual;
   public
@@ -225,17 +239,20 @@ type
 
   TRadioModuleClass = class of TRadioModule;
 
+  TBackgroundRadioModule = class;
+
   { TGenericRadioThread }
 
   TGenericRadioThread = class(TThread)
   private
+    FModule: TBackgroundRadioModule;
     FParam: Pointer;
     FRemoteRun: TNotifyEvent;
   protected
     procedure Execute; override;
   public
-    constructor Create;
-    property RemoteRun: TNotifyEvent read FRemoteRun write FRemoteRun;
+    constructor Create(Module: TBackgroundRadioModule);
+    property Module: TBackgroundRadioModule read FModule write FModule;
     property Param: Pointer read FParam write FParam;
   end;
 
@@ -256,8 +273,6 @@ type
 procedure RadioGlobalLock;
 procedure RadioGlobalUnlock;
 
-procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule);
-
 implementation
 
 var
@@ -271,11 +286,6 @@ end;
 procedure RadioGlobalUnlock;
 begin
   LeaveCriticalsection(RadioGlobalCS);
-end;
-
-procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule);
-begin
-  //
 end;
 
 { TRadioMessageQueue }
@@ -405,7 +415,7 @@ end;
 
 procedure TBackgroundRadioModule.ThreadFun(Thread: TGenericRadioThread);
 begin
-
+  Sleep(10);
 end;
 
 procedure TBackgroundRadioModule.SetRunning(AValue: Boolean);
@@ -417,8 +427,7 @@ end;
 constructor TBackgroundRadioModule.Create(RunQueue: TRadioRunQueue);
 begin
   inherited;
-  FThread := TGenericRadioThread.Create;
-  FThread.RemoteRun := TNotifyEvent(@ThreadFun);
+  FThread := TGenericRadioThread.Create(Self);
 end;
 
 destructor TBackgroundRadioModule.Destroy;
@@ -432,12 +441,13 @@ end;
 procedure TGenericRadioThread.Execute;
 begin
   while not Terminated do
-    if Assigned(RemoteRun) then RemoteRun(Self);
+    if Assigned(FModule) then FModule.ThreadFun(Self);
 end;
 
-constructor TGenericRadioThread.Create;
+constructor TGenericRadioThread.Create(Module: TBackgroundRadioModule);
 begin
   inherited Create(True);
+  FModule := Module;
 end;
 
 { TRadioRunQueue }
@@ -751,6 +761,24 @@ begin
 
 end;
 
+function TRadioModule.RMSetFrequency(const Msg: TRadioMessage;
+  const Freq: Cardinal): Integer;
+begin
+
+end;
+
+function TRadioModule.RMSetBandwidth(const Msg: TRadioMessage;
+  const Bandwidth: Cardinal): Integer;
+begin
+
+end;
+
+function TRadioModule.RMSetSampleRate(const Msg: TRadioMessage;
+  const Rate: Cardinal): Integer;
+begin
+
+end;
+
 procedure TRadioModule.DoReset;
 begin
   MessageQueueReset;
@@ -761,7 +789,7 @@ begin
   inherited Create;
   FDataListeners := TList.Create;
   FFeatureListeners := TList.Create;
-  FDefOutput := TRadioDataStream.Create(Self, 'output',1024);
+  FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
   FRunQueue := RunQueue;
   FLastMsg := @FFirstMsg;
 end;

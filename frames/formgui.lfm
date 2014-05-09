@@ -1,0 +1,17 @@
+object GUIForm: TGUIForm
+  Left = 535
+  Height = 436
+  Top = 314
+  Width = 502
+  Caption = 'FormGui'
+  ClientHeight = 436
+  ClientWidth = 502
+  LCLVersion = '1.2.0.3'
+  object PaintBox1: TPaintBox
+    Left = 0
+    Height = 436
+    Top = 0
+    Width = 502
+    Align = alClient
+  end
+end

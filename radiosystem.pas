@@ -5,9 +5,11 @@ unit RadioSystem;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, superobject;
+  Classes, SysUtils, RadioModule, SuperObject;
 
 type
+
+  TModuleId = Cardinal;
 
   { TRadioSystem }
 
@@ -32,6 +34,10 @@ type
 
 procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
 
+procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule); overload;
+procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
+procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
+
 implementation
 
 var
@@ -41,6 +47,21 @@ procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
 begin
   if not Assigned(ModuleClassDict) then ModuleClassDict := TSuperTableString.Create;
   ModuleClassDict.I[LowerCase(T)] := Int64(AClass);
+end;
+
+procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule);
+begin
+
+end;
+
+procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
+begin
+
+end;
+
+procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
+begin
+
 end;
 
 { TRadioSystem }
