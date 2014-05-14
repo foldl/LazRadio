@@ -59,7 +59,7 @@ begin
   P := PTimerNode(Pointer(T.Tag));
   with M do
   begin
-    Id := RM_TIMER;
+    Id := RadioModule.RM_TIMER;
     Sender := Self;
     ParamH := P^.Id and $FFFF;
     ParamL := T.Interval;
@@ -104,7 +104,7 @@ begin
   with P^.Obj do
   begin
     Interval := AInterval;
-    OnTimer := @OnTimer;
+    OnTimer := @Self.OnTimer;
     Tag := PtrInt(P);
     Enabled := True;
   end;

@@ -1,0 +1,33 @@
+object SpectrumForm: TSpectrumForm
+  Left = 328
+  Height = 414
+  Top = 254
+  Width = 659
+  Caption = 'SpectrumForm'
+  ClientHeight = 414
+  ClientWidth = 659
+  LCLVersion = '1.2.0.3'
+  object Image1: TImage
+    Left = 0
+    Height = 160
+    Top = 0
+    Width = 659
+    Align = alTop
+  end
+  object Splitter1: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 5
+    Top = 160
+    Width = 659
+    Align = alTop
+    ResizeAnchor = akTop
+  end
+  object Image2: TImage
+    Left = 0
+    Height = 249
+    Top = 165
+    Width = 659
+    Align = alClient
+  end
+end

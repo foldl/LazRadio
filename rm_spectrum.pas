@@ -5,7 +5,21 @@ unit rm_spectrum;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, RadioModule;
+
+type
+
+  TSpecturmWindowFunc = (wfRect, wfKaiser, wfBatterly);
+
+  TRadioSpectrum = class(TRadioModule)
+  private
+    FFreq: Cardinal;
+    FSampleRate: Cardinal;
+    FWindow: TSpecturmWindowFunc;
+    FOverlapPercent: Integer;
+  protected
+    //;
+  end;
 
 implementation
 

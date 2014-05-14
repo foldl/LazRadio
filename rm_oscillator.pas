@@ -72,7 +72,7 @@ begin
     C := DefOutput.BufferSize[I];
     A := 2 * Pi * FFreq / FSampleRate;
     V := FPhase;
-    Inc(D, C / FSampleRate);
+    D := D + C / FSampleRate;
     for I := 0 to C - 1 do
     begin
       W := V + A;

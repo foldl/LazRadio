@@ -17,10 +17,12 @@ const
   // ParamH: Frequency   (0)    ParamL: in Hz
   // ParamH: Sample rate (1)    ParamL: in samples per second
   // ParamH: Bandwidth   (2)    ParamL: in Hz
+  // ParamH: Phase ad    (3)    ParamL: in rad (cast from Float)
   RM_SET_FEATURE     = 2;
                      RM_FEATURE_FREQ        = 0;
                      RM_FEATURE_SAMPLE_RATE = 1;
                      RM_FEATURE_BANDWIDTH   = 2;
+                     RM_FEATURE_PHASE_ADJ   = 3;
 
   // ParamH: RUN   (0)    ParamL: ignore
   // ParamH: PAUSE (1)    ParamL: ignore

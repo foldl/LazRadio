@@ -15,6 +15,7 @@ type
   TMainForm = class(TForm)
     ActionList1: TActionList;
     Button1: TButton;
+    Button2: TButton;
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
@@ -25,6 +26,7 @@ type
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     FSystem: TRadioSystem;
   public
@@ -35,6 +37,9 @@ var
   MainForm: TMainForm;
 
 implementation
+
+uses
+  FFT, UComplex;
 
 {$R *.lfm}
 
@@ -48,6 +53,26 @@ begin
     FSystem.AddModule('rtl', 'RtlModule');
   end;
   FSystem.ConfigModule('rtl');
+end;
+
+procedure TMainForm.Button2Click(Sender: TObject);
+var
+  P: PFFTPlan;
+  I, O: array [0..13 -1] of Complex;
+  K: Integer;
+begin
+  for K := 0 to High(I) do
+  begin
+    I[K].im := Random;
+    I[K].re := Random;
+  end;
+  P := FFT.BuildFFTPlan(High(I) + 1, False);
+  FFT.FFT(P, I, O);
+
+  Memo1.Lines.Add(Format('numpy.fft.fft(%s)', [FFT.ToString(I, High(I) + 1)]));
+  Memo1.Lines.Add(Format('numpy.fft.fft(%s)', [FFT.ToString(O, High(I) + 1)]));
+
+  FFT.FinalizePlan(P);
 end;
 
 end.
