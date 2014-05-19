@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 734
+  Left = 539
   Height = 574
-  Top = 208
+  Top = 131
   Width = 854
   Caption = 'LazRadio'
   ClientHeight = 554
@@ -36,7 +36,7 @@ object MainForm: TMainForm
       Font.Height = -13
       Font.Name = 'Courier New'
       Font.Pitch = fpFixed
-      Font.Quality = fqNonAntialiased
+      Font.Quality = fqProof
       ParentColor = False
       ParentFont = False
       TabOrder = 1

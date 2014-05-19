@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="34">
+    <Units Count="35">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -18,10 +18,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formmain"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="48"/>
-        <CursorPos X="35" Y="61"/>
+        <TopLine Value="40"/>
+        <CursorPos X="14" Y="54"/>
         <UsageCount Value="228"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -29,10 +29,10 @@
         <Filename Value="radiomodule.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioModule"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="713"/>
-        <CursorPos X="5" Y="728"/>
+        <TopLine Value="171"/>
+        <CursorPos X="22" Y="194"/>
         <UsageCount Value="228"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -61,8 +61,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_rtl"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="41"/>
-        <CursorPos X="66" Y="62"/>
+        <TopLine Value="36"/>
+        <CursorPos X="30" Y="58"/>
         <UsageCount Value="270"/>
       </Unit5>
       <Unit6>
@@ -78,10 +78,10 @@
         <Filename Value="rm_oscillator.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_oscillator"/>
-        <EditorIndex Value="8"/>
+        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="61"/>
-        <CursorPos X="29" Y="75"/>
+        <TopLine Value="68"/>
+        <CursorPos X="29" Y="94"/>
         <UsageCount Value="282"/>
         <Loaded Value="True"/>
       </Unit7>
@@ -89,10 +89,12 @@
         <Filename Value="radiosystem.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioSystem"/>
+        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="62"/>
-        <CursorPos X="3" Y="64"/>
+        <TopLine Value="11"/>
+        <CursorPos X="44" Y="39"/>
         <UsageCount Value="282"/>
+        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\superobject\superobject.pas"/>
@@ -109,8 +111,8 @@
         <UnitName Value="rm_spectrum"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="5" Y="21"/>
+        <TopLine Value="116"/>
+        <CursorPos X="61" Y="142"/>
         <UsageCount Value="268"/>
         <Loaded Value="True"/>
       </Unit10>
@@ -118,12 +120,10 @@
         <Filename Value="rm_timer.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_timer"/>
-        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="82"/>
-        <CursorPos X="27" Y="108"/>
+        <TopLine Value="63"/>
+        <CursorPos X="56" Y="125"/>
         <UsageCount Value="214"/>
-        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="frames\formgui.pas"/>
@@ -158,10 +158,10 @@
         <Filename Value="rm_filter.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_filter"/>
-        <EditorIndex Value="9"/>
+        <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="21" Y="11"/>
+        <CursorPos X="42" Y="8"/>
         <UsageCount Value="206"/>
         <Loaded Value="True"/>
       </Unit15>
@@ -172,274 +172,223 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formspectrum"/>
-        <EditorIndex Value="2"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="2"/>
-        <CursorPos X="24" Y="18"/>
-        <UsageCount Value="79"/>
+        <TopLine Value="1"/>
+        <CursorPos X="24" Y="21"/>
+        <UsageCount Value="188"/>
         <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit16>
       <Unit17>
-        <Filename Value="dsp\fft.pas"/>
+        <Filename Value="dsp\kissfft.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="FFT"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
+        <UnitName Value="kissfft"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="242"/>
-        <CursorPos X="26" Y="263"/>
-        <UsageCount Value="72"/>
-        <Loaded Value="True"/>
+        <TopLine Value="1"/>
+        <CursorPos X="25" Y="4"/>
+        <UsageCount Value="181"/>
       </Unit17>
       <Unit18>
+        <Filename Value="dsp\signalbasic.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="SignalBasic"/>
+        <EditorIndex Value="6"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="36"/>
+        <CursorPos X="3" Y="52"/>
+        <UsageCount Value="84"/>
+        <Loaded Value="True"/>
+      </Unit18>
+      <Unit19>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\inc\ucomplex.pp"/>
         <UnitName Value="UComplex"/>
         <WindowIndex Value="0"/>
         <TopLine Value="230"/>
         <CursorPos X="40" Y="160"/>
-        <UsageCount Value="28"/>
-      </Unit18>
-      <Unit19>
+        <UsageCount Value="17"/>
+      </Unit19>
+      <Unit20>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\inc\threadh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="126"/>
         <CursorPos X="11" Y="164"/>
-        <UsageCount Value="66"/>
-      </Unit19>
-      <Unit20>
+        <UsageCount Value="55"/>
+      </Unit20>
+      <Unit21>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\inc\thread.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="178"/>
         <CursorPos X="3" Y="193"/>
-        <UsageCount Value="28"/>
-      </Unit20>
-      <Unit21>
+        <UsageCount Value="17"/>
+      </Unit21>
+      <Unit22>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\objpas\classes\classesh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1584"/>
         <CursorPos X="43" Y="1603"/>
-        <UsageCount Value="93"/>
-      </Unit21>
-      <Unit22>
+        <UsageCount Value="82"/>
+      </Unit22>
+      <Unit23>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\win\tthread.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="49"/>
         <CursorPos X="3" Y="51"/>
-        <UsageCount Value="68"/>
-      </Unit22>
-      <Unit23>
+        <UsageCount Value="57"/>
+      </Unit23>
+      <Unit24>
         <Filename Value="D:\lazarus-1.2rc2\fpc\2.6.2\source\rtl\inc\systemh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="936"/>
         <CursorPos X="11" Y="947"/>
-        <UsageCount Value="48"/>
-      </Unit23>
-      <Unit24>
+        <UsageCount Value="37"/>
+      </Unit24>
+      <Unit25>
         <Filename Value="D:\lazarus-1.2rc2\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
         <WindowIndex Value="0"/>
         <TopLine Value="475"/>
         <CursorPos X="3" Y="401"/>
-        <UsageCount Value="48"/>
-      </Unit24>
-      <Unit25>
+        <UsageCount Value="37"/>
+      </Unit25>
+      <Unit26>
         <Filename Value="D:\lazarus-1.2rc2\lcl\lmessages.pp"/>
         <UnitName Value="LMessages"/>
         <WindowIndex Value="0"/>
         <TopLine Value="797"/>
         <CursorPos X="3" Y="813"/>
-        <UsageCount Value="48"/>
-      </Unit25>
-      <Unit26>
+        <UsageCount Value="37"/>
+      </Unit26>
+      <Unit27>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\inc\threadh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="134"/>
         <CursorPos X="36" Y="157"/>
-        <UsageCount Value="22"/>
-      </Unit26>
-      <Unit27>
-        <Filename Value="rm_lpf.pas"/>
-        <UnitName Value="rm_lpf"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="1"/>
+        <UsageCount Value="11"/>
       </Unit27>
       <Unit28>
-        <Filename Value="rm_hpf.pas"/>
-        <UnitName Value="rm_hpf"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="1"/>
-      </Unit28>
-      <Unit29>
-        <Filename Value="rm_bpf.pas"/>
-        <UnitName Value="rm_bpf"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="1"/>
-      </Unit29>
-      <Unit30>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\inc\ucomplex.pp"/>
         <UnitName Value="UComplex"/>
-        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="22"/>
-        <CursorPos X="33" Y="44"/>
-        <UsageCount Value="33"/>
-        <Loaded Value="True"/>
-      </Unit30>
-      <Unit31>
-        <Filename Value="D:\lazarus1.2\lcl\extctrls.pp"/>
-        <UnitName Value="ExtCtrls"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="163"/>
-        <CursorPos X="14" Y="178"/>
-        <UsageCount Value="5"/>
-      </Unit31>
-      <Unit32>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\objpas\sysutils\sysstrh.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="12"/>
-        <CursorPos X="36" Y="27"/>
-        <UsageCount Value="6"/>
-      </Unit32>
-      <Unit33>
+        <TopLine Value="145"/>
+        <CursorPos X="14" Y="166"/>
+        <UsageCount Value="85"/>
+      </Unit28>
+      <Unit29>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\inc\systemh.inc"/>
-        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="511"/>
-        <CursorPos X="43" Y="526"/>
-        <UsageCount Value="10"/>
-        <Loaded Value="True"/>
+        <CursorPos X="32" Y="518"/>
+        <UsageCount Value="58"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\win32\signals.pp"/>
+        <UnitName Value="signals"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="40"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="9"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\objpas\math.pp"/>
+        <UnitName Value="math"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="28"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="9"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="D:\lazarus1.2\lcl\forms.pp"/>
+        <UnitName Value="Forms"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="160"/>
+        <CursorPos X="17" Y="175"/>
+        <UsageCount Value="9"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="D:\lazarus1.2\lcl\include\customform.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1939"/>
+        <CursorPos X="17" Y="1952"/>
+        <UsageCount Value="9"/>
       </Unit33>
+      <Unit34>
+        <Filename Value="D:\lazarus1.2\lcl\include\scrollingwincontrol.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="229"/>
+        <CursorPos X="3" Y="238"/>
+        <UsageCount Value="9"/>
+      </Unit34>
     </Units>
     <General>
       <ActiveWindowIndexAtStart Value="0"/>
     </General>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="16" HistoryIndex="15">
       <Position1>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="294" Column="1" TopLine="280"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="15" Column="24" TopLine="7"/>
       </Position1>
       <Position2>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="291" Column="1" TopLine="280"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="35" Column="33" TopLine="19"/>
       </Position2>
       <Position3>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="292" Column="1" TopLine="280"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="29" Column="8" TopLine="14"/>
       </Position3>
       <Position4>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="293" Column="1" TopLine="280"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="69" Column="35" TopLine="50"/>
       </Position4>
       <Position5>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="294" Column="1" TopLine="280"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="53" Column="39" TopLine="31"/>
       </Position5>
       <Position6>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="291" Column="1" TopLine="286"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="27" Column="5" TopLine="12"/>
       </Position6>
       <Position7>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="308" Column="1" TopLine="301"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="77" Column="38" TopLine="54"/>
       </Position7>
       <Position8>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="309" Column="1" TopLine="301"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="8" Column="43" TopLine="2"/>
       </Position8>
       <Position9>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="315" Column="1" TopLine="301"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="32" Column="74" TopLine="17"/>
       </Position9>
       <Position10>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="244" Column="1" TopLine="234"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="28" Column="30" TopLine="16"/>
       </Position10>
       <Position11>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="245" Column="1" TopLine="234"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="89" Column="35" TopLine="70"/>
       </Position11>
       <Position12>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="247" Column="1" TopLine="238"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="34" Column="52" TopLine="25"/>
       </Position12>
       <Position13>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="249" Column="1" TopLine="238"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="32" Column="26" TopLine="16"/>
       </Position13>
       <Position14>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="250" Column="1" TopLine="238"/>
+        <Filename Value="rm_spectrum.pas"/>
+        <Caret Line="108" Column="39" TopLine="73"/>
       </Position14>
       <Position15>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="252" Column="1" TopLine="238"/>
+        <Filename Value="dsp\signalbasic.pas"/>
+        <Caret Line="52" Column="3" TopLine="36"/>
       </Position15>
       <Position16>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="253" Column="1" TopLine="238"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="54" Column="14" TopLine="40"/>
       </Position16>
-      <Position17>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="252" Column="1" TopLine="238"/>
-      </Position17>
-      <Position18>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="253" Column="1" TopLine="238"/>
-      </Position18>
-      <Position19>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="252" Column="1" TopLine="238"/>
-      </Position19>
-      <Position20>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="253" Column="1" TopLine="238"/>
-      </Position20>
-      <Position21>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="252" Column="1" TopLine="238"/>
-      </Position21>
-      <Position22>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="253" Column="1" TopLine="238"/>
-      </Position22>
-      <Position23>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="252" Column="1" TopLine="247"/>
-      </Position23>
-      <Position24>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="253" Column="1" TopLine="238"/>
-      </Position24>
-      <Position25>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="257" Column="1" TopLine="250"/>
-      </Position25>
-      <Position26>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="259" Column="1" TopLine="250"/>
-      </Position26>
-      <Position27>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="260" Column="1" TopLine="250"/>
-      </Position27>
-      <Position28>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="241" Column="21" TopLine="231"/>
-      </Position28>
-      <Position29>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="349" Column="1" TopLine="334"/>
-      </Position29>
-      <Position30>
-        <Filename Value="dsp\fft.pas"/>
-        <Caret Line="279" Column="1" TopLine="264"/>
-      </Position30>
     </JumpHistory>
   </ProjectSession>
   <EditorMacros Count="0"/>

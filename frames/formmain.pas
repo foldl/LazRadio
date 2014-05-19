@@ -39,7 +39,7 @@ var
 implementation
 
 uses
-  FFT, UComplex;
+  kissfft, UComplex, SignalBasic;
 
 {$R *.lfm}
 
@@ -50,7 +50,8 @@ begin
   if not Assigned(FSystem) then
   begin
     FSystem := TRadioSystem.Create;
-    FSystem.AddModule('rtl', 'RtlModule');
+    FSystem.AddModule('s', 'Spectrum');
+    FSystem.AddModule('o', 'Oscillator');
   end;
   FSystem.ConfigModule('rtl');
 end;
@@ -63,16 +64,9 @@ var
 begin
   for K := 0 to High(I) do
   begin
-    I[K].im := Random;
-    I[K].re := Random;
+    Memo1.Lines.Add(Format('I0(%f) = %.9f', [K * 1.0, BesselI0(K)]));
   end;
-  P := FFT.BuildFFTPlan(High(I) + 1, False);
-  FFT.FFT(P, I, O);
 
-  Memo1.Lines.Add(Format('numpy.fft.fft(%s)', [FFT.ToString(I, High(I) + 1)]));
-  Memo1.Lines.Add(Format('numpy.fft.fft(%s)', [FFT.ToString(O, High(I) + 1)]));
-
-  FFT.FinalizePlan(P);
 end;
 
 end.

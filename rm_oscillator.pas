@@ -89,5 +89,9 @@ Wait:
   Sleep(Max(5, Round(D * 1000) - 20));
 end;
 
+initialization
+
+  RegisterModule('Oscillator', TRadioModuleClass(TRadioOscillator.ClassType));
+
 end.
 

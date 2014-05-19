@@ -1,10 +1,10 @@
 object SpectrumForm: TSpectrumForm
-  Left = 328
-  Height = 414
-  Top = 254
+  Left = 478
+  Height = 451
+  Top = 166
   Width = 659
   Caption = 'SpectrumForm'
-  ClientHeight = 414
+  ClientHeight = 451
   ClientWidth = 659
   LCLVersion = '1.2.0.3'
   object Image1: TImage
@@ -25,7 +25,7 @@ object SpectrumForm: TSpectrumForm
   end
   object Image2: TImage
     Left = 0
-    Height = 249
+    Height = 286
     Top = 165
     Width = 659
     Align = alClient

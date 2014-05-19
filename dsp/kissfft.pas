@@ -1,4 +1,4 @@
-unit FFT;
+unit KissFFT;
 
 // Port KissFFT to Pascal
 
@@ -16,6 +16,7 @@ type
 
   TFFTState = record
     N: Integer;
+    NRep: Double;
     Inverse: Boolean;
     Factors: array [0..2 * MAX_FACTORS - 1] of Integer;
     Twiddles: array of Complex;
@@ -25,7 +26,8 @@ type
 
 function BuildFFTPlan(const N: Integer;
                       const Inverse: Boolean): PFFTPlan;
-
+procedure ChangePlan(Plan: PFFTPlan; const N: Integer;
+                      const Inverse: Boolean);
 procedure FinalizePlan(P: PFFTPlan);
 
 procedure FFT(Plan: PFFTPlan;
@@ -340,21 +342,26 @@ begin
 end;
 
 function BuildFFTPlan(const N: Integer; const Inverse: Boolean): PFFTPlan;
+begin
+  New(Result);
+  ChangePlan(Result, N, Inverse);
+end;
+
+procedure ChangePlan(Plan: PFFTPlan; const N: Integer; const Inverse: Boolean);
 var
   I: Integer;
   P: Complex = (re: 0; im: 0);
 begin
-  New(Result);
-  FillChar(Result^, SizeOf(Result^), 0);
-  Result^.N := N;
-  Result^.Inverse := Inverse;
-  Factor(N, Result^.Factors);
-  SetLength(Result^.Twiddles, N);
+  Plan^.N := N;
+  Plan^.Inverse := Inverse;
+  Plan^.NRep := 1 / N;
+  Factor(N, Plan^.Factors);
+  SetLength(Plan^.Twiddles, N);
   for I := 0 to N - 1 do
   begin
     P.im := -2 * Pi * I / N;
     if Inverse then P.im := -P.im;
-    Result^.Twiddles[I] := cexp(p);
+    Plan^.Twiddles[I] := cexp(p);
   end;
 end;
 
@@ -373,6 +380,7 @@ procedure FFT(Plan: PFFTPlan; Input: PComplex; Output: PComplex;
   const Stride: Integer);
 var
   T: PComplex;
+  I: Integer;
 begin
   if Input = Output then
   begin
@@ -383,6 +391,11 @@ begin
   end
   else
     DoFFT(Output, Input, 1, Stride, Plan^.Factors, Plan^);
+  if Plan^.Inverse then
+  begin
+    for I := 0 to Plan^.N - 1 do
+      Output[I] := Output[I] * Plan^.NRep;
+  end;
 end;
 
 function NextFastSize(N: Integer): Integer;

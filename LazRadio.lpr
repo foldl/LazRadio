@@ -9,7 +9,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
   radiosystem, superobject, rm_spectrum, rm_timer, formgui, rm_audio_out, 
-rm_audio_in, rm_filter, formspectrum, fft;
+rm_audio_in, rm_filter, formspectrum, kissfft, signalbasic;
 
 {$R *.res}
 

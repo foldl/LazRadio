@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex;
+  Classes, SysUtils, Graphics, UComplex, kissfft;
 
 const
   // ParamH: TRadioDataStream
@@ -84,11 +84,28 @@ type
     property BufferSize[const Index: Integer]: Integer read GetBufferSize;
   end;
 
+  TReceiveData = procedure (const P: PComplex; const Len: Integer) of object;
+
   { TStreamRegulator }
 
   TStreamRegulator = class
+  private
+    FData: array of Complex;
+    FOnReceiveData: TReceiveData;
+    FSize: Integer;
+    FCursor: Integer;
+    FOverlap: Integer;
+    procedure SetOnReceiveData(AValue: TReceiveData);
+    procedure SetOverlap(AValue: Integer);
+    procedure SetSize(AValue: Integer);
+    procedure CallOnRegulatedData;
   public
-    constructor Create(const Size: Integer);
+    constructor Create;
+    procedure ReceiveData(P: PComplex; Len: Integer);
+
+    property Size: Integer read FSize write SetSize;
+    property Overlap: Integer read FOverlap write SetOverlap;
+    property OnRegulatedData: TReceiveData read FOnReceiveData write SetOnReceiveData ;
   end;
 
   TRadioMessageId      = 0..31;
@@ -97,7 +114,7 @@ type
   { TRadioMessage }
 
   TRadioMessage = record
-    Sender: TRadioModule;
+    Sender: TObject;
     Id: Integer;
     ParamH: PtrUInt;
     ParamL: PtrUInt;
@@ -271,11 +288,86 @@ type
     destructor Destroy; override;
   end;
 
+  { TDataFlowNode }
+
+  TDataFlowNode = class
+  private
+    FNext: TDataFlowNode;
+    FOnSendToNext: TReceiveData;
+  public
+    destructor Destroy; override;
+
+    procedure SendToNext(const P: PComplex; const Len: Integer);
+    procedure ReceiveData(const P: PComplex; const Len: Integer); virtual;
+
+    procedure Connect(ANext: TDataFlowNode);
+    function  LastNode: TDataFlowNode;
+
+    property Next: TDataFlowNode read FNext;
+    property OnSendToNext: TReceiveData read FOnSendToNext write FOnSendToNext;
+  end;
+
+  { TRegulatorNode }
+
+  TRegulatorNode = class(TDataFlowNode)
+  private
+    FRegulator: TStreamRegulator;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
+    property Regulator: TStreamRegulator read FRegulator;
+  end;
+
+  { TWindowNode }
+
+  TWindowNode = class(TDataFlowNode)
+  private
+    FWnd: array of Double;
+    FRegulator: TStreamRegulator;
+    function GetOverlap: Integer;
+    function GetWindowLen: Integer;
+    procedure RegulatedData(const P: PComplex; const Len: Integer);
+    procedure SetOverlap(AValue: Integer);
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure SetWindow(const P: PDouble; const Len: Integer);
+    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
+
+    property WindowLen: Integer read GetWindowLen;
+    property Overlap: Integer read GetOverlap write SetOverlap;
+  end;
+
+  { TFIRNode }
+
+  TFIRNode = class(TDataFlowNode)
+  private
+    FHFIR: array of Complex;
+    FBuf: array of Complex;
+    FRes: array of Complex;
+    FPlan: PFFTPlan;
+    FRegulator: TStreamRegulator;
+    procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer);
+    procedure RegulatedData(const P: PComplex; const Len: Integer);
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False);
+    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
+  end;
+
 // I don't like to creae too many CriticalSections
 procedure RadioGlobalLock;
 procedure RadioGlobalUnlock;
 
 implementation
+
+uses
+  Math, SignalBasic;
 
 var
   RadioGlobalCS: TRTLCriticalSection;
@@ -288,6 +380,204 @@ end;
 procedure RadioGlobalUnlock;
 begin
   LeaveCriticalsection(RadioGlobalCS);
+end;
+
+{ TWindowNode }
+
+procedure TWindowNode.RegulatedData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+begin
+  if Len = High(FWnd) + 1 then
+    for I := 0 to Len - 1 do P[I] := P[I] * FWnd[I];
+  SendToNext(P, Len);
+end;
+
+function TWindowNode.GetOverlap: Integer;
+begin
+  Result := FRegulator.Overlap;
+end;
+
+function TWindowNode.GetWindowLen: Integer;
+begin
+  Result := High(FWnd) + 1;
+end;
+
+procedure TWindowNode.SetOverlap(AValue: Integer);
+begin
+  FRegulator.Overlap := AValue;
+end;
+
+constructor TWindowNode.Create;
+begin
+  inherited;
+  FRegulator := TStreamRegulator.Create;
+  FRegulator.OnRegulatedData := @RegulatedData;
+end;
+
+destructor TWindowNode.Destroy;
+begin
+  FRegulator.Free;
+  inherited Destroy;
+end;
+
+procedure TWindowNode.SetWindow(const P: PDouble; const Len: Integer);
+begin
+  SetLength(FWnd, Len);
+  Move(P^, FWnd[0], Len * SizeOf(P^));
+  FRegulator.Size := Len;
+end;
+
+procedure TWindowNode.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+  FRegulator.ReceiveData(P, Len);
+end;
+
+{ TFIRNode }
+
+procedure TFIRNode.SetTimeDomainFIR(const P: PComplex; const Len: Integer);
+var
+  T: array of Complex;
+  M: Double = -1.0;
+  C: Complex;
+  I: Integer;
+begin
+  if Assigned(FPlan) then
+  begin
+    FinalizePlan(FPlan);
+    FPlan := nil;
+  end;
+  SetLength(T, Len);
+  ModArg(P, @T[0], Len);
+  for C in T do M := Max(M, C.re);
+  M := M / 1000;
+  I := Len - 1;
+  while T[I].re < M do Dec(I);
+  Inc(I);       // FIR length
+  I := Max(NextFastSize(I), 1024);
+  FRegulator.Size := I;
+  SetLength(FHFIR, I);
+  SetLength(FBuf, I);
+  SetLength(FRes, I);
+  FillChar(FHFIR[0], I * SizeOf(FHFIR[0]), 0);
+  FillChar(FBuf[0], I * SizeOf(FHFIR[0]), 0);
+  Move(P^, FBuf[0], Len * SizeOf(FHFIR[0]));
+  FPlan := BuildFFTPlan(I, False);
+  FFT(FPlan, @FBuf[0], @FHFIR[0]);
+  FinalizePlan(FPlan);
+  FPlan := BuildFFTPlan(I, True);
+  FRegulator.Overlap := I - 1;
+end;
+
+procedure TFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+begin
+  if Assigned(FPlan) then
+  begin
+    if Len <> High(FBuf) + 1 then
+    begin
+      SendToNext(P, Len);
+      Exit;
+    end;
+    for I := 0 to Len - 1 do
+      FBuf[I] := P[I] * FHFIR[I];
+    FFT(FPlan, @FBuf[0], @FRes[0]);
+    SendToNext(@FRes[0], Len);
+  end
+  else
+    SendToNext(P, Len);
+end;
+
+constructor TFIRNode.Create;
+begin
+  inherited Create;
+  FRegulator := TStreamRegulator.Create;
+  FRegulator.OnRegulatedData := @RegulatedData;
+end;
+
+destructor TFIRNode.Destroy;
+begin
+  FRegulator.Free;
+  inherited Destroy;
+end;
+
+procedure TFIRNode.SetFIR(const P: PComplex; const Len: Integer;
+  const FreqDomain: Boolean);
+var
+  T: array of Complex;
+  X: PFFTPlan;
+begin
+  if not FreqDomain then
+    SetTimeDomainFIR(P, Len)
+  else begin
+    SetLength(T, Len);
+    X := BuildFFTPlan(Len, True);
+    FFT(X, P, @T[0]);
+    FinalizePlan(X);
+    SetTimeDomainFIR(@T[0], Len);
+  end;
+end;
+
+procedure TFIRNode.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+  if Assigned(FPlan) then
+  begin
+    FRegulator.ReceiveData(P, Len);
+  end
+  else
+    SendToNext(P, Len);
+end;
+
+{ TRegulatorNode }
+
+constructor TRegulatorNode.Create;
+begin
+  inherited Create;
+  FRegulator := TStreamRegulator.Create;
+  FRegulator.OnRegulatedData := @SendToNext;
+end;
+
+destructor TRegulatorNode.Destroy;
+begin
+  FRegulator.Free;
+  inherited Destroy;
+end;
+
+procedure TRegulatorNode.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+  FRegulator.ReceiveData(P, Len);
+end;
+
+{ TDataFlowNode }
+destructor TDataFlowNode.Destroy;
+begin
+  if Assigned(FNext) then FNext.Free;
+  inherited Destroy;
+end;
+
+procedure TDataFlowNode.SendToNext(const P: PComplex; const Len: Integer);
+begin
+  if Assigned(FOnSendToNext) then
+    FOnSendToNext(P, Len)
+  else if Assigned(FNext) then
+    FNext.ReceiveData(P, Len);
+end;
+
+procedure TDataFlowNode.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+
+end;
+
+procedure TDataFlowNode.Connect(ANext: TDataFlowNode);
+begin
+  FNext := ANext;
+end;
+
+function TDataFlowNode.LastNode: TDataFlowNode;
+begin
+  Result := Self;
+  while Assigned(Result.FNext) do Result := Result.FNext;
 end;
 
 { TRadioMessageQueue }
@@ -566,9 +856,73 @@ end;
 
 { TStreamRegulator }
 
-constructor TStreamRegulator.Create(const Size: Integer);
+procedure TStreamRegulator.SetOnReceiveData(AValue: TReceiveData);
 begin
+  if FOnReceiveData = AValue then Exit;
+  FOnReceiveData := AValue;
+end;
 
+procedure TStreamRegulator.SetOverlap(AValue: Integer);
+begin
+  if AValue < 0 then
+    FOverlap := 0
+  else if AValue > FSize - 1 then
+    FOverlap := FSize - 1
+  else
+    FOverlap := AValue;
+end;
+
+procedure TStreamRegulator.SetSize(AValue: Integer);
+begin
+  if AValue < 1 then Exit;
+  if FSize = AValue then Exit;
+
+  FSize := AValue;
+  CallOnRegulatedData;
+
+  SetLength(FData, FSize);
+  Overlap := FOverlap;
+end;
+
+procedure TStreamRegulator.CallOnRegulatedData;
+var
+  I: Integer = 0;
+begin
+  while FCursor >= FSize do
+  begin
+    if Assigned(FOnReceiveData) then FOnReceiveData(@FData[I], FSize);
+    Inc(I, FSize - FOverlap);
+    Dec(FCursor, FSize - FOverlap);
+  end;
+  if I > 0 then
+    Move(FData[I], FData[0], FCursor * SizeOf(FData[0]));
+end;
+
+constructor TStreamRegulator.Create;
+begin
+  FSize := 1024;
+  SetLength(FData, FSize);
+end;
+
+procedure TStreamRegulator.ReceiveData(P: PComplex; Len: Integer);
+var
+  F: Integer;
+  S: Integer;
+begin
+  while Len > 0 do
+  begin
+    F := FSize - FCursor;
+    if F <= 0 then
+    begin
+      CallOnRegulatedData;
+      F := FSize - FCursor;
+    end;
+    S := Min(F, Len);
+    Move(P^, FData[FCursor], S * SizeOf(P^));
+    Inc(P, S);
+    Dec(Len, S);
+  end;
+  CallOnRegulatedData;
 end;
 
 { TRadioDataStream }
