@@ -28,6 +28,9 @@ const
   // ParamH: PAUSE (1)    ParamL: ignore
   // ParamH: RESET (2)    ParamL: ignore
   RM_CONTROL         = 3;
+                     RM_CONTROL_RUN   = 0;
+                     RM_CONTROL_PAUSE = 1;
+                     RM_CONTROL_RESET = 2;
 
   // ParamH: timer id    ParamL: timer interval
   RM_TIMER           = 4;
@@ -170,7 +173,7 @@ type
     procedure UnLock;
     procedure WorkerIdle(Worker: TRadioThread);
   public
-    constructor Create(const SMP: Integer = 4);
+    constructor Create(const SMP: Integer = 1);
     procedure Request(Job: TRadioMessageQueue);
   end;
 
@@ -186,6 +189,7 @@ type
     FFirstMsg: TRadioMessageNode;
     FLastMsg: PRadioMessageNode;
     FMessageFilter: TRadioMessageIdSet;
+    FRunQueue: TRadioRunQueue;
     function GetNotEmpty: Boolean;
     procedure SetMessageFilter(AValue: TRadioMessageIdSet);
     procedure RequestSchudule;
@@ -193,6 +197,7 @@ type
     procedure MessageExceute;      // execute one message in a single call
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: PtrInt); virtual; abstract;
   public
+    constructor Create(RunQueue: TRadioRunQueue); virtual;
     procedure Lock;
     procedure UnLock;
 
@@ -211,7 +216,6 @@ type
     FDefOutput: TRadioDataStream;
     FName: string;
     FRunning: Boolean;
-    FRunQueue: TRadioRunQueue;
     procedure SetName(AValue: string);
   protected
     FDataListeners: TList;
@@ -230,10 +234,11 @@ type
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; virtual;
     function RMSetBandwidth(const Msg: TRadioMessage; const Bandwidth: Cardinal): Integer; virtual;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
+    function RMPhaseAdjust(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
 
     procedure DoReset; virtual;
   public
-    constructor Create(RunQueue: TRadioRunQueue); virtual;
+    constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
     procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrInt);
@@ -294,11 +299,18 @@ type
   private
     FNext: TDataFlowNode;
     FOnSendToNext: TReceiveData;
+    FCache: array of Complex;
+    FHoldCount: Integer;
+  protected
+    procedure DoReceiveData(const P: PComplex; const Len: Integer); virtual;
   public
     destructor Destroy; override;
 
     procedure SendToNext(const P: PComplex; const Len: Integer);
-    procedure ReceiveData(const P: PComplex; const Len: Integer); virtual;
+    procedure ReceiveData(const P: PComplex; const Len: Integer);
+
+    procedure Hold;
+    procedure ReleaseHold;
 
     procedure Connect(ANext: TDataFlowNode);
     function  LastNode: TDataFlowNode;
@@ -312,11 +324,11 @@ type
   TRegulatorNode = class(TDataFlowNode)
   private
     FRegulator: TStreamRegulator;
+  protected
+    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
   public
     constructor Create;
     destructor Destroy; override;
-
-    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
     property Regulator: TStreamRegulator read FRegulator;
   end;
 
@@ -330,12 +342,13 @@ type
     function GetWindowLen: Integer;
     procedure RegulatedData(const P: PComplex; const Len: Integer);
     procedure SetOverlap(AValue: Integer);
+  protected
+    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
   public
     constructor Create;
     destructor Destroy; override;
 
     procedure SetWindow(const P: PDouble; const Len: Integer);
-    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
 
     property WindowLen: Integer read GetWindowLen;
     property Overlap: Integer read GetOverlap write SetOverlap;
@@ -352,17 +365,21 @@ type
     FRegulator: TStreamRegulator;
     procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer);
     procedure RegulatedData(const P: PComplex; const Len: Integer);
+  protected
+    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
   public
     constructor Create;
     destructor Destroy; override;
 
     procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False);
-    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
   end;
 
 // I don't like to creae too many CriticalSections
 procedure RadioGlobalLock;
 procedure RadioGlobalUnlock;
+
+function MakeMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
+  const Sender: TRadioModule = nil): TRadioMessage;
 
 implementation
 
@@ -380,6 +397,15 @@ end;
 procedure RadioGlobalUnlock;
 begin
   LeaveCriticalsection(RadioGlobalCS);
+end;
+
+function MakeMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
+  const Sender: TRadioModule): TRadioMessage;
+begin
+  Result.Id := Id;
+  Result.ParamH := ParamH;
+  Result.ParamL := ParamL;
+  Result.Sender := Sender;
 end;
 
 { TWindowNode }
@@ -428,7 +454,7 @@ begin
   FRegulator.Size := Len;
 end;
 
-procedure TWindowNode.ReceiveData(const P: PComplex; const Len: Integer);
+procedure TWindowNode.DoReceiveData(const P: PComplex; const Len: Integer);
 begin
   FRegulator.ReceiveData(P, Len);
 end;
@@ -519,7 +545,7 @@ begin
   end;
 end;
 
-procedure TFIRNode.ReceiveData(const P: PComplex; const Len: Integer);
+procedure TFIRNode.DoReceiveData(const P: PComplex; const Len: Integer);
 begin
   if Assigned(FPlan) then
   begin
@@ -530,6 +556,11 @@ begin
 end;
 
 { TRegulatorNode }
+
+procedure TRegulatorNode.DoReceiveData(const P: PComplex; const Len: Integer);
+begin
+  FRegulator.ReceiveData(P, Len);
+end;
 
 constructor TRegulatorNode.Create;
 begin
@@ -544,12 +575,13 @@ begin
   inherited Destroy;
 end;
 
-procedure TRegulatorNode.ReceiveData(const P: PComplex; const Len: Integer);
+{ TDataFlowNode }
+
+procedure TDataFlowNode.DoReceiveData(const P: PComplex; const Len: Integer);
 begin
-  FRegulator.ReceiveData(P, Len);
+
 end;
 
-{ TDataFlowNode }
 destructor TDataFlowNode.Destroy;
 begin
   if Assigned(FNext) then FNext.Free;
@@ -565,8 +597,34 @@ begin
 end;
 
 procedure TDataFlowNode.ReceiveData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
 begin
+  if FHoldCount <= 0 then
+    DoReceiveData(P, Len)
+  else begin
+    I := High(FCache) + 1;
+    SetLength(FCache, High(FCache) + Len + 1);
+    Move(P^, FCache[I], Len * SizeOf(P^));
+  end;
+end;
 
+procedure TDataFlowNode.Hold;
+begin
+  Inc(FHoldCount);
+end;
+
+procedure TDataFlowNode.ReleaseHold;
+begin
+  Dec(FHoldCount);
+  if FHoldCount = 0 then
+  begin
+    if High(FCache) >= 0 then
+    begin
+      DoReceiveData(@FCache[0], High(FCache) + 1);
+      SetLength(FCache, 0);
+    end;
+  end;
 end;
 
 procedure TDataFlowNode.Connect(ANext: TDataFlowNode);
@@ -625,7 +683,7 @@ end;
 
 procedure TRadioMessageQueue.RequestSchudule;
 begin
-
+  FRunQueue.Request(Self);
 end;
 
 procedure TRadioMessageQueue.MessageExceute;
@@ -644,6 +702,14 @@ begin
   UnLock;
   Dispose(P);
   ProccessMessage(Msg, Ret);
+end;
+
+constructor TRadioMessageQueue.Create(RunQueue: TRadioRunQueue);
+begin
+  FMessageFilter := $FFFFFFFF;
+  FLastExecMsg := @FFirstExecMsg;
+  FLastMsg := @FFirstMsg;
+  FRunQueue := RunQueue;
 end;
 
 procedure TRadioMessageQueue.Lock;
@@ -749,18 +815,19 @@ var
   T: PRadioThreadNode;
   P: PMessageQueueNode;
 begin
-  if not Assigned(FFirstJob.Next) then Exit;
-  if not Assigned(FIdleNode.Next) then Exit;
-  Lock;
-  T := FIdleNode.Next;
-  FIdleNode.Next := T^.Next;
-  P := FFirstJob.Next;
-  FFirstJob.Next := P^.Next;
-  UnLock;
+  while Assigned(FFirstJob.Next) and Assigned(FIdleNode.Next) do
+  begin
+    Lock;
+    T := FIdleNode.Next;
+    FIdleNode.Next := T^.Next;
+    P := FFirstJob.Next;
+    FFirstJob.Next := P^.Next;
+    UnLock;
 
-  T^.Thread.Job := P^.Queue;
-  Dispose(P);
-  RTLEventSetEvent(T^.Thread.FJobScheduled);
+    T^.Thread.Job := P^.Queue;
+    Dispose(P);
+    RTLEventSetEvent(T^.Thread.FJobScheduled);
+  end;
 end;
 
 procedure TRadioRunQueue.Lock;
@@ -779,6 +846,7 @@ begin
   Worker.Node^.Next := FIdleNode.Next;
   FIdleNode.Next := Worker.Node;
   Unlock;
+  Schedule;
 end;
 
 constructor TRadioRunQueue.Create(const SMP: Integer);
@@ -836,6 +904,7 @@ begin
     RTLEventResetEvent(FJobScheduled);
 
     if not Assigned(FJob) then Break;
+    //if not FJob.NotEmpty then raise Exception.Create('bad');
     while FJob.NotEmpty do FJob.MessageExceute;
     FJob := nil;
     FRunQueue.WorkerIdle(Self);
@@ -920,6 +989,7 @@ begin
     S := Min(F, Len);
     Move(P^, FData[FCursor], S * SizeOf(P^));
     Inc(P, S);
+    Inc(FCursor, S);
     Dec(Len, S);
   end;
   CallOnRegulatedData;
@@ -939,10 +1009,14 @@ end;
 
 constructor TRadioDataStream.Create(Module: TRadioModule; const AName: string;
   const BlockSize: Integer);
+var
+  I: Integer;
 begin
   FName := AName;
   FBlockSize := BlockSize;
   FModule := Module;
+  for I := Low(FBuffers) to High(FBuffers) do
+    SetLength(FBuffers[I].Data, FBlockSize);
 end;
 
 destructor TRadioDataStream.Destroy;
@@ -1104,7 +1178,12 @@ end;
 
 procedure TRadioModule.RMSetFeature(const Msg: TRadioMessage; var Ret: Integer);
 begin
-
+  case Msg.ParamH of
+    RM_FEATURE_BANDWIDTH: RMSetBandwidth(Msg, Msg.ParamL);
+    RM_FEATURE_FREQ:      RMSetFrequency(Msg, Msg.ParamL);
+    RM_FEATURE_PHASE_ADJ: RMPhaseAdjust(Msg, Msg.ParamL);
+    RM_FEATURE_SAMPLE_RATE: RMSetSampleRate(Msg, Msg.ParamL);
+  end;
 end;
 
 procedure TRadioModule.RMReport(const Msg: TRadioMessage; var Ret: Integer);
@@ -1135,6 +1214,12 @@ begin
 
 end;
 
+function TRadioModule.RMPhaseAdjust(const Msg: TRadioMessage;
+  const Rate: Cardinal): Integer;
+begin
+
+end;
+
 procedure TRadioModule.DoReset;
 begin
   MessageQueueReset;
@@ -1142,11 +1227,10 @@ end;
 
 constructor TRadioModule.Create(RunQueue: TRadioRunQueue);
 begin
-  inherited Create;
+  inherited;
   FDataListeners := TList.Create;
   FFeatureListeners := TList.Create;
   FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
-  FRunQueue := RunQueue;
   FLastMsg := @FFirstMsg;
 end;
 

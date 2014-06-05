@@ -12,11 +12,12 @@ type
   { TSpectrumForm }
 
   TSpectrumForm = class(TForm)
-    Image1: TImage;
-    Image2: TImage;
+    PaintBox1: TPaintBox;
+    PaintBox2: TPaintBox;
     Splitter1: TSplitter;
   private
     { private declarations }
+
   public
     { public declarations }
   end;
@@ -27,6 +28,9 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TSpectrumForm }
+
 
 end.
 

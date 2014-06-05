@@ -18,7 +18,12 @@ type
     FRunQueue: TRadioRunQueue;
     FSuspended: Boolean;
     FModuleDict: TSuperTableString;
+    FInstance: TRadioSystem; static;
+    function GetModule(const Name: string): TRadioModule;
     procedure SetSuspended(AValue: Boolean);
+  protected
+    procedure Lock;
+    procedure Unlock;
   public
     constructor Create;
     destructor Destroy; override;
@@ -29,7 +34,9 @@ type
     function ConnectModuel(const ModuleFrom, ModuleTo: string): Boolean;
     function ConfigModule(const Name: string): Boolean;
 
+    property Module[const Name: string]: TRadioModule read GetModule;
     property Suspended: Boolean read FSuspended write SetSuspended;
+    class property Instance: TRadioSystem read FInstance;
   end;
 
 procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
@@ -37,6 +44,7 @@ procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
 procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule); overload;
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
+procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; const Receiver: string);
 
 implementation
 
@@ -51,17 +59,26 @@ end;
 
 procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule);
 begin
-
+  Receiver.PostMessage(M);
 end;
 
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
+var
+  R: TRadioModule;
 begin
-
+  R := TRadioSystem.Instance.Module[Receiver];
+  if Assigned(R) then RadioPostMessage(M, R);
 end;
 
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
 begin
 
+end;
+
+procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
+  const Receiver: string);
+begin
+  RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
 end;
 
 { TRadioSystem }
@@ -72,14 +89,34 @@ begin
   FSuspended := AValue;
 end;
 
+function TRadioSystem.GetModule(const Name: string): TRadioModule;
+begin
+  Lock;
+  Result := TRadioModule(Pointer(FModuleDict.I[Name]));
+  Unlock;
+end;
+
+procedure TRadioSystem.Lock;
+begin
+  RadioGlobalLock;
+end;
+
+procedure TRadioSystem.Unlock;
+begin
+  RadioGlobalUnlock;
+end;
+
 constructor TRadioSystem.Create;
 begin
+  if Assigned(FInstance) then raise Exception.Create('TRadioSystem is singleton');
   FRunQueue   := TRadioRunQueue.Create;
   FModuleDict := TSuperTableString.Create;
+  FInstance := Self;
 end;
 
 destructor TRadioSystem.Destroy;
 begin
+  FInstance := nil;
   Reset;
   FModuleDict.Free;
   FRunQueue.Free;
@@ -96,6 +133,8 @@ begin
 end;
 
 function TRadioSystem.AddModule(const Name, T: string): Boolean;
+label
+  Quit;
 var
   C: TRadioModuleClass;
   I: SuperInt;
@@ -104,27 +143,38 @@ begin
   I := ModuleClassDict.I[LowerCase(T)];
   Result := I <> 0;
   if not Result then Exit;
+  Lock;
   C := TRadioModuleClass(Pointer(I));
   I := FModuleDict.I[Name];
   Result := I = 0;
-  if not Result then Exit;
+  if not Result then goto Quit;
   M := C.Create(FRunQueue);
   FModuleDict.I[Name] := SuperInt(Pointer(M));
   Result := True;
   M.Running := not Suspended;
+Quit:
+  Unlock;
 end;
 
 function TRadioSystem.ConnectModuel(const ModuleFrom, ModuleTo: string
   ): Boolean;
+var
+  MF, MT: TRadioModule;
 begin
-
+  MF := Module[ModuleFrom];
+  MT := Module[ModuleTo];
+  if Assigned(MF) and Assigned(MT) then
+  begin
+    MF.AddFeatureListener(MT);
+    MF.AddDataListener(MT);
+  end;
 end;
 
 function TRadioSystem.ConfigModule(const Name: string): Boolean;
 var
   M: TRadioModule;
 begin
-  M := TRadioModule(Pointer(FModuleDict.I[Name]));
+  M := Module[Name];
   Result := Assigned(M);
   if Result then M.Configure;
 end;

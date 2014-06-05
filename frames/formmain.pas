@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
-  Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls, RadioSystem;
+  Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls, RadioSystem, RadioModule;
 
 type
 
@@ -39,7 +39,7 @@ var
 implementation
 
 uses
-  kissfft, UComplex, SignalBasic;
+  kissfft, UComplex, SignalBasic, rm_spectrum;
 
 {$R *.lfm}
 
@@ -53,20 +53,19 @@ begin
     FSystem.AddModule('s', 'Spectrum');
     FSystem.AddModule('o', 'Oscillator');
   end;
-  FSystem.ConfigModule('rtl');
+  //FSystem.ConfigModule('rtl');
+  FSystem.ConnectModuel('o', 's');
+  RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, 's');
+  RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, 'o');
+
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 500, 'o');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 20000, 'o');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 1024 * 5, 's');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);
-var
-  P: PFFTPlan;
-  I, O: array [0..13 -1] of Complex;
-  K: Integer;
 begin
-  for K := 0 to High(I) do
-  begin
-    Memo1.Lines.Add(Format('I0(%f) = %.9f', [K * 1.0, BesselI0(K)]));
-  end;
-
+  Button1Click(Sender);
 end;
 
 end.

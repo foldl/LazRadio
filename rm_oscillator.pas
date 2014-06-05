@@ -7,6 +7,13 @@ interface
 uses
   Classes, SysUtils, RadioModule;
 
+const
+
+  RM_OSC_WAVE = RM_USER;
+                  SET_WAVE_SIN      = 0;
+                  SET_WAVE_RECT     = 1;  // ParamL =
+                  SET_WAVE_TRI      = 2;
+
 type
 
   { TRadioOscillator }
@@ -28,7 +35,7 @@ type
 implementation
 
 uses
-  Math, UComplex;
+  Math, UComplex, RadioSystem;
 
 { TRadioOscillator }
 
@@ -56,6 +63,7 @@ label
 var
   P: PComplex;
   I: Integer;
+  J: Integer;
   F: Cardinal;
   R: Cardinal;
   A: Double;
@@ -73,11 +81,11 @@ begin
     A := 2 * Pi * FFreq / FSampleRate;
     V := FPhase;
     D := D + C / FSampleRate;
-    for I := 0 to C - 1 do
+    for J := 0 to C - 1 do
     begin
       W := V + A;
-      P[I].re := Cos(V);
-      P[I].im := Sin(V);
+      P[J].re := Cos(V);
+      P[J].im := Sin(V);
       V := W;
     end;
     C := Trunc(V / (2 * Pi));

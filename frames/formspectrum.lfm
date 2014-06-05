@@ -7,26 +7,27 @@ object SpectrumForm: TSpectrumForm
   ClientHeight = 451
   ClientWidth = 659
   LCLVersion = '1.2.0.3'
-  object Image1: TImage
-    Left = 0
-    Height = 160
-    Top = 0
-    Width = 659
-    Align = alTop
-  end
   object Splitter1: TSplitter
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 160
+    Top = 105
     Width = 659
     Align = alTop
+    Beveled = True
     ResizeAnchor = akTop
   end
-  object Image2: TImage
+  object PaintBox1: TPaintBox
     Left = 0
-    Height = 286
-    Top = 165
+    Height = 105
+    Top = 0
+    Width = 659
+    Align = alTop
+  end
+  object PaintBox2: TPaintBox
+    Left = 0
+    Height = 341
+    Top = 110
     Width = 659
     Align = alClient
   end

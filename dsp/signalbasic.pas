@@ -14,12 +14,15 @@ type
 
 // Output.re = amplitude
 // Output.im = arg
-procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
+procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
+procedure ModArg(IO: PComplex; const N: Integer);
 
 procedure CreateWindowFunction(P: PDouble; const N: Integer; const Func: TWindowFunction;
   Param: Double = -1);
 
 function BesselI0(const Z: Double): Double;
+
+procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen, TargetLen: Integer);
 
 implementation
 
@@ -45,6 +48,60 @@ begin
   until T < 1e-8;
 end;
 
+procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen,
+  TargetLen: Integer);
+  procedure Smooth(Source: PDouble; Target: PDouble; const SourceLen,
+    TargetLen: Integer);
+  var
+    Ratio: Double;
+    P: Double = 0;
+    I: Integer;
+    K: Integer;
+    L: Integer = 0;
+    J: Integer;
+  begin
+    Ratio := SourceLen / TargetLen;
+    for I := 0 to TargetLen - 1 do
+    begin
+      K := Trunc(P);
+      Target[I] := 0;
+      for J := L to K do
+        Target[I] := Target[I] + Source[J];
+      Target[I] := Target[I] / (K - L + 1);
+      L := K + 1;
+      P := P + Ratio;
+    end;
+  end;
+
+  procedure Interpolate(Source: PDouble; Target: PDouble; const SourceLen,
+    TargetLen: Integer);
+  var
+    Ratio: Double;
+    P: Double = 0;
+    I: Integer;
+    K: Integer;
+  begin
+    Ratio := SourceLen / TargetLen;
+    for I := 0 to TargetLen - 1 do
+    begin
+      K := Trunc(P);
+      Target[I] := Source[K] + (P - K) * (Source[K + 1] - Source[K]);
+      P := P + Ratio;
+    end;
+  end;
+begin
+  if (SourceLen < 1) or (TargetLen < 1) then Exit;
+  if SourceLen = TargetLen then
+  begin
+    Move(Source^, Target^, SourceLen * SizeOf(Source^));
+    Exit;
+  end;
+  if SourceLen > TargetLen then
+    Smooth(Source, Target, SourceLen, TargetLen)
+  else
+    Interpolate(Source, Target, SourceLen, TargetLen);
+end;
+
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
 var
   I: Integer;
@@ -53,6 +110,19 @@ begin
   begin
     Output[I].re := cmod(Input[I]);
     Output[I].im := carg(Input[I]);
+  end;
+end;
+
+procedure ModArg(IO: PComplex; const N: Integer);
+var
+  I: Integer;
+  T: Complex;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := IO[I];
+    IO[I].re := cmod(T);
+    IO[I].im := carg(T);
   end;
 end;
 
