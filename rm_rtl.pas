@@ -20,11 +20,11 @@ type
     FDev: PRtlSdrDev;
     FDevRunning: Boolean;
     function  DevOK: Boolean;
+  protected
+    procedure DoConfigure; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
-
-    procedure Configure; override;
     property DevRunning: Boolean read FDevRunning;
   end;
 
@@ -51,7 +51,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TRtlModule.Configure;
+procedure TRtlModule.DoConfigure;
 begin
   RTLForm.Show;
   RTLForm.RtlMod := Self;

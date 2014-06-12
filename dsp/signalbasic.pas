@@ -17,12 +17,19 @@ type
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
 procedure ModArg(IO: PComplex; const N: Integer);
 
+// Output.re = power
+// Output.im = arg
+procedure PowArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
+procedure PowArg(IO: PComplex; const N: Integer);
+
 procedure CreateWindowFunction(P: PDouble; const N: Integer; const Func: TWindowFunction;
   Param: Double = -1);
 
 function BesselI0(const Z: Double): Double;
 
 procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen, TargetLen: Integer);
+
+procedure CancelDC(Signal: PComplex; const N: Integer);
 
 implementation
 
@@ -102,6 +109,18 @@ begin
     Interpolate(Source, Target, SourceLen, TargetLen);
 end;
 
+procedure CancelDC(Signal: PComplex; const N: Integer);
+var
+  T: Complex = (re: 0; im: 0);
+  I: Integer;
+begin
+  for I := 0 to N - 1 do
+    T := T + Signal[I];
+  T := T / N;
+  for I := 0 to N - 1 do
+    Signal[I] := Signal[I] - T;
+end;
+
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
 var
   I: Integer;
@@ -122,6 +141,30 @@ begin
   begin
     T := IO[I];
     IO[I].re := cmod(T);
+    IO[I].im := carg(T);
+  end;
+end;
+
+procedure PowArg(Input: PComplex; Output: PComplex; const N: Integer);
+var
+  I: Integer;
+begin
+  for I := 0 to N - 1 do
+  begin
+    Output[I].re := Input[I].re * Input[I].re + Input[I].im * Input[I].im;
+    Output[I].im := carg(Input[I]);
+  end;
+end;
+
+procedure PowArg(IO: PComplex; const N: Integer);
+var
+  I: Integer;
+  T: Complex;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := IO[I];
+    IO[I].re := T.re * T.re + T.im * T.im;
     IO[I].im := carg(T);
   end;
 end;

@@ -45,6 +45,7 @@ procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule); over
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
 procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; const Receiver: string);
+procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; Receiver: TRadioModule);
 
 implementation
 
@@ -77,6 +78,12 @@ end;
 
 procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
   const Receiver: string);
+begin
+  RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
+end;
+
+procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
+  Receiver: TRadioModule);
 begin
   RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
 end;
@@ -176,7 +183,7 @@ var
 begin
   M := Module[Name];
   Result := Assigned(M);
-  if Result then M.Configure;
+  M.PostMessage(RM_CONFIGURE, 0, 0);
 end;
 
 end.

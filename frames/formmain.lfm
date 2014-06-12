@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 539
+  Left = 481
   Height = 574
-  Top = 131
+  Top = 129
   Width = 854
   Caption = 'LazRadio'
   ClientHeight = 554
@@ -588,6 +588,15 @@ object MainForm: TMainForm
     Top = 532
     Width = 854
     Panels = <>
+  end
+  object Button3: TButton
+    Left = 440
+    Height = 25
+    Top = 96
+    Width = 75
+    Caption = 'Button3'
+    OnClick = Button3Click
+    TabOrder = 4
   end
   object MainMenu1: TMainMenu
     left = 256

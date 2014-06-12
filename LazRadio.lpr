@@ -9,7 +9,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
   radiosystem, superobject, rm_spectrum, rm_timer, formgui, rm_audio_out, 
-rm_audio_in, rm_filter, formspectrum, kissfft, signalbasic;
+rm_audio_in, rm_filter, formspectrum, kissfft, signalbasic, formoscillator;
 
 {$R *.res}
 
@@ -20,6 +20,7 @@ begin
   Application.CreateForm(TRTLForm, RTLForm);
   Application.CreateForm(TGUIForm, GUIForm);
   Application.CreateForm(TSpectrumForm, SpectrumForm);
+  Application.CreateForm(TOscillatorForm, OscillatorForm);
   Application.Run;
 end.
 

@@ -16,6 +16,7 @@ type
     ActionList1: TActionList;
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
@@ -27,6 +28,7 @@ type
     ToolButton1: TToolButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
     FSystem: TRadioSystem;
   public
@@ -39,7 +41,7 @@ var
 implementation
 
 uses
-  kissfft, UComplex, SignalBasic, rm_spectrum;
+  kissfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator;
 
 {$R *.lfm}
 
@@ -60,12 +62,22 @@ begin
 
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 500, 'o');
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 20000, 'o');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 1024 * 5, 's');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 20000, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 10000, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
+  RadioPostMessage(RM_OSC_WAVE, SET_WAVE_SIN, 50, 'o');
+
+  FSystem.ConfigModule('o');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);
 begin
   Button1Click(Sender);
+end;
+
+procedure TMainForm.Button3Click(Sender: TObject);
+begin
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 5000, 'o');
 end;
 
 end.

@@ -47,6 +47,8 @@ const
   // ParamH: module id (high) timer id (low)  ParamL: ignore
   RM_DELETE_TIMER    = 7;
 
+  RM_CONFIGURE       = 8;
+
   RM_USER            = 100;
 
 type
@@ -173,7 +175,7 @@ type
     procedure UnLock;
     procedure WorkerIdle(Worker: TRadioThread);
   public
-    constructor Create(const SMP: Integer = 1);
+    constructor Create(const SMP: Integer = 2);
     procedure Request(Job: TRadioMessageQueue);
   end;
 
@@ -183,7 +185,7 @@ type
 
   TRadioMessageQueue = class
   private
-    FExecuting: Boolean;
+    FInQueue: Boolean;
     FFirstExecMsg: TRadioMessageNode;
     FLastExecMsg: PRadioMessageNode;
     FFirstMsg: TRadioMessageNode;
@@ -191,6 +193,7 @@ type
     FMessageFilter: TRadioMessageIdSet;
     FRunQueue: TRadioRunQueue;
     function GetNotEmpty: Boolean;
+    procedure SetInQueue(AValue: Boolean);
     procedure SetMessageFilter(AValue: TRadioMessageIdSet);
     procedure RequestSchudule;
   protected
@@ -206,7 +209,7 @@ type
 
     property NotEmpty: Boolean read GetNotEmpty;
     property MessageFilter: TRadioMessageIdSet read FMessageFilter write SetMessageFilter;
-    property Executing: Boolean read FExecuting;
+    property InQueue: Boolean read FInQueue write SetInQueue;
   end;
 
   { TRadioModule }
@@ -236,6 +239,8 @@ type
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
     function RMPhaseAdjust(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
 
+    procedure DoConfigure; virtual;
+
     procedure DoReset; virtual;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -243,8 +248,8 @@ type
 
     procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrInt);
     procedure PostMessage(const Msg: TRadioMessage); virtual;
+    procedure Broadcast(const Msg: TRadioMessage);
 
-    procedure Configure; virtual;
     procedure Draw(ACanvas: TCanvas; ARect: TRect); virtual;
 
     procedure AddDataListener(Listener: TRadioModule);
@@ -645,6 +650,21 @@ begin
   Result := Assigned(FFirstExecMsg.Next);
 end;
 
+procedure TRadioMessageQueue.SetInQueue(AValue: Boolean);
+var
+  Req: Boolean = False;
+begin
+  Lock;
+  if FInQueue <> AValue then
+  begin
+    FInQueue := AValue;
+    Req := not AValue;
+  end;
+  Unlock;
+  if Req and NotEmpty then
+    RequestSchudule;
+end;
+
 procedure TRadioMessageQueue.SetMessageFilter(AValue: TRadioMessageIdSet);
 var
   P: PRadioMessageNode;
@@ -683,7 +703,7 @@ end;
 
 procedure TRadioMessageQueue.RequestSchudule;
 begin
-  FRunQueue.Request(Self);
+  if not FInQueue then FRunQueue.Request(Self);
 end;
 
 procedure TRadioMessageQueue.MessageExceute;
@@ -735,7 +755,7 @@ begin
     FLastExecMsg^.Next := P;
     FLastExecMsg := P;
     UnLock;
-    if not Executing then RequestSchudule;
+    RequestSchudule;
   end
   else begin
     Lock;
@@ -869,7 +889,18 @@ procedure TRadioRunQueue.Request(Job: TRadioMessageQueue);
 var
   T: PRadioThreadNode;
   P: PMessageQueueNode;
+  F: Boolean = False;
 begin
+  Lock;
+  if not Job.InQueue then
+  begin
+    F := True;
+    Job.InQueue := True;
+  end;
+  Unlock;
+
+  if not F then Exit;
+
   if Assigned(FIdleNode.Next) then
   begin
     Lock;
@@ -897,17 +928,24 @@ end;
 { TRadioThread }
 
 procedure TRadioThread.Execute;
+var
+  J: TRadioMessageQueue;
 begin
   while not Terminated do
   begin
     RTLEventWaitFor(FJobScheduled);
     RTLEventResetEvent(FJobScheduled);
 
-    if not Assigned(FJob) then Break;
-    //if not FJob.NotEmpty then raise Exception.Create('bad');
-    while FJob.NotEmpty do FJob.MessageExceute;
-    FJob := nil;
-    FRunQueue.WorkerIdle(Self);
+    if Assigned(FJob) then
+    begin
+      J := FJob;
+      FJob := nil;
+
+      while J.NotEmpty do J.MessageExceute;
+      FRunQueue.WorkerIdle(Self);
+      J.InQueue := False;
+    end
+    else;
   end;
 end;
 
@@ -1145,6 +1183,14 @@ begin
   StoreMessage(Msg);
 end;
 
+procedure TRadioModule.Broadcast(const Msg: TRadioMessage);
+var
+  P: Pointer;
+begin
+  for P in FFeatureListeners do
+    TRadioModule(P).PostMessage(Msg);
+end;
+
 procedure TRadioModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
@@ -1154,6 +1200,7 @@ begin
     RM_REPORT   : RMReport(Msg, Ret);
     RM_SET_FEATURE: RMSetFeature(Msg, Ret);
     RM_TIMER      : RMTimer(Msg, Ret);
+    RM_CONFIGURE:   TThread.Synchronize(nil, @DoConfigure)
   else
   end;
 end;
@@ -1257,7 +1304,7 @@ begin
   PostMessage(M);
 end;
 
-procedure TRadioModule.Configure;
+procedure TRadioModule.DoConfigure;
 begin
 
 end;
