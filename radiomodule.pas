@@ -61,6 +61,8 @@ type
 
   TRadioModule = class;
 
+  TRadioLogLevel = (llVerbose, llInfo, llWarn, llError);
+
   { TRadioDataStream }
 
   TRadioDataStream = class
@@ -71,7 +73,9 @@ type
     FBuffers: array [0..1] of TDataStreamRec;
     FModule: TRadioModule;
     function GetBuffer(const Index: Integer): PComplex;
-    function GetBufferSize(const Index: Integer): Integer;
+    function GetBufferCount: Integer;
+    function GetBufferSize: Integer;
+    procedure SetBufferSize(AValue: Integer);
   public
     constructor Create(Module: TRadioModule; const AName: string; const BlockSize: Integer);
     destructor Destroy; override;
@@ -86,7 +90,8 @@ type
 
     property Name: string read FName;
     property Buffer[const Index: Integer]: PComplex read GetBuffer;
-    property BufferSize[const Index: Integer]: Integer read GetBufferSize;
+    property BufferSize: Integer read GetBufferSize write SetBufferSize;
+    property BufferCount: Integer read GetBufferCount;
   end;
 
   TReceiveData = procedure (const P: PComplex; const Len: Integer) of object;
@@ -119,7 +124,7 @@ type
   { TRadioMessage }
 
   TRadioMessage = record
-    Sender: TObject;
+    Sender: string; // TObject;
     Id: Integer;
     ParamH: PtrUInt;
     ParamL: PtrUInt;
@@ -185,6 +190,7 @@ type
 
   TRadioMessageQueue = class
   private
+    FName: string;
     FInQueue: Boolean;
     FFirstExecMsg: TRadioMessageNode;
     FLastExecMsg: PRadioMessageNode;
@@ -210,6 +216,8 @@ type
     property NotEmpty: Boolean read GetNotEmpty;
     property MessageFilter: TRadioMessageIdSet read FMessageFilter write SetMessageFilter;
     property InQueue: Boolean read FInQueue write SetInQueue;
+
+    property Name: string read FName write FName;
   end;
 
   { TRadioModule }
@@ -217,14 +225,11 @@ type
   TRadioModule = class(TRadioMessageQueue)
   private
     FDefOutput: TRadioDataStream;
-    FName: string;
+
     FRunning: Boolean;
-    procedure SetName(AValue: string);
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
-
-    procedure SetRunning(AValue: Boolean); virtual;
 
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
 
@@ -242,13 +247,17 @@ type
     procedure DoConfigure; virtual;
 
     procedure DoReset; virtual;
+    function DoStart: Boolean; virtual;
+    function DoStop: Boolean; virtual;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
-    procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrInt);
+    procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt);
     procedure PostMessage(const Msg: TRadioMessage); virtual;
-    procedure Broadcast(const Msg: TRadioMessage);
+    procedure Broadcast(const Msg: TRadioMessage); overload;
+    procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
+
 
     procedure Draw(ACanvas: TCanvas; ARect: TRect); virtual;
 
@@ -262,8 +271,7 @@ type
     procedure ReceiveData(const P: PComplex; const Len: Integer); virtual;
 
     property DefOutput: TRadioDataStream read FDefOutput;
-    property Running: Boolean read FRunning write SetRunning;
-    property Name: string read FName write SetName;
+    property Running: Boolean read FRunning;
   end;
 
   TRadioModuleClass = class of TRadioModule;
@@ -292,7 +300,8 @@ type
     FThread: TGenericRadioThread;
   protected
     procedure ThreadFun(Thread: TGenericRadioThread); virtual;
-    procedure SetRunning(AValue: Boolean); override;
+    function DoStart: Boolean; override;
+    function DoStop: Boolean; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -379,6 +388,44 @@ type
     procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False);
   end;
 
+  { TResampleNode }
+
+  TResampleNode = class(TDataFlowNode)
+  private
+    FBuf: array [0..2048 - 1] of Complex;
+    FCursor: Integer;
+    FLastInput: Complex;
+    FLastScaledIndex: Double;
+    FInputRate: Cardinal;
+    FOutputRate: Cardinal;
+    procedure SetInputRate(AValue: Cardinal);
+    procedure SetOutputRate(AValue: Cardinal);
+  protected
+    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    property InputRate: Cardinal read FInputRate write SetInputRate ;
+    property OutputRate: Cardinal read FOutputRate write SetOutputRate;
+  end;
+
+  { TRadioLogger }
+
+  TRadioLogger = class
+  private
+    FLevel: TRadioLogLevel;  static;
+  protected
+    FInstance: TRadioLogger; static;
+    procedure DoReport(const ALevel: TRadioLogLevel; const S: string); virtual;
+  public
+    class procedure Report(const ALevel: TRadioLogLevel; const AFormat: string; Params: array of const); overload;
+    class procedure Report(const ALevel: TRadioLogLevel; const AFormat: string);
+    class property Level: TRadioLogLevel read FLevel write FLevel;
+
+    class function MsgToStr(const M: TRadioMessage): string;
+  end;
+
 // I don't like to creae too many CriticalSections
 procedure RadioGlobalLock;
 procedure RadioGlobalUnlock;
@@ -410,7 +457,105 @@ begin
   Result.Id := Id;
   Result.ParamH := ParamH;
   Result.ParamL := ParamL;
-  Result.Sender := Sender;
+  if Assigned(Sender) then Result.Sender := Sender.Name;
+end;
+
+{ TRadioLogger }
+
+procedure TRadioLogger.DoReport(const ALevel: TRadioLogLevel; const S: string);
+begin
+
+end;
+
+class procedure TRadioLogger.Report(const ALevel: TRadioLogLevel;
+  const AFormat: string; Params: array of const);
+var
+  S: string;
+begin
+  if not Assigned(FInstance) then Exit;
+  if FLevel > ALevel then Exit;
+  S := Format(AFormat, Params);
+  FInstance.DoReport(ALevel, S);
+end;
+
+class procedure TRadioLogger.Report(const ALevel: TRadioLogLevel;
+  const AFormat: string);
+begin
+  if not Assigned(FInstance) then Exit;
+  if FLevel > ALevel then Exit;
+  FInstance.DoReport(ALevel, AFormat);
+end;
+
+class function TRadioLogger.MsgToStr(const M: TRadioMessage): string;
+begin
+  if M.Sender <> '' then
+    Result := 'from ' + M.Sender
+  else
+    Result := 'from unknown';
+  Result := Result + Format(' Id = %d, ParamH = %d, ParamL = %d', [M.Id, M.ParamH, M.ParamL]);
+end;
+
+{ TResampleNode }
+
+procedure TResampleNode.SetInputRate(AValue: Cardinal);
+begin
+  if FInputRate = AValue then Exit;
+  FInputRate := Max(1, AValue);
+  FLastScaledIndex := 0;
+end;
+
+procedure TResampleNode.SetOutputRate(AValue: Cardinal);
+begin
+  if FOutputRate = AValue then Exit;
+  FOutputRate := Max(1, AValue);
+  FLastScaledIndex := 0;
+end;
+
+procedure TResampleNode.DoReceiveData(const P: PComplex; const Len: Integer);
+label
+  again;
+var
+  I: Integer = 0;
+  K: Double;
+  V: Double;
+begin
+  V := FLastScaledIndex;
+  K := FInputRate / FOutputRate;
+again:
+  while FCursor <= High(FBuf) do
+  begin
+    V := V + K;
+    I := Trunc(V);
+    if I >= Len - 1 then
+    begin
+      FLastScaledIndex := V - Len;
+      FLastInput := P[Len - 1];
+      Exit;
+    end;
+    if I >= 0 then
+      FBuf[FCursor] := P[I] * (V - I) + P[I + 1] * (1 + I - V)
+    else
+      FBuf[FCursor] := FLastInput * (V + 1) + P[0] * (- V);
+    Inc(FCursor);
+  end;
+
+  if FCursor = High(FBuf) + 1 then
+  begin
+    SendToNext(@FBuf[0], High(FBuf) + 1);
+    FCursor := 0;
+    goto again;
+  end;
+end;
+
+constructor TResampleNode.Create;
+begin
+  FInputRate := 1;
+  FOutputRate := 1;
+end;
+
+destructor TResampleNode.Destroy;
+begin
+  inherited Destroy;
 end;
 
 { TWindowNode }
@@ -721,7 +866,12 @@ begin
     FLastExecMsg := @FFirstExecMsg;
   UnLock;
   Dispose(P);
+
+  TRadioLogger.Report(llVerbose, 'in thread ' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
+
   ProccessMessage(Msg, Ret);
+
+  TRadioLogger.Report(llVerbose, Name + ' msg exec done');
 end;
 
 constructor TRadioMessageQueue.Create(RunQueue: TRadioRunQueue);
@@ -796,10 +946,16 @@ begin
   Sleep(10);
 end;
 
-procedure TBackgroundRadioModule.SetRunning(AValue: Boolean);
+function TBackgroundRadioModule.DoStart: Boolean;
 begin
+  FThread.Suspended := False;
   inherited;
-  FThread.Suspended := not AValue;
+end;
+
+function TBackgroundRadioModule.DoStop: Boolean;
+begin
+  FThread.Suspended := True;
+  inherited;
 end;
 
 constructor TBackgroundRadioModule.Create(RunQueue: TRadioRunQueue);
@@ -1040,9 +1196,36 @@ begin
   Result := @FBuffers[Index].Data[0];
 end;
 
-function TRadioDataStream.GetBufferSize(const Index: Integer): Integer;
+function TRadioDataStream.GetBufferCount: Integer;
+begin
+  Result := High(FBuffers) + 1;
+end;
+
+function TRadioDataStream.GetBufferSize: Integer;
 begin
   Result := FBlockSize;
+end;
+
+procedure TRadioDataStream.SetBufferSize(AValue: Integer);
+var
+  F: Boolean = False;
+  I: Integer;
+begin
+  Lock;
+  for I := Low(FBuffers) to High(FBuffers) do
+  begin
+    if FBuffers[I].Allocated then F:= True;
+  end;
+
+  if not F then
+  begin
+    FBlockSize := AValue;
+    for I := Low(FBuffers) to High(FBuffers) do
+      SetLength(FBuffers[I].Data, AValue);
+  end;
+  Unlock;
+
+  if F then raise Exception.Create('internal error: TRadioDataStream.SetBufferSize');
 end;
 
 constructor TRadioDataStream.Create(Module: TRadioModule; const AName: string;
@@ -1124,7 +1307,7 @@ begin
   with M do
   begin
     Id := RM_DATA;
-    Sender := FModule;
+    Sender := FModule.Name;
     ParamH := PtrInt(Self);
     ParamL := Index;
   end;
@@ -1155,7 +1338,7 @@ begin
     with M do
     begin
       Id := RM_DATA_DONE;
-      Sender := FModule;
+      Sender := FModule.Name;
       ParamH := PtrInt(Self);
       ParamL := Index;
     end;
@@ -1165,21 +1348,9 @@ end;
 
 { TRadioModule }
 
-procedure TRadioModule.SetName(AValue: string);
-begin
-  if FName = AValue then Exit;
-  FName := AValue;
-end;
-
-procedure TRadioModule.SetRunning(AValue: Boolean);
-begin
-  if FRunning = AValue then Exit;
-  FRunning := AValue;
-end;
-
 procedure TRadioModule.PostMessage(const Msg: TRadioMessage);
 begin
-  if (not Running) and (Msg.Id <> RM_CONTROL) then Exit;
+  //if (not Running) and (Msg.Id <> RM_CONTROL) then Exit;
   StoreMessage(Msg);
 end;
 
@@ -1189,6 +1360,21 @@ var
 begin
   for P in FFeatureListeners do
     TRadioModule(P).PostMessage(Msg);
+end;
+
+procedure TRadioModule.Broadcast(const AId: Integer; const AParamH,
+  AParamL: PtrUInt);
+var
+  M: TRadioMessage;
+begin
+  with M do
+  begin
+    Sender := Name;
+    Id := AId;
+    ParamH := AParamH;
+    ParamL := AParamL;
+  end;
+  Broadcast(M);
 end;
 
 procedure TRadioModule.ProccessMessage(const Msg: TRadioMessage;
@@ -1208,8 +1394,8 @@ end;
 procedure TRadioModule.RMControl(const Msg: TRadioMessage; var Ret: Integer);
 begin
   case Msg.ParamH of
-    0: Running := True;
-    1: Running := False;
+    0: FRunning := DoStart;
+    1: FRunning := not DoStop;
     2: DoReset;
   end;
 end;
@@ -1219,7 +1405,7 @@ var
   B: TRadioDataStream;
 begin
   B := TRadioDataStream(Pointer(Msg.ParamH));
-  ReceiveData(B.Buffer[Msg.ParamL], B.BufferSize[Msg.ParamL]);
+  ReceiveData(B.Buffer[Msg.ParamL], B.BufferSize);
   B.Release(Msg.ParamL);
 end;
 
@@ -1272,6 +1458,16 @@ begin
   MessageQueueReset;
 end;
 
+function TRadioModule.DoStart: Boolean;
+begin
+  Result := True;
+end;
+
+function TRadioModule.DoStop: Boolean;
+begin
+  Result := True;
+end;
+
 constructor TRadioModule.Create(RunQueue: TRadioRunQueue);
 begin
   inherited;
@@ -1294,7 +1490,7 @@ begin
 end;
 
 procedure TRadioModule.PostMessage(const Id: Integer; const ParamH,
-  ParamL: PtrInt);
+  ParamL: PtrUInt);
 var
   M: TRadioMessage;
 begin

@@ -31,6 +31,8 @@ procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen, TargetLen: 
 
 procedure CancelDC(Signal: PComplex; const N: Integer);
 
+function FormatFreq(F: Integer): string;
+
 implementation
 
 uses
@@ -119,6 +121,28 @@ begin
   T := T / N;
   for I := 0 to N - 1 do
     Signal[I] := Signal[I] - T;
+end;
+
+function FormatFreq(F: Integer): string;
+const
+  U: array [1..3] of string = ('K', 'M', 'G');
+var
+  I: Integer;
+  C: Integer = 0;
+begin
+  Result := IntToStr(F);
+  I := Length(Result);
+  while Result[I] = '0' do
+  begin
+    Inc(C);
+    Dec(I);
+  end;
+  I := Round(C / 3);
+  if I > 0 then
+  begin
+    I := Min(I, High(U));
+    Result := FloatToStr(F / power(1000, I)) + U[I];
+  end;
 end;
 
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);

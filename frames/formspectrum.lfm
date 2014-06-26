@@ -1,34 +1,182 @@
 object SpectrumForm: TSpectrumForm
-  Left = 478
+  Left = 470
   Height = 451
-  Top = 166
-  Width = 659
+  Top = 139
+  Width = 760
   Caption = 'SpectrumForm'
   ClientHeight = 451
-  ClientWidth = 659
+  ClientWidth = 760
   LCLVersion = '1.2.0.3'
-  object Splitter1: TSplitter
-    Cursor = crVSplit
-    Left = 0
-    Height = 5
-    Top = 105
-    Width = 659
-    Align = alTop
-    Beveled = True
-    ResizeAnchor = akTop
-  end
-  object PaintBox1: TPaintBox
-    Left = 0
-    Height = 105
+  object Panel1: TPanel
+    Left = 648
+    Height = 451
     Top = 0
-    Width = 659
-    Align = alTop
+    Width = 112
+    Align = alRight
+    ClientHeight = 451
+    ClientWidth = 112
+    TabOrder = 1
+    object GroupBox1: TGroupBox
+      Left = 1
+      Height = 143
+      Top = 1
+      Width = 110
+      Align = alTop
+      Caption = 'Y-axis'
+      ClientHeight = 125
+      ClientWidth = 106
+      TabOrder = 0
+      object LabeledEdit2: TLabeledEdit
+        Left = 10
+        Height = 23
+        Top = 66
+        Width = 80
+        Alignment = taRightJustify
+        EditLabel.AnchorSideLeft.Control = LabeledEdit2
+        EditLabel.AnchorSideRight.Control = LabeledEdit2
+        EditLabel.AnchorSideRight.Side = asrBottom
+        EditLabel.AnchorSideBottom.Control = LabeledEdit2
+        EditLabel.Left = 10
+        EditLabel.Height = 15
+        EditLabel.Top = 48
+        EditLabel.Width = 80
+        EditLabel.Caption = 'Range (dB)'
+        EditLabel.ParentColor = False
+        TabOrder = 0
+        Text = '20'
+        OnKeyUp = LabeledEdit2KeyUp
+      end
+      object LabeledEdit1: TLabeledEdit
+        Left = 10
+        Height = 23
+        Top = 20
+        Width = 80
+        Alignment = taRightJustify
+        EditLabel.AnchorSideLeft.Control = LabeledEdit1
+        EditLabel.AnchorSideRight.Control = LabeledEdit1
+        EditLabel.AnchorSideRight.Side = asrBottom
+        EditLabel.AnchorSideBottom.Control = LabeledEdit1
+        EditLabel.Left = 10
+        EditLabel.Height = 15
+        EditLabel.Top = 2
+        EditLabel.Width = 80
+        EditLabel.Caption = 'Max. (dBm)'
+        EditLabel.ParentColor = False
+        TabOrder = 1
+        Text = '0'
+        OnKeyUp = LabeledEdit1KeyUp
+      end
+      object Button1: TButton
+        Left = 10
+        Height = 25
+        Top = 95
+        Width = 80
+        Caption = 'Auto'
+        OnClick = Button1Click
+        TabOrder = 2
+      end
+    end
+    object GroupBox2: TGroupBox
+      Left = 1
+      Height = 143
+      Top = 144
+      Width = 110
+      Align = alTop
+      Caption = 'X-axis'
+      ClientHeight = 125
+      ClientWidth = 106
+      TabOrder = 1
+      object LabeledEdit3: TLabeledEdit
+        Left = 10
+        Height = 23
+        Top = 66
+        Width = 80
+        Alignment = taRightJustify
+        EditLabel.AnchorSideLeft.Control = LabeledEdit3
+        EditLabel.AnchorSideRight.Control = LabeledEdit3
+        EditLabel.AnchorSideRight.Side = asrBottom
+        EditLabel.AnchorSideBottom.Control = LabeledEdit3
+        EditLabel.Left = 10
+        EditLabel.Height = 15
+        EditLabel.Top = 48
+        EditLabel.Width = 80
+        EditLabel.Caption = 'Span (Hz)'
+        EditLabel.ParentColor = False
+        TabOrder = 0
+        OnKeyUp = LabeledEdit3KeyUp
+      end
+      object LabeledEdit4: TLabeledEdit
+        Left = 10
+        Height = 23
+        Top = 20
+        Width = 80
+        Alignment = taRightJustify
+        EditLabel.AnchorSideLeft.Control = LabeledEdit4
+        EditLabel.AnchorSideRight.Control = LabeledEdit4
+        EditLabel.AnchorSideRight.Side = asrBottom
+        EditLabel.AnchorSideBottom.Control = LabeledEdit4
+        EditLabel.Left = 10
+        EditLabel.Height = 15
+        EditLabel.Top = 2
+        EditLabel.Width = 80
+        EditLabel.Caption = 'Center (Hz)'
+        EditLabel.ParentColor = False
+        TabOrder = 1
+        OnKeyUp = LabeledEdit4KeyUp
+      end
+      object Button2: TButton
+        Left = 5
+        Height = 25
+        Top = 95
+        Width = 43
+        Caption = 'Full'
+        OnClick = Button2Click
+        TabOrder = 2
+      end
+      object Button3: TButton
+        Left = 53
+        Height = 25
+        Top = 95
+        Width = 40
+        Caption = 'Zero'
+        OnClick = Button3Click
+        TabOrder = 3
+      end
+    end
   end
-  object PaintBox2: TPaintBox
+  object Panel2: TPanel
     Left = 0
-    Height = 341
-    Top = 110
-    Width = 659
+    Height = 451
+    Top = 0
+    Width = 648
     Align = alClient
+    Caption = 'Panel2'
+    ClientHeight = 451
+    ClientWidth = 648
+    TabOrder = 0
+    object PaintBox1: TPaintBox
+      Left = 1
+      Height = 105
+      Top = 1
+      Width = 646
+      Align = alTop
+    end
+    object PaintBox2: TPaintBox
+      Left = 1
+      Height = 339
+      Top = 111
+      Width = 646
+      Align = alClient
+    end
+    object Splitter1: TSplitter
+      Cursor = crVSplit
+      Left = 1
+      Height = 5
+      Top = 106
+      Width = 646
+      Align = alTop
+      Beveled = True
+      ResizeAnchor = akTop
+    end
   end
 end

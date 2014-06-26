@@ -156,9 +156,11 @@ begin
   Result := I = 0;
   if not Result then goto Quit;
   M := C.Create(FRunQueue);
+  M.Name := T;
   FModuleDict.I[Name] := SuperInt(Pointer(M));
   Result := True;
-  M.Running := not Suspended;
+  if not Suspended then;
+    RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, M);
 Quit:
   Unlock;
 end;

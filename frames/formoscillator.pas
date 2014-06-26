@@ -30,7 +30,7 @@ type
     procedure SetModule(AValue: TRadioModule);
 
   public
-    property Module: TRadioModule read FModule write SetModule ;
+    property Module: TRadioModule read FModule write SetModule;
   end;
 
 var

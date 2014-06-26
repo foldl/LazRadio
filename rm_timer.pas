@@ -60,7 +60,7 @@ begin
   with M do
   begin
     Id := RadioModule.RM_TIMER;
-    Sender := Self;
+    Sender := Name;
     ParamH := P^.Id and $FFFF;
     ParamL := T.Interval;
   end;

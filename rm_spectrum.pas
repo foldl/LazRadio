@@ -17,8 +17,9 @@ const
                   GUI_RESET         = 3;  // gui resize
                   SET_Y_RANGE       = 4;  // y range in dB
                   SET_AUTO_Y        = 5;  // set y range automatically for one-shot
-                  SET_SPAN          = 6;  // set x span in Hz (full span: sample rate / 2)
+                  SET_SPAN          = 6;  // set x span in Hz (full span: sample rate / 2 (-1))
                   SET_CENTER_FREQ   = 7;  // set center frequency in x span (freq of the input data stream)
+                  SET_Y_MAX         = 8;
 
 
 type
@@ -67,6 +68,7 @@ type
     FSpan: Integer;
     FStartFreq: Cardinal;
     FEndFreq: Cardinal;
+    FHzPerPix: Double;
     FAutoY: Boolean;
     FFlow: TDataFlowNode;
     FWndNode: TWindowNode;
@@ -81,6 +83,8 @@ type
     FLine: array of Double;
     FFrames: Integer;
     FYRange: Integer;
+    FYMax: Double;
+    FThisMax: Double;
     FX:boolean;
     procedure ImageResize(Sender: TObject);
     procedure SetRealtime(AValue: TPaintBox);
@@ -118,10 +122,36 @@ uses
   RadioSystem;
 
 const
-  FRAME_MARGIN_LEFT   = 40;
-  FRAME_MARGIN_RIGHT  = 0;
-  FRAME_MARGIN_TOP    = 0;
-  FRAME_MARGIN_BOTTOM = 15;
+  FRAME_MARGIN_LEFT   = 41;
+  FRAME_MARGIN_RIGHT  = 1;
+  FRAME_MARGIN_TOP    = 1;
+  FRAME_MARGIN_BOTTOM = 16;
+
+procedure HSL2RGB(Hue, Saturation, Lightness: Double; out R, G, B: Byte);
+var
+  P, Q: Double;
+
+  function hue2rgb(P, Q, T: Double): Double;
+  begin
+    if T < 0 then T := T + 1;
+    if T > 1 then T := T - 1;
+    if T < 1/6 then Result := P + (Q - P) * 6 * T
+    else if T < 1/2 then Result := Q
+    else if T < 2/3 then Result := P + (Q - P) * (2/3 - T) * 6
+    else Result := P;
+  end;
+begin
+  if Saturation = 0 then
+  begin
+    R := 255; G := 255; B := 255;
+    Exit;
+  end;
+  q := IfThen(Lightness < 0.5, Lightness * (1 + Saturation), Lightness + Saturation - Lightness * Saturation);
+  p := 2 * Lightness - q;
+  R := Trunc(255 * hue2rgb(p, q, Hue + 1/3));
+  G := Trunc(255 * hue2rgb(p, q, Hue));
+  B := Trunc(255 * hue2rgb(p, q, Hue - 1/3));
+end;
 
 procedure BeatifulTick(const ScreenWidth, MinTickWidth: Integer; const V0, V1: Double; out Start, Step: Double);
 var
@@ -334,13 +364,13 @@ begin
 
     Pen.Style := psSolid;
     Pen.Color := clWhite;
-    Rectangle(FRAME_MARGIN_LEFT, FRAME_MARGIN_TOP, Width - FRAME_MARGIN_RIGHT, Height - FRAME_MARGIN_BOTTOM);
+    Rectangle(FRAME_MARGIN_LEFT - 1, FRAME_MARGIN_TOP - 1, Width - FRAME_MARGIN_RIGHT + 1, Height - FRAME_MARGIN_BOTTOM + 1);
 
     // y-axis
     Font.Color := clWhite;
     Font.Size  := 12;
     E := TextExtent(IntToStr(-FYRange));
-    BeatifulTick(Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP, Max(60, E.cy), 0, FYRange, Start, Step);
+    BeatifulTick(Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP, Max(50, E.cy), 0, FYRange, Start, Step);
     XStep := Max(1, Round(Step));
 
     with R do
@@ -364,11 +394,13 @@ begin
     end;
 
     // x-axis
+    FHzPerPix := 1;
     if FSpan = 0 then Exit;
     if FEndFreq = FStartFreq then Exit;
 
     Font.Size  := 9;
-    E := TextExtent(IntToStr(FEndFreq + FFreq));
+    E := TextExtent(FormatFreq(FEndFreq + FFreq));
+    E.cx := E.cx * 2;
     BeatifulTick(Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT, Max(100, E.cx), FStartFreq + FFreq, FEndFreq + FFreq, Start, Step);
     XStep := Max(1, Round(Step));
 
@@ -387,23 +419,30 @@ begin
     TextRect(R, 0, 0, FloatToStr(Start), Style);
     FStartFreq := Round(Start);
     FEndFreq := Round((Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) / T * XStep + FStartFreq);
+    FHzPerPix := XStep / T;
     for I := 1 to C do
     begin
       Line(FRAME_MARGIN_LEFT + I * T, FRAME_MARGIN_TOP, FRAME_MARGIN_LEFT + I * T, Height - FRAME_MARGIN_BOTTOM);
       Inc(R.Left, T); Inc(R.Right, T); Start := Start + XStep;
-      TextRect(R, 0, 0, FloatToStr(Start), Style);
+      TextRect(R, 0, 0, FormatFreq(Round(Start)), Style);
     end;
   end;
 end;
 
 procedure TRadioSpectrum.DrawWaterfallFrame;
 begin
-  with FRt.DrawBuffer.Canvas do
+  with Fwf.DrawBuffer.Canvas do
   begin
     Brush.Style := bsSolid;
     Brush.Color := clBlack;
+    FillRect(0, 0, Width, Height);
+
     Pen.Color := clWhite;
-    Font.Color := clWhite;
+    Font.Color := clYellow;
+    Font.Size  := 9;
+
+    Line(FRAME_MARGIN_LEFT - 1, 0, FRAME_MARGIN_LEFT - 1, Height);
+    Line(Width - FRAME_MARGIN_RIGHT + 1, 0, Width - FRAME_MARGIN_RIGHT + 1, Height);
   end;
 end;
 
@@ -416,22 +455,18 @@ var
   CurvehHeight: Integer;
   Pts: array of TPoint;
   function VtoY(const V: Double): Integer;
+  var
+    T: Double;
   begin
-    if V > N then
-      Result := FRAME_MARGIN_TOP + CurvehHeight - Round(CurvehHeight * (V - N) / (M - N))
-    else
-      Result := FRAME_MARGIN_TOP + CurvehHeight;
+    T := EnsureRange(V, N, M);
+    Result := FRAME_MARGIN_TOP + CurvehHeight - Round(CurvehHeight * (T - N) / (M - N));
   end;
 
 begin
   CurvehHeight := FRt.DrawBuffer.Height - FRAME_MARGIN_TOP - FRAME_MARGIN_BOTTOM;
 
-  for X in FLine do
-  begin
-    M := Max(M, X);
-    N := Min(N, X);
-  end;
-  N := Max(N, M - FYRange);
+  M := FYMax;
+  N := M - FYRange;
   SetLength(Pts, High(FLine) + 1);
   for I := 0 to High(FLine) do
   begin
@@ -455,8 +490,40 @@ begin
 end;
 
 procedure TRadioSpectrum.DrawWaterfall;
+var
+  SrcRect, TarRect: TRect;
+  P: PByte;
+  I: Integer;
+  R, G, B: Byte;
+  S: Double;
 begin
-
+  with SrcRect do
+  begin
+    Left := FRAME_MARGIN_LEFT;
+    Right := FWf.DrawBuffer.Canvas.Width - FRAME_MARGIN_RIGHT;
+    Top := 0;
+    Bottom := FWf.DrawBuffer.Canvas.Height - 1;
+  end;
+  TarRect := SrcRect;
+  TarRect.Top := 1;
+  Inc(TarRect.Bottom);
+  FWf.DrawBuffer.Canvas.CopyRect(TarRect, FWf.DrawBuffer.Canvas, SrcRect);
+  if SrcRect.Right - SrcRect.Left < High(FLine) then Exit;
+  with FWf.DrawBuffer do
+  begin
+    BeginUpdate();
+    P := @PByte(FWf.DrawBuffer.ScanLine[0])[FRAME_MARGIN_LEFT * 3];
+    for I := 0 to High(FLine) do
+    begin
+      S := EnsureRange((FYMax - FLine[I]) / FYRange, 0, 1);
+      HSL2RGB(0.7 * S, 1, 0.5 - 0.3 * S, R, G, B);
+      P[3 * I + 0] := B;
+      P[3 * I + 1] := G;
+      P[3 * I + 2] := R;
+    end;
+    EndUpdate();
+  end;
+  FWf.Draw2Paint;
 end;
 
 procedure TRadioSpectrum.PaintRealtime;
@@ -492,6 +559,7 @@ begin
   DrawFrame;
   FRt.DrawBuffer.Canvas.Draw(0, 0, FRt.Background);
   FRt.Draw2Paint;
+  FWf.Draw2Paint;
 end;
 
 procedure TRadioSpectrum.SyncRedrawFull;
@@ -554,7 +622,12 @@ begin
           SyncRedrawFull;
         SET_Y_RANGE:
           begin
-            FYRange := Integer(Msg.ParamL);
+            FYRange := Max(2, Integer(Msg.ParamL));
+            DrawRealtimeFrame;
+          end;
+        SET_Y_MAX:
+          begin
+            FYMax := Integer(Msg.ParamL);
             DrawRealtimeFrame;
           end;
         SET_AUTO_Y:
@@ -562,6 +635,7 @@ begin
         SET_SPAN:
           begin
             FSpan := Integer(Msg.ParamL);
+            if FSpan < 0 then FSpan := FSampleRate div 2;
             DrawRealtimeFrame;
           end;
         SET_CENTER_FREQ:
@@ -578,28 +652,69 @@ end;
 procedure TRadioSpectrum.ReceiveWindowedData(const P: PComplex;
   const Len: Integer);
 var
-  I: Integer;
+  I, J: Integer;
+  Li, Lj: Integer;
+  F0: Double;
+  Ma, Mi: Double;
 begin
-  if FX then raise Exception.create('fsf');
   if FSpan = 0 then
   begin
-    for I := 0 to High(FLine) do
+    // TODO: zero span
+    for I := 0 to Min(Len - 1, High(FLine)) do
     begin
-      FLine[I] := log10(P[I].re * P[I].re + P[I].im * P[I].im + MinDouble);       //    log10
+      FLine[I] := log10(P[I].re * P[I].re + P[I].im * P[I].im + MinDouble);
     end;
+    DrawRealtime;
     Exit;
   end;
 
-  FX:=True;
+  if FEndFreq < FStartFreq then Exit;
+
   FFT(FFFTPlan, P, @FF[0]);
   PowArg(@FF[0], FFFTSize);
   for I := 0 to High(FPower) do
+    FPower[I] := log10(FF[I].re + MinDouble);
+  if FAutoY then
   begin
-    FPower[I] := log10(FF[I].re + MinDouble);       //    log10
+    FAutoY := False;
+    Ma := FPower[0]; Mi := FPower[0];
+    if High(FPower) >= 1 then
+    begin
+      Ma := FPower[1]; Mi := FPower[1];
+    end
+    else;
+    for I := 1 to High(FPower) do
+    begin
+      Ma := Max(Ma, FPower[I]);
+      Mi := Min(Mi, FPower[I]);
+    end;
+    FYMax := Ma;;
+    FYRange := Max(1, Min(50, Round(Ma - Mi)));
+    DrawRealtimeFrame;
   end;
-  Xpolate(@FPower[0], @FLine[0], High(FPower) + 1, High(FLine) + 1);
+  for I := 0 to High(FLine) do
+    FLine[I] := -MaxDouble;
+
+  F0 := 1;
+  if FSampleRate > 0 then
+    F0 := FSampleRate / FFFTSize;
+
+  Li := 0; Lj := High(FLine);
+  I := Round(FStartFreq / F0);
+  J := Round(FEndFreq / F0);
+  if I < 0 then
+  begin
+    Li := Round(-FStartFreq / FHzPerPix);
+    I := 0;
+  end;
+  if J > High(FPower) then
+  begin
+    Dec(Lj, Round((J - High(FPower)) * F0 / FHzPerPix));
+    J := High(FPower);
+  end;
+  Xpolate(@FPower[I], @FLine[Li], J - I + 1, Lj - Li + 1);
   DrawRealtime;
-  FX:=False;
+  DrawWaterfall;
 end;
 
 constructor TRadioSpectrum.Create(RunQueue: TRadioRunQueue);
@@ -607,6 +722,7 @@ begin
   inherited Create(RunQueue);
   FRt := TTripleBuffer.Create;
   FWf := TDoubleBuffer.Create;
+  FWf.DrawBuffer.PixelFormat := pf24bit;
 
   FYRange := 30;
   FFFTSize := 1024 * 16;
@@ -626,6 +742,7 @@ begin
   RedrawFull;
   FForm.PaintBox1.OnResize := @ImageResize;
   FForm.PaintBox2.OnResize := @ImageResize;
+  FForm.Module := Self;
 end;
 
 destructor TRadioSpectrum.Destroy;

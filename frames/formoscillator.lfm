@@ -1,7 +1,7 @@
 object OscillatorForm: TOscillatorForm
-  Left = 533
+  Left = 835
   Height = 187
-  Top = 143
+  Top = 421
   Width = 229
   Caption = 'Oscillator Setup'
   ClientHeight = 187

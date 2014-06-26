@@ -151,6 +151,7 @@ begin
   FWaveFunc := @GenSin;
   FUI := TOscillatorForm.Create(nil);
   FUI.Module := Self;
+  DefOutput.BufferSize := 1024 * 10;
 end;
 
 destructor TRadioOscillator.Destroy;
@@ -190,7 +191,7 @@ begin
 
   while Assigned(DefOutput.Alloc(I)) do
   begin
-    C := DefOutput.BufferSize[I];
+    C := DefOutput.BufferSize;
     D := D + C / FSampleRate;
     FWaveFunc(DefOutput.Buffer[I], C);
     CancelDC(DefOutput.Buffer[I], C);
@@ -198,7 +199,7 @@ begin
   end;
 
 Wait:
-  Sleep(Max(5, Round(D * 1000) - 20));
+  Sleep(1000);
 end;
 
 procedure TRadioOscillator.DoConfigure;

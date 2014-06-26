@@ -41,7 +41,7 @@ var
 implementation
 
 uses
-  kissfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator;
+  kissfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger;
 
 {$R *.lfm}
 
@@ -49,23 +49,26 @@ uses
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
+  TTextLogger.Start;
   if not Assigned(FSystem) then
   begin
     FSystem := TRadioSystem.Create;
     FSystem.AddModule('s', 'Spectrum');
+    FSystem.AddModule('a', 'AudioIn');
+    FSystem.AddModule('u', 'AudioOut');
     FSystem.AddModule('o', 'Oscillator');
+    FSystem.AddModule('dump', 'Dump');
   end;
   //FSystem.ConfigModule('rtl');
   FSystem.ConnectModuel('o', 's');
-  RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, 's');
-  RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, 'o');
+  FSystem.ConnectModuel('o', 'u');
+  //FSystem.ConnectModuel('a', 'dump');
 
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 500, 'o');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 20000, 'o');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 20000, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 10000, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 44100 div 4, 's');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_OSC_WAVE, SET_WAVE_SIN, 50, 'o');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 6000, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 3000, 's');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
   FSystem.ConfigModule('o');
 end;

@@ -2,6 +2,8 @@
 *.dll
 *.obj
 *.mdb
+dump*
+log*
 backup/
 lib/
 release/
