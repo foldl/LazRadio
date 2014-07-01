@@ -12,6 +12,8 @@ type
   TWindowFunction = (wfRect, wfGaussian, wfHamming, wfHann, wfTriangular, wfBartlett,
                      wfBlackman, wfKaiser, wfBartlettHann);
 
+  TFilterType = (ftLPF, ftBPF, ftBSF, ftHPF);
+
 // Output.re = amplitude
 // Output.im = arg
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
@@ -33,10 +35,27 @@ procedure CancelDC(Signal: PComplex; const N: Integer);
 
 function FormatFreq(F: Integer): string;
 
+procedure FIRDesign(Coef: PDouble; const N: Integer;
+  const AType: TFilterType;
+  const OmegaC: Double; const Bandwidth: Double;
+  const Wf: TWindowFunction; const WfParam: Double);
+
+var
+  gWindowFunctionNames: array [TWindowFunction] of string =
+    ('Rect', 'Gaussian', 'Hamming', 'Hann', 'Triangular', 'Bartlett', 'Blackman', 'Kaiser', 'BartlettHann');
+
 implementation
 
 uses
   Math;
+
+function Sinc(const X: Double): Double;
+begin
+  if Abs(X) > 1e-10 then
+    Result := Sin(X) / X
+  else
+    Result := 1.0;
+end;
 
 // naive, not applicable for real-time
 function BesselI0(const Z: Double): Double;
@@ -68,15 +87,16 @@ procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen,
     K: Integer;
     L: Integer = 0;
     J: Integer;
+    T: Double;
   begin
     Ratio := SourceLen / TargetLen;
     for I := 0 to TargetLen - 1 do
     begin
       K := Trunc(P);
-      Target[I] := 0;
-      for J := L to K do
-        Target[I] := Target[I] + Source[J];
-      Target[I] := Target[I] / (K - L + 1);
+      T := Source[L];
+      for J := L + 1 to K do
+        T := Max(T, Source[J]);
+      Target[I] := T;
       L := K + 1;
       P := P + Ratio;
     end;
@@ -143,6 +163,60 @@ begin
     I := Min(I, High(U));
     Result := FloatToStr(F / power(1000, I)) + U[I];
   end;
+end;
+
+procedure FIRDesign(Coef: PDouble; const N: Integer; const AType: TFilterType;
+  const OmegaC: Double; const Bandwidth: Double; const Wf: TWindowFunction;
+  const WfParam: Double);
+var
+  J: Integer;
+  W: array of Double;
+  BL, BH: Double;
+  function lpf(const I: Integer): Double;
+  var
+    Arg: Double;
+  begin
+    Arg := I - (N - 1) / 2;
+    Result := OmegaC * Sinc(OmegaC * Arg * Pi);
+  end;
+  function hpf(const I: Integer): Double;
+  var
+    Arg: Double;
+  begin
+    Arg := I - (N - 1) / 2;
+    Result := Sinc(Arg * Pi) - OmegaC * Sinc(OmegaC * Arg * Pi);
+  end;
+  function bpf(const I: Integer; const OmegaLow, OmegaHigh: Double): Double;
+  var
+    Arg: Double;
+  begin
+    Arg := I - (N - 1) / 2;
+    if Arg = 0.0 then Exit(0.0);
+    Result := (Cos(OmegaLow * Arg * Pi) - Cos(OmegaHigh * Arg * Pi)) / Pi / Arg;
+  end;
+  function bsf(const I: Integer; const OmegaLow, OmegaHigh: Double): Double;
+  var
+    Arg: Double;
+  begin
+    Arg := I - (N - 1) / 2;
+    if Arg = 0.0 then Exit(0.0);
+    Result := Sinc(Arg * Pi) - OmegaHigh * Sinc(OmegaHigh * Arg * Pi)
+              - OmegaLow * Sinc(OmegaLow * Arg * Pi);
+  end;
+begin
+  BL := Max(0, OmegaC - Bandwidth / 2);
+  BH := Min(1, OmegaC + Bandwidth / 2);
+  case AType of
+    ftLPF: for J := 0 to N - 1 do Coef[J] := lpf(J);
+    ftHPF: for J := 0 to N - 1 do Coef[J] := hpf(J);
+    ftBPF: for J := 0 to N - 1 do Coef[J] := bpf(J, BL, BH);
+    ftBSF: for J := 0 to N - 1 do Coef[J] := bsf(J, BL, BH);
+  end;
+
+  SetLength(W, N);
+  CreateWindowFunction(@W[0], N, Wf, WfParam);
+  for J := 0 to N - 1 do
+    Coef[J] := Coef[J] * W[J];
 end;
 
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);

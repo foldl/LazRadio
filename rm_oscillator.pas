@@ -60,16 +60,14 @@ var
   A: Double;
   C: Integer;
   V: Double;
-  W: Double;
 begin
   A := 2 * Pi * FFreq / FSampleRate;
   V := FPhase;
   for J := 0 to Len - 1 do
   begin
-    W := V + A;
     P[J].re := Cos(V);
     P[J].im := Sin(V);
-    V := W;
+    V := V + A;
   end;
   C := Trunc(V / (2 * Pi));
   FPhase := V - (2 * Pi * C);
@@ -199,7 +197,7 @@ begin
   end;
 
 Wait:
-  Sleep(1000);
+  Sleep(10);
 end;
 
 procedure TRadioOscillator.DoConfigure;

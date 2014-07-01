@@ -69,7 +69,7 @@ object OscillatorForm: TOscillatorForm
     EditLabel.Caption = 'Frequency (Hz)'
     EditLabel.ParentColor = False
     TabOrder = 2
-    Text = '1000'
+    Text = '500'
     OnKeyUp = LabeledEdit2KeyUp
   end
   object Label1: TLabel

@@ -10,7 +10,7 @@ uses
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
   radiosystem, superobject, rm_spectrum, rm_timer, formgui,
   rm_audio, rm_filter, formspectrum, kissfft, signalbasic, formoscillator,
-  formauin, utils, rm_dump, logger;
+  formauin, utils, rm_dump, logger, tachartlazaruspkg, formfilter;
 
 {$R *.res}
 
@@ -23,6 +23,7 @@ begin
   Application.CreateForm(TSpectrumForm, SpectrumForm);
   Application.CreateForm(TOscillatorForm, OscillatorForm);
   Application.CreateForm(TAudioInForm, AudioInForm);
+  Application.CreateForm(TFilterForm, FilterForm);
   Application.Run;
 end.
 

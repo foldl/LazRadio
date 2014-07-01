@@ -20,6 +20,7 @@ const
                   SET_SPAN          = 6;  // set x span in Hz (full span: sample rate / 2 (-1))
                   SET_CENTER_FREQ   = 7;  // set center frequency in x span (freq of the input data stream)
                   SET_Y_MAX         = 8;
+                  SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
 
 
 type
@@ -86,6 +87,7 @@ type
     FYMax: Double;
     FThisMax: Double;
     FX:boolean;
+    FWaterfallTick: Integer;
     procedure ImageResize(Sender: TObject);
     procedure SetRealtime(AValue: TPaintBox);
     procedure SetWaterfall(AValue: TPaintBox);
@@ -122,7 +124,7 @@ uses
   RadioSystem;
 
 const
-  FRAME_MARGIN_LEFT   = 41;
+  FRAME_MARGIN_LEFT   = 45;
   FRAME_MARGIN_RIGHT  = 1;
   FRAME_MARGIN_TOP    = 1;
   FRAME_MARGIN_BOTTOM = 16;
@@ -438,8 +440,8 @@ begin
     FillRect(0, 0, Width, Height);
 
     Pen.Color := clWhite;
-    Font.Color := clYellow;
-    Font.Size  := 9;
+    Font.Color := clWhite;
+    Font.Size  := 8;
 
     Line(FRAME_MARGIN_LEFT - 1, 0, FRAME_MARGIN_LEFT - 1, Height);
     Line(Width - FRAME_MARGIN_RIGHT + 1, 0, Width - FRAME_MARGIN_RIGHT + 1, Height);
@@ -483,8 +485,6 @@ begin
 
     Pen.Color := clYellow;
     Polyline(Pts);
-
-    TextOut(20, 40, Format('%d', [FFrames]));
   end;
   FRt.Draw2Paint;
 end;
@@ -496,10 +496,24 @@ var
   I: Integer;
   R, G, B: Byte;
   S: Double;
+  procedure DrawTick;
+  var
+    H, M, S, MS: Word;
+    T: TDateTime;
+  begin
+    T := Now;
+    DecodeTime(T, H, M, S, MS);
+    if ((H * 60 + M) * 60 + S) mod FWaterfallTick <> 0 then Exit;
+    with FWf.DrawBuffer do
+    begin
+      Canvas.TextOut(0, 0, Format('%.2d:%.2d:%.2d', [H, M, S]));
+    end;
+  end;
+
 begin
   with SrcRect do
   begin
-    Left := FRAME_MARGIN_LEFT;
+    Left := 0;
     Right := FWf.DrawBuffer.Canvas.Width - FRAME_MARGIN_RIGHT;
     Top := 0;
     Bottom := FWf.DrawBuffer.Canvas.Height - 1;
@@ -512,17 +526,24 @@ begin
   with FWf.DrawBuffer do
   begin
     BeginUpdate();
+    P := @PByte(FWf.DrawBuffer.ScanLine[0])[(FRAME_MARGIN_LEFT - 1)* 3];
+    P[0] := 255; P[1] := 255; P[2] := 255;
+
     P := @PByte(FWf.DrawBuffer.ScanLine[0])[FRAME_MARGIN_LEFT * 3];
     for I := 0 to High(FLine) do
     begin
       S := EnsureRange((FYMax - FLine[I]) / FYRange, 0, 1);
-      HSL2RGB(0.7 * S, 1, 0.5 - 0.3 * S, R, G, B);
+      HSL2RGB(0.7 * S, 1, 0.5 - 0.4 * S, R, G, B);
       P[3 * I + 0] := B;
       P[3 * I + 1] := G;
       P[3 * I + 2] := R;
     end;
     EndUpdate();
   end;
+
+  // time ticker
+  if FWaterfallTick > 0 then DrawTick;
+
   FWf.Draw2Paint;
 end;
 
@@ -673,7 +694,7 @@ begin
   FFT(FFFTPlan, P, @FF[0]);
   PowArg(@FF[0], FFFTSize);
   for I := 0 to High(FPower) do
-    FPower[I] := log10(FF[I].re + MinDouble);
+    FPower[I] := 10 * log10(FF[I].re + MinDouble);
   if FAutoY then
   begin
     FAutoY := False;
@@ -683,12 +704,12 @@ begin
       Ma := FPower[1]; Mi := FPower[1];
     end
     else;
-    for I := 1 to High(FPower) do
+    for I := 2 to High(FPower) do
     begin
       Ma := Max(Ma, FPower[I]);
       Mi := Min(Mi, FPower[I]);
     end;
-    FYMax := Ma;;
+    FYMax := Ma;
     FYRange := Max(1, Min(50, Round(Ma - Mi)));
     DrawRealtimeFrame;
   end;
@@ -729,6 +750,7 @@ begin
   FWindow := wfRect;
   FFFTPlan := BuildFFTPlan(FFFTSize, False);
   FSpan := -1;
+  FWaterfallTick := 5;
 
   FFlow := TWindowNode.Create;
   FFlow.LastNode.OnSendToNext := @ReceiveWindowedData;

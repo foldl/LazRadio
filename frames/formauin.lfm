@@ -1,7 +1,7 @@
 object AudioInForm: TAudioInForm
-  Left = 146
+  Left = 1083
   Height = 144
-  Top = 168
+  Top = 286
   Width = 413
   Caption = 'Audio Input Configuration'
   ClientHeight = 144

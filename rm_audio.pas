@@ -26,8 +26,11 @@ const
   PRIV_RM_AUDIO_IN_DATA  = RM_USER + 100;  // ParamH = WAVEHDR index
   PRIV_RM_AUDIO_IN_CLOSE = RM_USER + 101;
 
-  PRIV_RM_AUDIO_OUT_DATA  = RM_USER + 100;  // ParamH = WAVEHDR index
   PRIV_RM_AUDIO_OUT_CLOSE = RM_USER + 101;
+
+const
+  AUDIO_OUT_SAMPLE_RATE = 44100;
+  AUDIO_OUT_BLOCK_NUM   = 3;
 
 type
 
@@ -36,7 +39,7 @@ type
   TRadioAudioIn = class(TRadioModule)
   private
     FHDRs: array [0..1] of WAVEHDR;
-    FBufs: array [0..1] of array of Word;
+    FBufs: array [0..1] of array of SmallInt;
     FConfig: TAudioInForm;
     FHandle: HWAVEIN;
     FClosing: Boolean;
@@ -55,8 +58,9 @@ type
 
   TRadioAudioOut = class(TRadioModule)
   private
-    FHDRs: array [0..2] of WAVEHDR;
-    FBufs: array [0..2] of array [0..44100 - 1] of Word;
+    FHDRs: array [0..AUDIO_OUT_BLOCK_NUM - 1] of WAVEHDR;
+    FBufs: array [0..AUDIO_OUT_BLOCK_NUM - 1] of array [0..(AUDIO_OUT_SAMPLE_RATE div 2) - 1] of SmallInt;
+    FEvents: array [0..AUDIO_OUT_BLOCK_NUM - 1] of Handle;
     FHandle: HWAVEOUT;
     FAutoGain: Boolean;
     FGain: Double;
@@ -109,12 +113,22 @@ procedure waveOutProc(
                       dwParam1: PDWord;
                       dwParam2: PDWord); stdcall;
 var
-  M: TRadioAudioIn;
+  M: TRadioAudioOut;
+  H: PWAVEHDR;
 begin
-  M := TRadioAudioIn(dwInstance);
+  M := TRadioAudioOut(dwInstance);
   case uMsg of
-    WOM_DONE:  RadioPostMessage(PRIV_RM_AUDIO_IN_DATA, PWAVEHDR(dwParam1)^.dwUser, 0, M);
-    WOM_CLOSE: RadioPostMessage(PRIV_RM_AUDIO_IN_CLOSE, 0, 0, M);
+    WOM_DONE:
+      begin
+        H := PWAVEHDR(dwParam1);
+        with M do
+        begin
+          waveOutUnprepareHeader(M.FHandle, @FHDRs[H^.dwUser], Sizeof(FHDRs[0]));
+          FHDRs[H^.dwUser].dwFlags := 0;
+          SetEvent(FEvents[H^.dwUser]);
+        end;
+      end;
+    WOM_CLOSE: RadioPostMessage(PRIV_RM_AUDIO_OUT_CLOSE, 0, 0, M);
   end;
 end;
 
@@ -155,11 +169,11 @@ var
   I: Integer;
   H: Integer = -1;
   N: Integer;
-  W: PWord;
-
+  W: PSmallInt;
+  T: SmallInt;
   function Scale(const X: Double): Integer; inline;
   begin
-    Result := EnsureRange(Round(X * FGain) + 32768, 0, 65535);
+    Result := EnsureRange(Round(X * FGain), -32768, 32767);
   end;
 
 begin
@@ -167,30 +181,50 @@ begin
   begin
     AutoGain(P, Len);
     FAutoGain := False;
-  end;    FGain := 32768;
+  end;
 
-  for I := 0 to High(FHDRs) do
-    if FHDRs[I].dwFlags = 0 then
-    begin
-      H := I;
-      Break;
-    end;
+  TRadioLogger.Report(llVerbose, 'audio out: wait');
+
+  H := WaitForMultipleObjects(High(FEvents) + 1, @FEvents[0], False, INFINITE) - WAIT_OBJECT_0;
 
   if H < 0 then Exit;
+  ResetEvent(FEvents[H]);
   W := @FBufs[H][0];
-  N := High(FBufs[H]);
+  N := Min(Len - 1, High(FBufs[H]) div 2);
   FillChar(W^, (H + 1) * SizeOf(W^), 0);
   case FFmt of
-      AUDIO_OUT_FMT_MONO_I: for I := 0 to N do W[I] := Scale(P[I shr 1].re);
-      AUDIO_OUT_FMT_MONO_Q: for I := 0 to N do W[I] := Scale(P[I shr 1].im);
+      AUDIO_OUT_FMT_MONO_I:
+        for I := 0 to N do
+        begin
+          T := Scale(P[I].re);
+          W[2 * I + 0] := T;
+          W[2 * I + 1] := T;
+        end;
+      AUDIO_OUT_FMT_MONO_Q:
+        for I := 0 to N do
+        begin
+          T := Scale(P[I].im);
+          W[2 * I + 0] := T;
+          W[2 * I + 1] := T;
+        end;
       AUDIO_OUT_FMT_STEREO_IQ:
-        for I := 0 to N do W[I] := IfThen(Odd(I), Scale(P[I shr 1].im), Scale(P[I shr 1].re));
+        for I := 0 to N do
+        begin
+          W[2 * I + 0] := Scale(P[I].re);
+          W[2 * I + 1] := Scale(P[I].im);
+        end;
       AUDIO_OUT_FMT_STEREO_QI:
-        for I := 0 to N do W[I] := IfThen(Odd(I), Scale(P[I shr 1].re), Scale(P[I shr 1].im));
+        for I := 0 to N do
+        begin
+          W[2 * I + 0] := Scale(P[I].im);
+          W[2 * I + 1] := Scale(P[I].re);
+        end;
     end;
 
   waveOutPrepareHeader(FHandle, @FHDRs[H], Sizeof(FHDRs[0]));
   waveOutWrite(FHandle, @FHDRs[H], Sizeof(FHDRs[0]));
+
+  TRadioLogger.Report(llVerbose, 'audio out: buffer send out');
 end;
 
 procedure TRadioAudioOut.AutoGain(P: PComplex; Len: Integer);
@@ -227,6 +261,7 @@ function TRadioAudioOut.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FResample.InputRate := Rate;
+  Result := inherited;
 end;
 
 procedure TRadioAudioOut.ProccessMessage(const Msg: TRadioMessage;
@@ -236,11 +271,6 @@ begin
     RM_AUDIO_OUT_FMT:       FFmt := Integer(Msg.ParamH);
     RM_AUDIO_OUT_GAIN:      FGain := power(10, Integer(Msg.ParamH) / 10);
     RM_AUDIO_OUT_GAIN_AUTO: FAutoGain := True;
-    PRIV_RM_AUDIO_IN_DATA:
-      begin
-        waveOutUnprepareHeader(FHandle, @FHDRs[Msg.ParamH], Sizeof(FHDRs[Msg.ParamH]));
-        FHDRs[Msg.ParamH].dwFlags := 0;
-      end;
     PRIV_RM_AUDIO_IN_CLOSE:
       begin
         // TODO:
@@ -261,7 +291,7 @@ begin
   begin
     wFormatTag := WAVE_FORMAT_PCM;
     nChannels  := 2;
-    nSamplesPerSec := 44100;
+    nSamplesPerSec := AUDIO_OUT_SAMPLE_RATE;
     wBitsPerSample := 16;
     nBlockAlign    := (nChannels * wBitsPerSample) div 8;
     nAvgBytesPerSec := nSamplesPerSec * nBlockAlign;
@@ -291,21 +321,28 @@ end;
 constructor TRadioAudioOut.Create(RunQueue: TRadioRunQueue);
 var
   R: TRegulatorNode;
+  I: Integer;
 begin
   inherited Create(RunQueue);
   FResample  := TResampleNode.Create;
-  FResample.OutputRate := 44100;
-  FResample.InputRate := FResample.OutputRate;
+  FResample.OutputRate := AUDIO_OUT_SAMPLE_RATE;
+  FResample.InputRate := AUDIO_OUT_SAMPLE_RATE;
   R := TRegulatorNode.Create;
   R.Regulator.Size := (High(FBufs[0]) + 1) div 2;
   R.OnSendToNext := @ReceiveRegulatedData;
   FResample.Connect(R);
   FGain := 32760;
+  for I := 0 to High(FEvents) do
+    FEvents[I] := CreateEvent(nil, True, True, nil);
 end;
 
 destructor TRadioAudioOut.Destroy;
+var
+  I: Integer;
 begin
   FResample.Free;
+  for I := 0 to High(FEvents) do
+    CloseHandle(FEvents[I]);
   inherited Destroy;
 end;
 
@@ -363,7 +400,7 @@ begin
     J := Min(FHDRs[Index].dwBytesRecorded, DefOutput.BufferSize);
     for K := 0 to J - 1 do
     begin
-      P[K].Re := (FBufs[Index][K] - 32768) / 32768;
+      P[K].Re := FBufs[Index][K] / 32768;
       P[K].Im := 0;
     end;
     FillChar(P[J], (DefOutput.BufferSize - J) * SizeOf(P[0]), 0);

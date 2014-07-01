@@ -70,7 +70,7 @@ type
     FName: string;
     FBlockSize: Integer;
     FFreeFlag: Boolean;
-    FBuffers: array [0..1] of TDataStreamRec;
+    FBuffers: array [0..10] of TDataStreamRec;
     FModule: TRadioModule;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;
@@ -258,7 +258,6 @@ type
     procedure Broadcast(const Msg: TRadioMessage); overload;
     procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
 
-
     procedure Draw(ACanvas: TCanvas; ARect: TRect); virtual;
 
     procedure AddDataListener(Listener: TRadioModule);
@@ -375,8 +374,10 @@ type
     FHFIR: array of Complex;
     FBuf: array of Complex;
     FRes: array of Complex;
-    FPlan: PFFTPlan;
+    FFPlan: PFFTPlan;
+    FIPlan: PFFTPlan;
     FRegulator: TStreamRegulator;
+    FTaps: Integer;
     procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer);
     procedure RegulatedData(const P: PComplex; const Len: Integer);
   protected
@@ -385,7 +386,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False);
+    procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False); overload;
+    procedure SetFIR(const P: PDouble; const Len: Integer);
   end;
 
   { TResampleNode }
@@ -614,23 +616,16 @@ end;
 procedure TFIRNode.SetTimeDomainFIR(const P: PComplex; const Len: Integer);
 var
   T: array of Complex;
-  M: Double = -1.0;
-  C: Complex;
   I: Integer;
 begin
-  if Assigned(FPlan) then
+  if Assigned(FFPlan) then
   begin
-    FinalizePlan(FPlan);
-    FPlan := nil;
+    FinalizePlan(FFPlan);
+    FinalizePlan(FIPlan);
   end;
   SetLength(T, Len);
   ModArg(P, @T[0], Len);
-  for C in T do M := Max(M, C.re);
-  M := M / 1000;
-  I := Len - 1;
-  while T[I].re < M do Dec(I);
-  Inc(I);       // FIR length
-  I := Max(NextFastSize(I), 1024);
+  I := NextFastSize(2 * Len - 1);
   FRegulator.Size := I;
   SetLength(FHFIR, I);
   SetLength(FBuf, I);
@@ -638,31 +633,34 @@ begin
   FillChar(FHFIR[0], I * SizeOf(FHFIR[0]), 0);
   FillChar(FBuf[0], I * SizeOf(FHFIR[0]), 0);
   Move(P^, FBuf[0], Len * SizeOf(FHFIR[0]));
-  FPlan := BuildFFTPlan(I, False);
-  FFT(FPlan, @FBuf[0], @FHFIR[0]);
-  FinalizePlan(FPlan);
-  FPlan := BuildFFTPlan(I, True);
-  FRegulator.Overlap := I - 1;
+  FFPlan := BuildFFTPlan(I, False);
+  FFT(FFPlan, @FBuf[0], @FHFIR[0]);
+  FIPlan := BuildFFTPlan(I, True);
+  FRegulator.Overlap := Len - 1;
+  FTaps := Len;
 end;
 
 procedure TFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
 var
   I: Integer;
 begin
-  if Assigned(FPlan) then
+  if Assigned(FFPlan) then
   begin
     if Len <> High(FBuf) + 1 then
     begin
-      SendToNext(P, Len);
+      TRadioLogger.Report(llWarn, 'TFIRNode.RegulatedData: Len <> High(FBuf) + 1');
       Exit;
     end;
+
+    FFT(FFPlan, P, @FBuf[0]);
     for I := 0 to Len - 1 do
-      FBuf[I] := P[I] * FHFIR[I];
-    FFT(FPlan, @FBuf[0], @FRes[0]);
-    SendToNext(@FRes[0], Len);
+      FBuf[I] := FBuf[I] * FHFIR[I];
+    FFT(FIPlan, @FBuf[0], @FRes[0]);
+    I := FTaps - 1;
+    SendToNext(@FRes[I], Len - I);
   end
   else
-    SendToNext(P, Len);
+    TRadioLogger.Report(llError, 'TFIRNode.RegulatedData: FPlan = nil');
 end;
 
 constructor TFIRNode.Create;
@@ -695,14 +693,23 @@ begin
   end;
 end;
 
+procedure TFIRNode.SetFIR(const P: PDouble; const Len: Integer);
+var
+  X: array of Complex;
+  I: Integer;
+begin
+  SetLength(X, Len);
+  for I := 0 to Len - 1 do
+  begin
+    X[I].re := P[I];
+    X[I].im := 0;
+  end;
+  SetTimeDomainFIR(PComplex(@X[0]), Len);
+end;
+
 procedure TFIRNode.DoReceiveData(const P: PComplex; const Len: Integer);
 begin
-  if Assigned(FPlan) then
-  begin
-    FRegulator.ReceiveData(P, Len);
-  end
-  else
-    SendToNext(P, Len);
+  FRegulator.ReceiveData(P, Len);
 end;
 
 { TRegulatorNode }
@@ -987,13 +994,16 @@ end;
 { TRadioRunQueue }
 
 procedure TRadioRunQueue.Schedule;
+label
+  again;
 var
   T: PRadioThreadNode;
   P: PMessageQueueNode;
 begin
-  while Assigned(FFirstJob.Next) and Assigned(FIdleNode.Next) do
+again:
+  Lock;
+  if Assigned(FFirstJob.Next) and Assigned(FIdleNode.Next) then
   begin
-    Lock;
     T := FIdleNode.Next;
     FIdleNode.Next := T^.Next;
     P := FFirstJob.Next;
@@ -1003,7 +1013,10 @@ begin
     T^.Thread.Job := P^.Queue;
     Dispose(P);
     RTLEventSetEvent(T^.Thread.FJobScheduled);
-  end;
+    goto again;
+  end
+  else
+    Unlock;
 end;
 
 procedure TRadioRunQueue.Lock;
@@ -1236,12 +1249,14 @@ begin
   FName := AName;
   FBlockSize := BlockSize;
   FModule := Module;
-  for I := Low(FBuffers) to High(FBuffers) do
-    SetLength(FBuffers[I].Data, FBlockSize);
 end;
 
 destructor TRadioDataStream.Destroy;
+var
+  I: Integer;
 begin
+  for I := Low(FBuffers) to High(FBuffers) do
+    SetLength(FBuffers[I].Data, 0);
   inherited Destroy;
 end;
 
@@ -1284,6 +1299,8 @@ begin
   begin
     if not FBuffers[I].Allocated then
     begin
+      if High(FBuffers[I].Data) <> FBlockSize - 1 then
+        SetLength(FBuffers[I].Data, FBlockSize);
       Result := @FBuffers[I].Data[0];
       FBuffers[I].Allocated := True;
       Index := I;
@@ -1432,7 +1449,7 @@ end;
 function TRadioModule.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
-
+  Broadcast(Msg);
 end;
 
 function TRadioModule.RMSetBandwidth(const Msg: TRadioMessage;
@@ -1444,7 +1461,7 @@ end;
 function TRadioModule.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
-
+  Broadcast(Msg);
 end;
 
 function TRadioModule.RMPhaseAdjust(const Msg: TRadioMessage;
