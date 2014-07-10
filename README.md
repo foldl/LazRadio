@@ -1,4 +1,6 @@
 LazRadio
 ========
 
-An SDR in Lazarus
+An SDR in Lazarus.
+
+Under development. Stay tuned.
