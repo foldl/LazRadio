@@ -132,6 +132,7 @@ function TFilterModule.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FResampleNode.InputRate := Rate;
+  FConfig.EditRate.Text := IntToStr(Rate);
   Result := 0;
   Broadcast(Msg);
 end;
@@ -155,7 +156,9 @@ begin
   FNode         := FResampleNode;
   R.Regulator.Size := DefOutput.BufferSize;
   R.OnSendToNext := @ReceiveFIRData;
-  FWndParam := -1;
+  FWnd           := wfKaiser;
+  FWndParam      := -1;
+  FTaps          := 64;
   FConfig := TFilterForm.Create(nil);
   FConfig.Module := Self;
 end;

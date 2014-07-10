@@ -10,7 +10,7 @@ uses
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
   radiosystem, superobject, rm_spectrum, rm_timer, formgui,
   rm_audio, rm_filter, formspectrum, kissfft, signalbasic, formoscillator,
-  formauin, utils, rm_dump, logger, tachartlazaruspkg, formfilter;
+  formauin, utils, rm_dump, logger, tachartlazaruspkg, formfilter, rm_fm;
 
 {$R *.res}
 

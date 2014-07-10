@@ -12,7 +12,7 @@ const
   // ParamL: index of data
   // Note: call TRadioDataStream.Release after processed
   RM_DATA            = 0;
-  RM_DATA_DONE       = 1;
+  // RM_DATA_DONE       = 1;  // this is stupid
 
   // ParamH: Frequency   (0)    ParamL: in Hz
   // ParamH: Sample rate (1)    ParamL: in samples per second
@@ -295,9 +295,8 @@ type
   { TBackgroundRadioModule }
 
   TBackgroundRadioModule = class(TRadioModule)
-  private
-    FThread: TGenericRadioThread;
   protected
+    FThread: TGenericRadioThread;
     procedure ThreadFun(Thread: TGenericRadioThread); virtual;
     function DoStart: Boolean; override;
     function DoStop: Boolean; override;
@@ -521,6 +520,18 @@ var
   K: Double;
   V: Double;
 begin
+  if FInputRate = FOutputRate then
+  begin
+    if FCursor > 0 then
+    begin
+      SendToNext(@FBuf[0], FCursor);
+      FCursor := 0;
+    end;
+
+    SendToNext(P, Len);
+    Exit;
+  end;
+
   V := FLastScaledIndex;
   K := FInputRate / FOutputRate;
 again:
@@ -1070,9 +1081,9 @@ begin
 
   if not F then Exit;
 
+  Lock;
   if Assigned(FIdleNode.Next) then
   begin
-    Lock;
     T := FIdleNode.Next;
     FIdleNode.Next := T^.Next;
     UnLock;
@@ -1081,7 +1092,9 @@ begin
     RTLEventSetEvent(T^.Thread.FJobScheduled);
 
     Exit;
-  end;
+  end
+  else
+    UnLock;
 
   New(P);
   P^.Queue := Job;
@@ -1334,10 +1347,7 @@ begin
     for P in Listeners do
       TRadioModule(P).PostMessage(M);
   end
-  else begin
-    M.Id := RM_DATA_DONE;
-    FModule.PostMessage(M);
-  end;
+  else;
 end;
 
 procedure TRadioDataStream.Release(const Index: Integer);
@@ -1349,18 +1359,6 @@ begin
   if FBuffers[Index].Counter < 1 then
     FBuffers[Index].Allocated := False;
   Unlock;
-
-  if not FBuffers[Index].Allocated then
-  begin
-    with M do
-    begin
-      Id := RM_DATA_DONE;
-      Sender := FModule.Name;
-      ParamH := PtrInt(Self);
-      ParamL := Index;
-    end;
-    FModule.PostMessage(M);
-  end;
 end;
 
 { TRadioModule }
@@ -1438,36 +1436,36 @@ end;
 
 procedure TRadioModule.RMReport(const Msg: TRadioMessage; var Ret: Integer);
 begin
-
 end;
 
 procedure TRadioModule.RMTimer(const Msg: TRadioMessage; var Ret: Integer);
 begin
-
 end;
 
 function TRadioModule.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
   Broadcast(Msg);
+  Result := 0;
 end;
 
 function TRadioModule.RMSetBandwidth(const Msg: TRadioMessage;
   const Bandwidth: Cardinal): Integer;
 begin
-
+  Result := 0;
 end;
 
 function TRadioModule.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   Broadcast(Msg);
+  Result := 0;
 end;
 
 function TRadioModule.RMPhaseAdjust(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
-
+  Result := 0;
 end;
 
 procedure TRadioModule.DoReset;

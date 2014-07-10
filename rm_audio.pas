@@ -369,7 +369,7 @@ var
   I: Integer;
   N: Integer;
 begin
-  N := SampleRate div 2;   // 0.5s per block
+  N := SampleRate div 4;   // 0.5s per block
   DefOutput.BufferSize := N;
   for I := 0 to High(FHDRs) do
   begin
@@ -451,6 +451,7 @@ begin
         PrepareBufs(FHandle, DWord(Msg.ParamL));
         waveInStart(FHandle);
         Broadcast(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, Msg.ParamL);
+        Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, Msg.ParamL div 4);
       end;
     RM_AUDIO_IN_STOP: CloseDev;
     PRIV_RM_AUDIO_IN_DATA: waveInData(Integer(Msg.ParamH));

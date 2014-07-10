@@ -95,8 +95,8 @@ procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen,
       K := Trunc(P);
       T := Source[L];
       for J := L + 1 to K do
-        T := Max(T, Source[J]);
-      Target[I] := T;
+        T := T + Source[J];
+      Target[I] := T / (K - L + 1);
       L := K + 1;
       P := P + Ratio;
     end;

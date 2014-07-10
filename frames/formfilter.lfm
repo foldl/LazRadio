@@ -1,7 +1,7 @@
 object FilterForm: TFilterForm
-  Left = 531
+  Left = 453
   Height = 293
-  Top = 548
+  Top = 126
   Width = 841
   Caption = 'Filter Configuration (FIR Design)'
   ClientHeight = 293
@@ -31,8 +31,8 @@ object FilterForm: TFilterForm
   end
   object BtnGo: TBitBtn
     Left = 8
-    Height = 30
-    Top = 224
+    Height = 38
+    Top = 216
     Width = 107
     Caption = 'Accept'
     Kind = bkYes

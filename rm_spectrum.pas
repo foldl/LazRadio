@@ -5,8 +5,8 @@ unit rm_spectrum;
 interface
 
 uses
-  Classes, SysUtils, Types, ExtCtrls, Graphics, RadioModule, UComplex, SignalBasic,
-  KissFFT, formspectrum, Forms, Math;
+  Classes, SysUtils, Types, Graphics, ExtCtrls, FPImage, RadioModule, UComplex, SignalBasic,
+  KissFFT, formspectrum, Forms, Math, Controls;
 
 const
 
@@ -16,14 +16,28 @@ const
                   SET_FFT_SIZE      = 2;
                   GUI_RESET         = 3;  // gui resize
                   SET_Y_RANGE       = 4;  // y range in dB
-                  SET_AUTO_Y        = 5;  // set y range automatically for one-shot
+                  SET_AUTO_Y        = 5;  // set y range automatically, ParamL: enable (1), disable (0)
                   SET_SPAN          = 6;  // set x span in Hz (full span: sample rate / 2 (-1))
                   SET_CENTER_FREQ   = 7;  // set center frequency in x span (freq of the input data stream)
                   SET_Y_MAX         = 8;
                   SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
+                  SET_DRAW_MIN_INTERVAL = 10; // minimal interval between updates in milli-second
 
+   PRIV_RM_SPECTRUM_ENABLE_PICKER = RM_USER + 10; // ParamH: Picker index (0..); ParamL: enable(1) or disable(0)
+   PRIV_RM_SPECTRUM_MOUSE_DOWN  = RM_USER + 11; // ParamH: Button, ParamL: (X shl 16) or Y
+   PRIV_RM_SPECTRUM_MOUSE_UP    = RM_USER + 12; // ParamH: Button, ParamL: (X shl 16) or Y
+   PRIV_RM_SPECTRUM_MOUSE_MOVE  = RM_USER + 13; // ParamH: ------, ParamL: (X shl 16) or Y
+   PRIV_RM_SPECTRUM_MOUSE_LEAVE = RM_USER + 14; // ParamH/L ignore
 
 type
+
+  TBandInfo = record
+    Freq: Cardinal;
+    Bandwidth: Cardinal;
+    Enable: Boolean;
+  end;
+
+  TSpectrumMouse = (smCenter, smBandwidth);
 
   { TDoubleBuffer }
 
@@ -40,6 +54,7 @@ type
     destructor Destroy; override;
 
     procedure Draw2Paint;
+    procedure Paint;
 
     procedure SetSize(const W, H: Integer); virtual;
     property DrawBuffer: TBitmap read FDrawBuffer;
@@ -66,11 +81,11 @@ type
     FFreq: Cardinal;
     FSampleRate: Cardinal;
     FCenterFreq: Integer;
-    FSpan: Integer;
     FStartFreq: Cardinal;
     FEndFreq: Cardinal;
-    FHzPerPix: Double;
+    FHzPerPixel: Double;
     FAutoY: Boolean;
+    FSpan: Integer;
     FFlow: TDataFlowNode;
     FWndNode: TWindowNode;
     FWindow: TWindowFunction;
@@ -83,14 +98,31 @@ type
     FPower: array of Double;
     FLine: array of Double;
     FFrames: Integer;
-    FYRange: Integer;
+    FYRange: Double;
     FYMax: Double;
     FThisMax: Double;
     FX:boolean;
-    FWaterfallTick: Integer;
+    FWaterfallTickInterval: Integer;
+    FLastWaterfallTick: Integer;
+    FMinInterval: TDateTime;
+    FLastTime: TDateTime;
+    FBandPicker: array [0..3] of TBandInfo;
+    FSelectedBand: Integer;
+    FMouseTool: TSpectrumMouse;
+    function ScreenToFreq(const X: Integer): Integer;
+    function FreqToScreen(const F: Integer): Integer;
+
     procedure ImageResize(Sender: TObject);
+    procedure SetFFTSize(const ASize: Integer);
     procedure SetRealtime(AValue: TPaintBox);
     procedure SetWaterfall(AValue: TPaintBox);
+
+    procedure PickerEnable(const Index: Integer; const Enable: Integer);
+    procedure MouseDown(Button: TMouseButton; X, Y: Integer);
+    procedure MouseUp(Button: TMouseButton; X, Y: Integer);
+    procedure MouseMove(X, Y: Integer);
+    procedure MouseLeave;
+
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
@@ -100,11 +132,7 @@ type
     procedure DrawWaterfallFrame;
     procedure DrawRealtime;
     procedure DrawWaterfall;
-    procedure PaintRealtime;
-    procedure PaintWaterfall;
-    procedure SyncPaintRealtime(Sender: TObject);
-    procedure SyncPaintWaterfall(Sender: TObject);
-    procedure SyncPaint;
+    procedure DrawPickers;
     procedure RedrawFull;
     procedure SyncRedrawFull;
     procedure ConfigWndNode(const Wt: TWindowFunction; const L: Integer; const Ov: Double);
@@ -162,9 +190,8 @@ var
   function Simplify(V: Double): Double;
   var
     S: string;
-    K, J: Integer;
+    K: Integer;
     T: Integer = 0;
-    F: Boolean = False;
     procedure ClearS(const Start: Integer);
     var
       L: Integer;
@@ -256,7 +283,6 @@ end;
 
 procedure TDoubleBuffer.Draw2Paint2;
 begin
-  FPaintBuffer.Canvas.Draw(0, 0, FDrawBuffer);
   FPaintBox.Canvas.Draw(0, 0, FPaintBuffer);
 end;
 
@@ -274,6 +300,11 @@ end;
 
 procedure TDoubleBuffer.Draw2Paint;
 begin
+  FPaintBuffer.Canvas.Draw(0, 0, FDrawBuffer);
+end;
+
+procedure TDoubleBuffer.Paint;
+begin
   TThread.Synchronize(nil, @Draw2Paint2);
 end;
 
@@ -285,9 +316,37 @@ end;
 
 { TRadioSpectrum }
 
+function TRadioSpectrum.ScreenToFreq(const X: Integer): Integer;
+begin
+  Result := 0;
+  if FStartFreq >= FEndFreq then Exit;
+  Result := FStartFreq + Round((X - FRAME_MARGIN_LEFT) * FHzPerPixel);
+end;
+
+function TRadioSpectrum.FreqToScreen(const F: Integer): Integer;
+begin
+  Result := 0;
+  if FStartFreq >= FEndFreq then Exit;
+  Result := FRAME_MARGIN_LEFT + Round((F - FStartFreq) / FHzPerPixel);
+end;
+
 procedure TRadioSpectrum.ImageResize(Sender: TObject);
 begin
   PostMessage(RM_SPECTRUM_CFG, GUI_RESET, 0);
+end;
+
+procedure TRadioSpectrum.SetFFTSize(const ASize: Integer);
+var
+  D: Double;
+begin
+  FWndNode.Hold;
+  D := FWndNode.Overlap / FFFTSize;
+  FFFTSize := Integer(ASize);
+  SetLength(FF, FFFTSize);
+  SetLength(FPower, FFFTSize div 2);
+  ChangePlan(FFFTPlan, FFFTSize, False);
+  ConfigWndNode(FWindow, FFFTSize, D);
+  FWndNode.ReleaseHold;
 end;
 
 procedure TRadioSpectrum.SetRealtime(AValue: TPaintBox);
@@ -300,11 +359,94 @@ begin
   FWf.PaintBox := AValue;
 end;
 
+procedure TRadioSpectrum.PickerEnable(const Index: Integer;
+  const Enable: Integer);
+var
+  B: Boolean;
+  S: Integer;
+  Z: Integer;
+begin
+  if (Index < 0) or (Index > High(FBandPicker)) then Exit;
+  B := Enable <> 0;
+  if FBandPicker[Index].Enable = B then Exit;
+  FBandPicker[Index].Enable := B;
+  Z := FFreq - FSampleRate div 4;
+  S := FSampleRate div 2 div (High(FBandPicker) + 1);
+  FBandPicker[Index].Freq := Z + Index * S + S div 2;
+  FBandPicker[Index].Bandwidth := S div 4;
+  FRt.Draw2Paint;
+  DrawPickers;
+  FRt.Paint;
+end;
+
+procedure TRadioSpectrum.MouseDown(Button: TMouseButton; X, Y: Integer);
+const
+  CAPTURE = 3;
+var
+  I: Integer;
+  AX: Integer;
+begin
+  FSelectedBand := -1;
+  for I := 0 to High(FBandPicker) do
+  begin
+    AX := FreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
+    if Abs(AX - X) <= CAPTURE then
+    begin
+      FSelectedBand := I;
+      FMouseTool := smBandwidth;
+      Break;
+    end;
+    AX := FreqToScreen(FBandPicker[I].Freq + FBandPicker[I].Bandwidth div 2);
+    if Abs(AX - X) <= CAPTURE then
+    begin
+      FSelectedBand := I;
+      FMouseTool := smBandwidth;
+      Break;
+    end;
+    AX := FreqToScreen(FBandPicker[I].Freq);
+    if Abs(AX - X) <= CAPTURE then
+    begin
+      FSelectedBand := I;
+      FMouseTool := smCenter;
+      Break;
+    end;
+  end;
+end;
+
+procedure TRadioSpectrum.MouseUp(Button: TMouseButton; X, Y: Integer);
+begin
+  FSelectedBand := -1;
+end;
+
+procedure TRadioSpectrum.MouseMove(X, Y: Integer);
+var
+  F: Integer;
+begin
+  if FSelectedBand < 0 then Exit;
+  F := ScreenToFreq(X);
+  case FMouseTool of
+    smCenter:
+      FBandPicker[FSelectedBand].Freq := F;
+    smBandwidth:
+      FBandPicker[FSelectedBand].Bandwidth := 2 * Round(Abs(F - FBandPicker[FSelectedBand].Freq));
+  end;
+  FRt.Draw2Paint;
+  DrawPickers;
+  FRt.Paint;
+end;
+
+procedure TRadioSpectrum.MouseLeave;
+begin
+  FSelectedBand := -1;
+end;
+
 function TRadioSpectrum.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
   FFreq := Freq;
+  FCenterFreq := Freq;
   DrawRealtimeFrame;
+  Result := 0;
 end;
 
 function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
@@ -312,6 +454,7 @@ function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
 begin
   FSampleRate := Rate;
   DrawRealtimeFrame;
+  Result := 0;
 end;
 
 procedure TRadioSpectrum.DrawFrame;
@@ -327,7 +470,7 @@ var
   T: Integer;
   C: Integer;
   I: Integer;
-  XStep: Integer;
+  XStep: Double;
   Style: TTextStyle;
   R: TRect;
 begin
@@ -348,14 +491,13 @@ begin
 
   if FSpan < 0 then
   begin
-    // full span
-    FStartFreq := 0;
-    FEndFreq := FSampleRate div 2;
+    FStartFreq := Max(0, FFreq - (FSampleRate div 4));
+    FEndFreq := FFreq + (FSampleRate div 4);
   end
   else if FSpan > 0 then
   begin
     FStartFreq := Max(0, FCenterFreq - (FSpan div 2));
-    FEndFreq := Min(FSampleRate div 2, FStartFreq + FSpan);
+    FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + (FSampleRate div 4));
   end;
 
   with FRt.Background.Canvas do
@@ -370,15 +512,15 @@ begin
 
     // y-axis
     Font.Color := clWhite;
-    Font.Size  := 12;
-    E := TextExtent(IntToStr(-FYRange));
-    BeatifulTick(Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP, Max(50, E.cy), 0, FYRange, Start, Step);
-    XStep := Max(1, Round(Step));
+    Font.Size  := 10;
+    E := TextExtent('0');
+    BeatifulTick(Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP, 50, FYMax - FYRange, FYMax, Start, Step);
+    XStep := Max(1, Step);
 
     with R do
     begin
       Left := 1;
-      Right := Left + E.cx;
+      Right := Left + FRAME_MARGIN_LEFT - 2;
       Top := 0;
       Bottom := Top + E.cy;
     end;
@@ -386,24 +528,24 @@ begin
     T := Round((Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP) / (FYRange / XStep));
     Pen.Color := TColor($404040);
     C := (Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP) div T;
-    TextRect(R, 0, 0, '0', Style);
+    TextRect(R, 0, 0, FloatToStr(Start + (C + 1) * XStep), Style);
     Dec(R.Top, E.cy div 2); Dec(R.Bottom, E.cy div 2);
     for I := 1 to C do
     begin
       Line(FRAME_MARGIN_LEFT, FRAME_MARGIN_TOP + I * T, Width - FRAME_MARGIN_RIGHT, FRAME_MARGIN_TOP + I * T);
       Inc(R.Top, T); Inc(R.Bottom, T);
-      TextRect(R, 0, 0, IntToStr(- I * XStep), Style);
+      TextRect(R, 0, 0, FloatToStr(Start + (C - I + 1) * XStep), Style);
     end;
 
     // x-axis
-    FHzPerPix := 1;
+    FHzPerPixel := 1;
     if FSpan = 0 then Exit;
     if FEndFreq = FStartFreq then Exit;
 
     Font.Size  := 9;
     E := TextExtent(FormatFreq(FEndFreq + FFreq));
     E.cx := E.cx * 2;
-    BeatifulTick(Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT, Max(100, E.cx), FStartFreq + FFreq, FEndFreq + FFreq, Start, Step);
+    BeatifulTick(Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT, Max(100, E.cx), FStartFreq, FEndFreq, Start, Step);
     XStep := Max(1, Round(Step));
 
     with R do
@@ -418,10 +560,10 @@ begin
 
     T := Trunc((Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) / ((FEndFreq - FStartFreq) / XStep));
     C := (Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) div T;
-    TextRect(R, 0, 0, FloatToStr(Start), Style);
+    TextRect(R, 0, 0, FormatFreq(Round(Start)), Style);
     FStartFreq := Round(Start);
     FEndFreq := Round((Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) / T * XStep + FStartFreq);
-    FHzPerPix := XStep / T;
+    FHzPerPixel := XStep / T;
     for I := 1 to C do
     begin
       Line(FRAME_MARGIN_LEFT + I * T, FRAME_MARGIN_TOP, FRAME_MARGIN_LEFT + I * T, Height - FRAME_MARGIN_BOTTOM);
@@ -487,6 +629,8 @@ begin
     Polyline(Pts);
   end;
   FRt.Draw2Paint;
+  DrawPickers;
+  FRt.Paint;
 end;
 
 procedure TRadioSpectrum.DrawWaterfall;
@@ -499,15 +643,16 @@ var
   procedure DrawTick;
   var
     H, M, S, MS: Word;
-    T: TDateTime;
+    K: Integer;
   begin
-    T := Now;
-    DecodeTime(T, H, M, S, MS);
-    if ((H * 60 + M) * 60 + S) mod FWaterfallTick <> 0 then Exit;
+    DecodeTime(FLastTime, H, M, S, MS);
+    K := ((H * 60 + M) * 60 + S);
+    if (K = FLastWaterfallTick) or (K mod FWaterfallTickInterval <> 0) then Exit;
     with FWf.DrawBuffer do
     begin
       Canvas.TextOut(0, 0, Format('%.2d:%.2d:%.2d', [H, M, S]));
     end;
+    FLastWaterfallTick := K;
   end;
 
 begin
@@ -542,34 +687,45 @@ begin
   end;
 
   // time ticker
-  if FWaterfallTick > 0 then DrawTick;
+  if FWaterfallTickInterval > 0 then DrawTick;
 
   FWf.Draw2Paint;
+  FWf.Paint;
 end;
 
-procedure TRadioSpectrum.PaintRealtime;
+procedure TRadioSpectrum.DrawPickers;
+var
+  I: Integer;
+  C: TColor;
+  X1, X2: Integer;
+  procedure VLine(const V: Integer);
+  begin
+    if V <= FRAME_MARGIN_LEFT then Exit;
+    if V >= FRt.PaintBuffer.Width - FRAME_MARGIN_RIGHT then Exit;
+    with FRt.PaintBuffer.Canvas do
+      Line(V, FRAME_MARGIN_TOP, V, Height - FRAME_MARGIN_BOTTOM);
+  end;
+
 begin
-
-end;
-
-procedure TRadioSpectrum.PaintWaterfall;
-begin
-
-end;
-
-procedure TRadioSpectrum.SyncPaintRealtime(Sender: TObject);
-begin
-
-end;
-
-procedure TRadioSpectrum.SyncPaintWaterfall(Sender: TObject);
-begin
-
-end;
-
-procedure TRadioSpectrum.SyncPaint;
-begin
-
+  for I := 0 to High(FBandPicker) do
+  begin
+    if not FBandPicker[I].Enable then Continue;
+    with FRt.PaintBuffer.Canvas do
+    begin
+      Pen.Color := clWhite;
+      Pen.Width := 1;
+      Brush.Color := clWhite;
+      X1 := FreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
+      X2 := FreqToScreen(FBandPicker[I].Freq);
+      VLine(X1);
+      VLine(X2 + (X2 - X1));
+      Pen.Color := clRed;
+      Pen.Width := 2;
+      Pen.Style := psDashDot;
+      VLine(X2);
+      TextOut(X2 - TextWidth('0') div 2, FRAME_MARGIN_TOP, IntToStr(I + 1));
+    end;
+  end;
 end;
 
 procedure TRadioSpectrum.RedrawFull;
@@ -620,6 +776,16 @@ var
   D: Double;
 begin
   case Msg.Id of
+    PRIV_RM_SPECTRUM_ENABLE_PICKER:
+      PickerEnable(Msg.ParamH, Msg.ParamL);
+    PRIV_RM_SPECTRUM_MOUSE_DOWN:
+      MouseDown(TMouseButton(Msg.ParamH), Msg.ParamL shr 16, Msg.ParamL and $FFFF);
+    PRIV_RM_SPECTRUM_MOUSE_UP:
+      MouseUp(TMouseButton(Msg.ParamH), Msg.ParamL shr 16, Msg.ParamL and $FFFF);
+    PRIV_RM_SPECTRUM_MOUSE_LEAVE:
+      MouseLeave;
+    PRIV_RM_SPECTRUM_MOUSE_MOVE:
+      MouseMove(Msg.ParamL shr 16, Msg.ParamL and $FFFF);
     RM_SPECTRUM_CFG:
       case Msg.ParamH of
         SET_WND_FUNC: SetWindowFunc(Integer(Msg.ParamL));
@@ -629,16 +795,7 @@ begin
             if (I >= 0) and (I < FFFTSize) then FWndNode.Overlap := I;
           end;
         SET_FFT_SIZE:
-          begin
-            FWndNode.Hold;
-            D := FWndNode.Overlap / FFFTSize;
-            FFFTSize := Integer(Msg.ParamL);
-            SetLength(FF, FFFTSize);
-            SetLength(FPower, FFFTSize div 2);
-            ChangePlan(FFFTPlan, FFFTSize, False);
-            ConfigWndNode(FWindow, FFFTSize, D);
-            FWndNode.ReleaseHold;
-          end;
+           SetFFTSize(Msg.ParamL);
         GUI_RESET:
           SyncRedrawFull;
         SET_Y_RANGE:
@@ -652,11 +809,11 @@ begin
             DrawRealtimeFrame;
           end;
         SET_AUTO_Y:
-          FAutoY := True;
+          FAutoY := Msg.ParamL <> 0;
         SET_SPAN:
           begin
             FSpan := Integer(Msg.ParamL);
-            if FSpan < 0 then FSpan := FSampleRate div 2;
+
             DrawRealtimeFrame;
           end;
         SET_CENTER_FREQ:
@@ -664,6 +821,8 @@ begin
             FCenterFreq := Integer(Msg.ParamL);
             DrawRealtimeFrame;
           end;
+        SET_DRAW_MIN_INTERVAL:
+          FMinInterval := Msg.ParamL / MSecsPerDay;
       end;
     else
       inherited ProccessMessage(Msg, Ret);
@@ -675,65 +834,108 @@ procedure TRadioSpectrum.ReceiveWindowedData(const P: PComplex;
 var
   I, J: Integer;
   Li, Lj: Integer;
-  F0: Double;
+  F0, T: Double;
   Ma, Mi: Double;
+  ZeroFreq: Integer;
+  BStart, BEnd: Integer;
+
+  function CheckTime: Boolean;
+  var
+    T: TDateTime;
+  begin
+    T := Now;
+    Result := T - FLastTime > FMinInterval;
+    if Result then FLastTime := T;
+  end;
+
 begin
+  if not CheckTime then Exit;
+
   if FSpan = 0 then
   begin
-    // TODO: zero span
-    for I := 0 to Min(Len - 1, High(FLine)) do
+    J := Min(Len - 1, High(FLine));
+    Ma := 0;
+    Mi := MaxDouble;
+    for I := 0 to J do
     begin
-      FLine[I] := log10(P[I].re * P[I].re + P[I].im * P[I].im + MinDouble);
+      FLine[I] := P[I].re * P[I].re + P[I].im * P[I].im;
+      Ma := Max(Ma, FLine[I]);
+      Mi := Min(Mi, FLine[I]);
     end;
+    for I := J + 1 to High(FLine) do
+      FLine[I] := 0;
+    T := FYRange;
+    F0 := FYMax;
+    FYMax := Ma;
+    FYRange := Round(Ma - Mi);
     DrawRealtime;
+    FYRange := T; // restore
+    FYMax   := F0;
     Exit;
   end;
 
   if FEndFreq < FStartFreq then Exit;
 
+  FillByte(FLine[0], (High(FLine) + 1) * SizeOf(FLine[0]), 0);
+
+  if @FF[0] = nil then
+    Setlength(FF, 1);
   FFT(FFFTPlan, P, @FF[0]);
   PowArg(@FF[0], FFFTSize);
   for I := 0 to High(FPower) do
-    FPower[I] := 10 * log10(FF[I].re + MinDouble);
-  if FAutoY then
-  begin
-    FAutoY := False;
-    Ma := FPower[0]; Mi := FPower[0];
-    if High(FPower) >= 1 then
-    begin
-      Ma := FPower[1]; Mi := FPower[1];
-    end
-    else;
-    for I := 2 to High(FPower) do
-    begin
-      Ma := Max(Ma, FPower[I]);
-      Mi := Min(Mi, FPower[I]);
-    end;
-    FYMax := Ma;
-    FYRange := Max(1, Min(50, Round(Ma - Mi)));
-    DrawRealtimeFrame;
-  end;
-  for I := 0 to High(FLine) do
-    FLine[I] := -MaxDouble;
+    FPower[I] := FF[I].re;
 
   F0 := 1;
   if FSampleRate > 0 then
     F0 := FSampleRate / FFFTSize;
 
+  ZeroFreq := FFreq - (FSampleRate div 4);
+  BStart := FStartFreq - ZeroFreq;
+  BEnd   := FEndFreq - ZeroFreq;
+
   Li := 0; Lj := High(FLine);
-  I := Round(FStartFreq / F0);
-  J := Round(FEndFreq / F0);
+  I := Round(BStart / F0);
+  J := Round(BEnd / F0);
   if I < 0 then
   begin
-    Li := Round(-FStartFreq / FHzPerPix);
+    Li := Round(-BStart / FHzPerPixel);
     I := 0;
   end;
   if J > High(FPower) then
   begin
-    Dec(Lj, Round((J - High(FPower)) * F0 / FHzPerPix));
+    Dec(Lj, Round((J - High(FPower)) * F0 / FHzPerPixel));
     J := High(FPower);
   end;
+
   Xpolate(@FPower[I], @FLine[Li], J - I + 1, Lj - Li + 1);
+
+  for I := 0 to High(FLine) do
+    FLine[I] := 10 * log10(FLine[I] + MinDouble);
+
+  if FAutoY then
+  begin
+    //FAutoY := False;
+    if High(FLine) >= 0 then
+    begin
+      Ma := FLine[0]; Mi := FLine[0];
+    end
+    else
+      Exit;
+    if High(FLine) >= 1 then
+    begin
+      Ma := FLine[1]; Mi := FLine[1];
+    end
+    else;
+    for I := 2 to High(FLine) do
+    begin
+      Ma := Max(Ma, FLine[I]);
+      Mi := Min(Mi, FLine[I]);
+    end;
+    FYMax := Ma;
+    FYRange := Max(1, Min(50, Round(Ma - Mi)));
+    DrawRealtimeFrame;
+  end;
+
   DrawRealtime;
   DrawWaterfall;
 end;
@@ -745,12 +947,13 @@ begin
   FWf := TDoubleBuffer.Create;
   FWf.DrawBuffer.PixelFormat := pf24bit;
 
+  FMinInterval := 10 / MSecsPerDay;
   FYRange := 30;
   FFFTSize := 1024 * 16;
   FWindow := wfRect;
   FFFTPlan := BuildFFTPlan(FFFTSize, False);
   FSpan := -1;
-  FWaterfallTick := 5;
+  FWaterfallTickInterval := 5;
 
   FFlow := TWindowNode.Create;
   FFlow.LastNode.OnSendToNext := @ReceiveWindowedData;
@@ -765,6 +968,8 @@ begin
   FForm.PaintBox1.OnResize := @ImageResize;
   FForm.PaintBox2.OnResize := @ImageResize;
   FForm.Module := Self;
+
+  SetFFTSize(FFFTSize);
 end;
 
 destructor TRadioSpectrum.Destroy;
