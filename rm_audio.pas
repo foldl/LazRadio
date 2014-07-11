@@ -65,7 +65,6 @@ type
     FAutoGain: Boolean;
     FGain: Double;
     FFmt: Integer;
-    FSampleRate: Cardinal;
     FClosing: Boolean;
     FResample: TResampleNode;
     procedure CloseDev;
@@ -343,7 +342,7 @@ begin
   FResample.Free;
   for I := 0 to High(FEvents) do
     CloseHandle(FEvents[I]);
-  inherited Destroy;
+  inherited
 end;
 
 procedure TRadioAudioOut.ReceiveData(const P: PComplex; const Len: Integer);
@@ -420,7 +419,6 @@ end;
 procedure TRadioAudioIn.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 var
-  R: MMRESULT;
   F: WAVEFORMATEX;
 begin
   case Msg.Id of

@@ -29,6 +29,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   private
     FSystem: TRadioSystem;
   public
@@ -42,7 +43,7 @@ implementation
 
 uses
   kissfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger,
-  formfilter;
+  formfilter, rm_dump;
 
 {$R *.lfm}
 
@@ -64,14 +65,15 @@ begin
     FSystem.AddModule('o', 'Oscillator');
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('r', 'Rtl');
-    FSystem.AddModule('dump', 'Dump');
+    FSystem.AddModule('dump', 'DumpPlayer');
   end;
   //FSystem.ConfigModule('rtl');
  // FSystem.ConnectModuel('r', 'f');
-  FSystem.ConnectModuel('a', 's');
+ // FSystem.ConnectModuel('dump', 's');
+
  // FSystem.ConnectModuel('f', 's2');
   //FSystem.ConnectModuel('f', 'u');
-  //FSystem.ConnectModuel('a', 'dump');
+ // FSystem.ConnectModuel('dump', 'u');
 
   RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 44100 div 4, 's');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
@@ -79,8 +81,8 @@ begin
  // RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 3000, 's');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
+ // FSystem.ConfigModule('a');
   FSystem.ConfigModule('a');
- // FSystem.ConfigModule('f');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);
@@ -90,7 +92,12 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 begin
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 5000, 'o');
+  RadioPostMessage(RM_DUMP_STOP, 0, 0, 'dump');
+end;
+
+procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  FSystem.Free;
 end;
 
 end.

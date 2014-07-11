@@ -98,8 +98,6 @@ end;
 
 procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
-var
-  I, J: Integer;
 begin
   case Msg.Id of
     RM_FILTER_SET:

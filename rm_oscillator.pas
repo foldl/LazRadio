@@ -187,7 +187,7 @@ var
 begin
   if FSampleRate = 0 then goto Wait;
 
-  while Assigned(DefOutput.Alloc(I)) do
+  while (not FThread.Terminated) and Assigned(DefOutput.Alloc(I)) do
   begin
     C := DefOutput.BufferSize;
     D := D + C / FSampleRate;

@@ -49,6 +49,9 @@ procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; Rec
 
 implementation
 
+uses
+  Math;
+
 var
   ModuleClassDict: TSuperTableString = nil;
 
@@ -91,9 +94,21 @@ end;
 { TRadioSystem }
 
 procedure TRadioSystem.SetSuspended(AValue: Boolean);
+var
+  M: TRadioMessage;
+  E: TSuperAvlEntry;
 begin
   if FSuspended = AValue then Exit;
   FSuspended := AValue;
+  with M do
+  begin
+    Id := RM_CONTROL;
+    ParamH := IfThen(AValue, RM_CONTROL_PAUSE, RM_CONTROL_RUN);
+    ParamL := 0;
+  end;
+  for E in FModuleDict do
+    RadioPostMessage(M, TRadioModule(Pointer(E.Value.AsInteger)));
+  Sleep(500);
 end;
 
 function TRadioSystem.GetModule(const Name: string): TRadioModule;
@@ -133,9 +148,16 @@ end;
 procedure TRadioSystem.Reset;
 var
   A: TSuperAvlEntry;
+  M: TRadioModule;
 begin
+  //Suspended := True;
   for A in FModuleDict do
-    TRadioModule(Pointer(A.Value.AsInteger)).Free;
+  begin
+    TRadioLogger.Report(llError, 'free %s', [A.Name]);
+    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M.Free;
+  end;
+  TRadioLogger.Report(llError, 'all freed');
   FModuleDict.Clear(True);
 end;
 

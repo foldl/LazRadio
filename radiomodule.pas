@@ -174,14 +174,18 @@ type
   private
     FFirstJob: TMessageQueueNode;
     FIdleNode: TRadioThreadNode;
+    FWorkers: array of TRadioThread;
   private
     procedure Schedule;
     procedure Lock;
+
     procedure UnLock;
     procedure WorkerIdle(Worker: TRadioThread);
   public
     constructor Create(const SMP: Integer = 2);
+    destructor Destroy; override;
     procedure Request(Job: TRadioMessageQueue);
+    procedure Terminate;
   end;
 
   TProcessingType = (ptBackground, ptForeground);
@@ -290,6 +294,7 @@ type
     constructor Create(Module: TBackgroundRadioModule);
     property Module: TBackgroundRadioModule read FModule write FModule;
     property Param: Pointer read FParam write FParam;
+    property Terminated;
   end;
 
   { TBackgroundRadioModule }
@@ -984,8 +989,8 @@ end;
 
 destructor TBackgroundRadioModule.Destroy;
 begin
-  inherited Destroy;
   FThread.Free;
+  inherited;
 end;
 
 { TGenericRadioThread }
@@ -1054,6 +1059,7 @@ var
   I: Integer;
   P: PRadioThreadNode;
 begin
+  SetLength(FWorkers, SMP);
   for I := 1 to SMP do
   begin
     New(P);
@@ -1062,7 +1068,16 @@ begin
     P^.Thread.FRunQueue := Self;
     P^.Next := FIdleNode.Next;
     FIdleNode.Next := P;
+    FWorkers[I - 1] := P^.Thread;
   end;
+end;
+
+destructor TRadioRunQueue.Destroy;
+var
+  T: TRadioThread;
+begin
+  for T in FWorkers do T.Free;
+  inherited
 end;
 
 procedure TRadioRunQueue.Request(Job: TRadioMessageQueue);
@@ -1105,6 +1120,13 @@ begin
   Unlock;
 
   Schedule;
+end;
+
+procedure TRadioRunQueue.Terminate;
+var
+  T: TRadioThread;
+begin
+  for T in FWorkers do T.Terminate;
 end;
 
 { TRadioThread }
@@ -1494,10 +1516,6 @@ end;
 
 destructor TRadioModule.Destroy;
 begin
-  // reset, then pause
-  PostMessage(RM_CONTROL, 2, 0);
-  PostMessage(RM_CONTROL, 1, 0);
-  while Running do Sleep(10);
   FDefOutput.SafeFree;
   FDataListeners.Free;
   FFeatureListeners.Free;

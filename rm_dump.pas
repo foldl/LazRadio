@@ -5,7 +5,7 @@ unit rm_dump;
 interface
 
 uses
-  Classes, SysUtils, UComplex, RadioModule, RadioSystem;
+  Classes, SysUtils, Dialogs, UComplex, RadioModule, RadioSystem;
 
 const
   RM_DUMP_START = RM_USER + 0;              // ParamH: TStream, ParamL: MaxSize
@@ -51,6 +51,7 @@ type
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure DoConfigure; override;
   public
     destructor Destroy; override;
 
@@ -66,11 +67,11 @@ type
     FStoppedEvent: PRTLEvent;
     FRegulator: TStreamRegulator;
     FSampleRate: Cardinal;
-    procedure Suspend;
   protected
     procedure ThreadFun(Thread: TGenericRadioThread); override;
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
+    procedure DoConfigure; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -89,12 +90,6 @@ const
      Verion: DUMP_FILE_VERSION);
 
 { TRadioDumpPlayer }
-
-procedure TRadioDumpPlayer.Suspend;
-begin
-  FFile := nil;
-  RTLeventWaitFor(FStoppedEvent);
-end;
 
 procedure TRadioDumpPlayer.ThreadFun(Thread: TGenericRadioThread);
 label
@@ -116,13 +111,17 @@ begin
   RTLeventResetEvent(FStartEvent);
   RTLeventResetEvent(FStoppedEvent);
   F := FFile;
+  if FThread.Terminated then goto Wait;
+
   if not Assigned(F) then goto Wait;
 
   F.Position := 0;
   if not ReadRec(@H, SizeOf(H)) then goto Wait;
-  if CompareMem(@H, @DUMP_HEADER, SizeOf(H)) then goto Wait;
+  if (H.Id <> DUMP_HEADER.Id) or (H.Verion <> DUMP_HEADER.Verion)
+     or (H.Size <> DUMP_HEADER.Size) or (H.MagicCardinal <> DUMP_HEADER.MagicCardinal)
+     or (H.MagicDouble <> DUMP_HEADER.MagicDouble) then goto Wait;
 
-  while ReadRec(@D, SizeOf(D)) do
+  while (not FThread.Terminated) and (FFile <> nil) and ReadRec(@D, SizeOf(D)) do
   begin
     case D.Tag of
       dtDataBlob:
@@ -146,6 +145,7 @@ begin
     if F.Position = F.Size then
       F.Position := SizeOf(DUMP_HEADER);
   end;
+
 Wait:
   RTLeventSetEvent(FStoppedEvent);
 end;
@@ -157,11 +157,14 @@ begin
   case Msg.Id of
     RM_DUMP_PLAYER_START:
       begin
-        Suspend;
+        FFile := nil;
+        RTLeventWaitFor(FStoppedEvent);
         FFile := TStream(Msg.ParamH);
         RTLeventSetEvent(FStartEvent);
       end;
     RM_DUMP_PLAYER_STOP: Suspend;
+    else
+      inherited;
   end;
 end;
 
@@ -181,6 +184,24 @@ begin
   DefOutput.Broadcast(I, FDataListeners);
 end;
 
+procedure TRadioDumpPlayer.DoConfigure;
+var
+  D: TOpenDialog;
+  F: TFileStream = nil;
+begin
+  D := TOpenDialog.Create(nil);
+  D.Filter := 'radio dump (*.dump)|*.dump';
+  if D.Execute then
+  begin
+    try
+      F := TFileStream.Create(D.FileName, fmOpenRead);
+      RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(F), 0, Self);
+    except
+    end;
+  end;
+  D.Free;
+end;
+
 constructor TRadioDumpPlayer.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -194,7 +215,11 @@ end;
 
 destructor TRadioDumpPlayer.Destroy;
 begin
-  Suspend;
+  FThread.Terminated;
+  FFile := nil;
+  RTLeventSetEvent(FStartEvent);
+  RTLeventWaitFor(FStoppedEvent);
+
   RTLeventdestroy(FStartEvent);
   RTLeventdestroy(FStoppedEvent);
   inherited Destroy;
@@ -247,6 +272,24 @@ begin
       inherited;
       DumpMsg(Msg);
   end;
+end;
+
+procedure TRadioDump.DoConfigure;
+var
+  D: TSaveDialog;
+  F: TFileStream = nil;
+begin
+  D := TSaveDialog.Create(nil);
+  D.Filter := 'radio dump (*.dump)|*.dump';
+  if D.Execute then
+  begin
+    try
+      F := TFileStream.Create(D.FileName, fmCreate);
+      RadioPostMessage(RM_DUMP_START, PtrUInt(F), 0, Self);
+    except
+    end;
+  end;
+  D.Free;
 end;
 
 destructor TRadioDump.Destroy;
