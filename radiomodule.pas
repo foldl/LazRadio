@@ -1077,7 +1077,7 @@ var
   T: TRadioThread;
 begin
   for T in FWorkers do T.Free;
-  inherited
+  inherited;
 end;
 
 procedure TRadioRunQueue.Request(Job: TRadioMessageQueue);
@@ -1138,6 +1138,8 @@ begin
   while not Terminated do
   begin
     RTLEventWaitFor(FJobScheduled);
+    if Terminated then Break;
+
     RTLEventResetEvent(FJobScheduled);
 
     if Assigned(FJob) then
@@ -1161,6 +1163,9 @@ end;
 
 destructor TRadioThread.Destroy;
 begin
+  Terminate;
+  RTLeventSetEvent(FJobScheduled);
+  WaitFor;
   RTLEventDestroy(FJobScheduled);
   inherited Destroy;
 end;

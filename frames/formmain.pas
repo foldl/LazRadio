@@ -65,11 +65,10 @@ begin
     FSystem.AddModule('o', 'Oscillator');
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('r', 'Rtl');
-    FSystem.AddModule('dump', 'DumpPlayer');
+    FSystem.AddModule('dump', 'Dump');
   end;
-  //FSystem.ConfigModule('rtl');
- // FSystem.ConnectModuel('r', 'f');
- // FSystem.ConnectModuel('dump', 's');
+  FSystem.ConnectModuel('r', 's');
+  FSystem.ConnectModuel('r', 'dump');
 
  // FSystem.ConnectModuel('f', 's2');
   //FSystem.ConnectModuel('f', 'u');
@@ -82,7 +81,7 @@ begin
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
  // FSystem.ConfigModule('a');
-  FSystem.ConfigModule('a');
+  FSystem.ConfigModule('r');   FSystem.ConfigModule('dump');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);

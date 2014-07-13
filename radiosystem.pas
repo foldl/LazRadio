@@ -150,14 +150,13 @@ var
   A: TSuperAvlEntry;
   M: TRadioModule;
 begin
-  //Suspended := True;
   for A in FModuleDict do
   begin
-    TRadioLogger.Report(llError, 'free %s', [A.Name]);
+    TRadioLogger.Report(llWarn, 'free %s', [A.Name]);
     M := TRadioModule(Pointer(A.Value.AsInteger));
     M.Free;
   end;
-  TRadioLogger.Report(llError, 'all freed');
+  TRadioLogger.Report(llWarn, 'all freed');
   FModuleDict.Clear(True);
 end;
 
@@ -207,7 +206,7 @@ var
 begin
   M := Module[Name];
   Result := Assigned(M);
-  M.PostMessage(RM_CONFIGURE, 0, 0);
+  if Result then M.PostMessage(RM_CONFIGURE, 0, 0);
 end;
 
 end.

@@ -8,7 +8,7 @@ object MainForm: TMainForm
   ClientWidth = 854
   Menu = MainMenu1
   OnClose = FormClose
-  LCLVersion = '1.2.0.3'
+  LCLVersion = '1.2.2.0'
   object Panel1: TPanel
     Left = 0
     Height = 160
@@ -467,6 +467,7 @@ object MainForm: TMainForm
           ShortCut = 57379
         end>
       MouseActions = <>
+      MouseTextActions = <>
       MouseSelActions = <>
       Lines.Strings = (
         'SynEdit1'

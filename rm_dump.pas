@@ -67,6 +67,7 @@ type
     FStoppedEvent: PRTLEvent;
     FRegulator: TStreamRegulator;
     FSampleRate: Cardinal;
+    procedure StopPlaying;
   protected
     procedure ThreadFun(Thread: TGenericRadioThread); override;
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
@@ -90,6 +91,12 @@ const
      Verion: DUMP_FILE_VERSION);
 
 { TRadioDumpPlayer }
+
+procedure TRadioDumpPlayer.StopPlaying;
+begin
+  FFile := nil;
+  RTLeventWaitFor(FStoppedEvent);
+end;
 
 procedure TRadioDumpPlayer.ThreadFun(Thread: TGenericRadioThread);
 label
@@ -157,12 +164,11 @@ begin
   case Msg.Id of
     RM_DUMP_PLAYER_START:
       begin
-        FFile := nil;
-        RTLeventWaitFor(FStoppedEvent);
+        StopPlaying;
         FFile := TStream(Msg.ParamH);
         RTLeventSetEvent(FStartEvent);
       end;
-    RM_DUMP_PLAYER_STOP: Suspend;
+    RM_DUMP_PLAYER_STOP: StopPlaying;
     else
       inherited;
   end;
@@ -215,7 +221,7 @@ end;
 
 destructor TRadioDumpPlayer.Destroy;
 begin
-  FThread.Terminated;
+  FThread.Terminate;
   FFile := nil;
   RTLeventSetEvent(FStartEvent);
   RTLeventWaitFor(FStoppedEvent);
