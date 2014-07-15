@@ -5,7 +5,7 @@ unit rm_fm;
 interface
 
 uses
-  Classes, SysUtils, UComplex, RadioModule, RadioSystem;
+  Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math;
 
 type
 
@@ -15,7 +15,13 @@ type
   private
     FRegulator: TStreamRegulator;
     FLastValue: Complex;
+    FBandIndex: Integer;
+    FCarrierFreq: Cardinal;
+    FSampleRate: Cardinal;
+    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
+  protected
+    function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -27,6 +33,18 @@ implementation
 
 { TRadioFMDemod }
 
+procedure TRadioFMDemod.ProccessMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
+begin
+  if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
+  begin
+    FCarrierFreq := Msg.ParamH;
+    Exit;
+  end;
+
+  inherited;
+end;
+
 procedure TRadioFMDemod.ReceiveRegulatedData(const P: PComplex;
   const Len: Integer);
 var
@@ -34,13 +52,28 @@ var
   J: Integer;
   O: PComplex;
   T: Complex;
+  X: Complex;
+  F: Double;
 begin
+  if FSampleRate = 0 then Exit;
+  F := 2 * Pi * FCarrierFreq / FSampleRate;
   O := AllocWait(I);
   T := FLastValue;
   for J := 0 to Len - 1 do
   begin
-
+    X := P[J] * cong(T);
+    T := P[J];
+    O[J].re := arctan2(X.im, X.re) - F;
+    O[J].im := 0;
   end;
+  FLastValue := T;
+end;
+
+function TRadioFMDemod.RMSetSampleRate(const Msg: TRadioMessage;
+  const Rate: Cardinal): Integer;
+begin
+  FSampleRate := Rate;
+  Result := 0;
 end;
 
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);
