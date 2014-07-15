@@ -59,16 +59,19 @@ begin
   begin
     FSystem := TRadioSystem.Create;
     FSystem.AddModule('s', 'Spectrum');
-  //  FSystem.AddModule('s2', 'Spectrum');
+    FSystem.AddModule('s2', 'Spectrum');
     FSystem.AddModule('a', 'AudioIn');
     FSystem.AddModule('u', 'AudioOut');
     FSystem.AddModule('o', 'Oscillator');
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('r', 'Rtl');
-    FSystem.AddModule('dump', 'Dump');
+    FSystem.AddModule('dump', 'DumpPlayer');
   end;
-  FSystem.ConnectModuel('r', 's');
-  FSystem.ConnectModuel('r', 'dump');
+  FSystem.ConnectModuel('dump', 's');
+  FSystem.ConnectModuel('dump', 'f');
+  FSystem.ConnectModuel('s', 'f');
+  FSystem.ConnectModuel('f', 's2');
+  //FSystem.ConnectModuel('r', 'dump');
 
  // FSystem.ConnectModuel('f', 's2');
   //FSystem.ConnectModuel('f', 'u');
@@ -81,7 +84,8 @@ begin
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
  // FSystem.ConfigModule('a');
-  FSystem.ConfigModule('r');   FSystem.ConfigModule('dump');
+ // FSystem.ConfigModule('r');
+  FSystem.ConfigModule('dump');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);

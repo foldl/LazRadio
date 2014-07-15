@@ -84,6 +84,7 @@ type
     procedure Lock;
     procedure Unlock;
 
+    function AllocWait(out Index: Integer): PComplex;
     function Alloc(out Index: Integer): PComplex;
     procedure Broadcast(const Index: Integer; Listeners: TList);
     procedure Release(const Index: Integer); // Listeners call this to release buffer
@@ -1326,6 +1327,18 @@ end;
 procedure TRadioDataStream.Unlock;
 begin
   RadioGlobalUnlock;
+end;
+
+function TRadioDataStream.AllocWait(out Index: Integer): PComplex;
+var
+  I: Integer;
+begin
+  Result := DefOutput.Alloc(I);
+  while Result = nil do
+  begin
+    Sleep(10);
+    Result := DefOutput.Alloc(I);
+  end;
 end;
 
 function TRadioDataStream.Alloc(out Index: Integer): PComplex;

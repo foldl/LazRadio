@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, RadioSystem, RadioModule, SignalBasic, UComplex, formfilter,
-  Math;
+  rm_spectrum, Math;
 
 const
   RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PDouble); ParamL: (SampleRate << 8) or (Filter taps)
@@ -34,8 +34,10 @@ type
     FBandwidth: Integer;
     FWndParam: Double;
     FConfig: TFilterForm;
+    FBandIndex: Integer;
     procedure Redesign;
     procedure ReceiveFIRData(const P: PComplex; const Len: Integer);
+    procedure DesignBPF(LowFreq, HighFreq: Cardinal);
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
@@ -57,17 +59,20 @@ var
   Omega: Double;
   Bw: Double;
   Coeff: array of Double;
+  N: Integer;
 begin
+  N := FTaps;
   if FResampleNode.OutputRate < 1 then Exit;
-  if FTaps < 5 then Exit;
-  SetLength(Coeff, FTaps);
+  if N < 5 then Exit;
+  if (FType = ftHPF) and (not odd(N)) then Inc(N);
+  SetLength(Coeff, N);
   Omega := FOmega / FResampleNode.OutputRate * 2;
   Bw := FBandwidth / FResampleNode.OutputRate * 2;
-  FIRDesign(@Coeff[0], FTaps, FType,
+  FIRDesign(@Coeff[0], N, FType,
             Omega, Bw,
             FWnd,
             FWndParam);
-  FFIRNode.SetFIR(PDouble(@Coeff[0]), FTaps);
+  FFIRNode.SetFIR(PDouble(@Coeff[0]), N);
 end;
 
 procedure TFilterModule.ReceiveFIRData(const P: PComplex; const Len: Integer);
@@ -96,9 +101,38 @@ begin
   DefOutput.Broadcast(J, FDataListeners);
 end;
 
+procedure TFilterModule.DesignBPF(LowFreq, HighFreq: Cardinal);
+var
+  F: Cardinal;
+begin
+  F := FResampleNode.OutputRate div 2;
+  FType := ftBPF;
+  FOmega := (LowFreq + HighFreq) div 2;
+  FBandwidth := HighFreq - LowFreq;
+  if LowFreq / F < 1e-3 then
+  begin
+    FType := ftLPF;
+    FOmega := HighFreq;
+  end;
+  if HighFreq / F > (1 - 1e-3) then
+  begin
+    FType := ftHPF;
+    FOmega := LowFreq;
+  end;
+
+  Redesign;
+end;
+
 procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
+  if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
+  begin
+    FResampleNode.OutputRate := FResampleNode.InputRate;
+    DesignBPF(Msg.ParamH, Msg.ParamL);
+    Exit;
+  end;
+
   case Msg.Id of
     RM_FILTER_SET:
       begin

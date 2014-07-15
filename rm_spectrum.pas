@@ -23,11 +23,17 @@ const
                   SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
                   SET_DRAW_MIN_INTERVAL = 10; // minimal interval between updates in milli-second
 
-   PRIV_RM_SPECTRUM_ENABLE_PICKER = RM_USER + 10; // ParamH: Picker index (0..); ParamL: enable(1) or disable(0)
-   PRIV_RM_SPECTRUM_MOUSE_DOWN  = RM_USER + 11; // ParamH: Button, ParamL: (X shl 16) or Y
-   PRIV_RM_SPECTRUM_MOUSE_UP    = RM_USER + 12; // ParamH: Button, ParamL: (X shl 16) or Y
-   PRIV_RM_SPECTRUM_MOUSE_MOVE  = RM_USER + 13; // ParamH: ------, ParamL: (X shl 16) or Y
-   PRIV_RM_SPECTRUM_MOUSE_LEAVE = RM_USER + 14; // ParamH/L ignore
+  // ParamH: Baseband low freq (Hz), ParamL: Baseband high freq (Hz)
+  RM_SPECTRUM_BAND_SELECT_1 = RM_USER + 1001;
+  RM_SPECTRUM_BAND_SELECT_2 = RM_USER + 1002;
+  RM_SPECTRUM_BAND_SELECT_3 = RM_USER + 1003;
+  RM_SPECTRUM_BAND_SELECT_4 = RM_USER + 1004;
+
+  PRIV_RM_SPECTRUM_ENABLE_PICKER = RM_USER + 10; // ParamH: Picker index (0..); ParamL: enable(1) or disable(0)
+  PRIV_RM_SPECTRUM_MOUSE_DOWN    = RM_USER + 11; // ParamH: Button, ParamL: (X shl 16) or Y
+  PRIV_RM_SPECTRUM_MOUSE_UP      = RM_USER + 12; // ParamH: Button, ParamL: (X shl 16) or Y
+  PRIV_RM_SPECTRUM_MOUSE_MOVE    = RM_USER + 13; // ParamH: ------, ParamL: (X shl 16) or Y
+  PRIV_RM_SPECTRUM_MOUSE_LEAVE   = RM_USER + 14; // ParamH/L ignore
 
 type
 
@@ -132,7 +138,7 @@ type
     procedure DrawWaterfallFrame;
     procedure DrawRealtime;
     procedure DrawWaterfall;
-    procedure DrawPickers;
+    procedure DrawPickers(const X, Y: Integer);
     procedure RedrawFull;
     procedure SyncRedrawFull;
     procedure ConfigWndNode(const Wt: TWindowFunction; const L: Integer; const Ov: Double);
@@ -210,8 +216,12 @@ var
           if StrToIntDef(S[K + 1], 0) >= 5 then T := 1;
         Inc(T, StrToInt(S[K]));
         case T of
-          3, 7, 9:
-            Inc(T);
+          8, 9:
+            T := 10;
+          4, 6, 7:
+            T := 5;
+          3:
+            T := 2;
         end;
         if T < 10 then
         begin
@@ -283,7 +293,8 @@ end;
 
 procedure TDoubleBuffer.Draw2Paint2;
 begin
-  FPaintBox.Canvas.Draw(0, 0, FPaintBuffer);
+  //FPaintBox.Canvas.Draw(0, 0, FPaintBuffer);
+  FPaintBox.Refresh;
 end;
 
 constructor TDoubleBuffer.Create;
@@ -375,7 +386,7 @@ begin
   FBandPicker[Index].Freq := Z + Index * S + S div 2;
   FBandPicker[Index].Bandwidth := S div 4;
   FRt.Draw2Paint;
-  DrawPickers;
+  DrawPickers(0, 0);
   FRt.Paint;
 end;
 
@@ -414,7 +425,20 @@ begin
 end;
 
 procedure TRadioSpectrum.MouseUp(Button: TMouseButton; X, Y: Integer);
+var
+  M: TRadioMessage;
+  Z: Int64;
 begin
+  if FSelectedBand < 0 then Exit;
+
+  Z := FFreq - (FSampleRate div 4);
+  Z := FBandPicker[FSelectedBand].Freq - Z;
+
+  // send out notification message
+  Broadcast(RM_SPECTRUM_BAND_SELECT_1 + FSelectedBand,
+            EnsureRange(Z - FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate div 2),
+            EnsureRange(Z + FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate div 2));
+
   FSelectedBand := -1;
 end;
 
@@ -431,7 +455,7 @@ begin
       FBandPicker[FSelectedBand].Bandwidth := 2 * Round(Abs(F - FBandPicker[FSelectedBand].Freq));
   end;
   FRt.Draw2Paint;
-  DrawPickers;
+  DrawPickers(X, Y);
   FRt.Paint;
 end;
 
@@ -629,7 +653,7 @@ begin
     Polyline(Pts);
   end;
   FRt.Draw2Paint;
-  DrawPickers;
+  DrawPickers(0, 0);
   FRt.Paint;
 end;
 
@@ -693,11 +717,12 @@ begin
   FWf.Paint;
 end;
 
-procedure TRadioSpectrum.DrawPickers;
+procedure TRadioSpectrum.DrawPickers(const X, Y: Integer);
 var
   I: Integer;
   C: TColor;
   X1, X2: Integer;
+
   procedure VLine(const V: Integer);
   begin
     if V <= FRAME_MARGIN_LEFT then Exit;
@@ -714,7 +739,7 @@ begin
     begin
       Pen.Color := clWhite;
       Pen.Width := 1;
-      Brush.Color := clWhite;
+      Pen.Style := psSolid;
       X1 := FreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
       X2 := FreqToScreen(FBandPicker[I].Freq);
       VLine(X1);
@@ -723,7 +748,21 @@ begin
       Pen.Width := 2;
       Pen.Style := psDashDot;
       VLine(X2);
+      Brush.Color := clWhite;
+      Brush.Style := bsSolid;
+      Font.Color := clBlack;
       TextOut(X2 - TextWidth('0') div 2, FRAME_MARGIN_TOP, IntToStr(I + 1));
+      if FSelectedBand = I then
+      begin
+        Brush.Style := bsClear;
+        Font.Color := clCream;
+        TextOut(X2 + 2, Height div 2,
+                Format('Freq = %s',
+                       [FormatFreq(FBandPicker[I].Freq)]));
+        TextOut(X2 + 2, Height div 2 + TextHeight('F'),
+                Format('Bw = %s',
+                       [FormatFreq(FBandPicker[I].Bandwidth)]));
+      end;
     end;
   end;
 end;
@@ -878,8 +917,6 @@ begin
 
   FillByte(FLine[0], (High(FLine) + 1) * SizeOf(FLine[0]), 0);
 
-  if @FF[0] = nil then
-    Setlength(FF, 1);
   FFT(FFFTPlan, P, @FF[0]);
   PowArg(@FF[0], FFFTSize);
   for I := 0 to High(FPower) do
@@ -909,32 +946,35 @@ begin
 
   Xpolate(@FPower[I], @FLine[Li], J - I + 1, Lj - Li + 1);
 
-  for I := 0 to High(FLine) do
-    FLine[I] := 10 * log10(FLine[I] + MinDouble);
-
   if FAutoY then
   begin
     //FAutoY := False;
-    if High(FLine) >= 0 then
+    Ma := 0.0;
+    Mi := 0.0;
+    for J := 0 to High(FLine) do
     begin
-      Ma := FLine[0]; Mi := FLine[0];
-    end
-    else
-      Exit;
-    if High(FLine) >= 1 then
-    begin
-      Ma := FLine[1]; Mi := FLine[1];
-    end
-    else;
-    for I := 2 to High(FLine) do
+      if FLine[J] > 0 then
+      begin
+        Ma := FLine[J];
+        Mi := FLine[J];
+        Break;
+      end;
+    end;
+    for I := J + 1 to High(FLine) do
     begin
       Ma := Max(Ma, FLine[I]);
       Mi := Min(Mi, FLine[I]);
     end;
+    Ma := 10 * log10(Ma + MinDouble);
+    Mi := 10 * log10(Mi + MinDouble);
+
     FYMax := Ma;
     FYRange := Max(1, Min(50, Round(Ma - Mi)));
     DrawRealtimeFrame;
   end;
+
+  for I := 0 to High(FLine) do
+    FLine[I] := 10 * log10(FLine[I] + MinDouble);
 
   DrawRealtime;
   DrawWaterfall;
