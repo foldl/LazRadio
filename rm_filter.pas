@@ -165,8 +165,7 @@ function TFilterModule.RMSetSampleRate(const Msg: TRadioMessage;
 begin
   FResampleNode.InputRate := Rate;
   FConfig.EditRate.Text := IntToStr(Rate);
-  Result := 0;
-  Broadcast(Msg);
+  Result := inherited;
 end;
 
 procedure TFilterModule.DoConfigure;

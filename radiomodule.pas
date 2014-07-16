@@ -5,11 +5,11 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex, kissfft;
+  Classes, SysUtils, Graphics, UComplex, kissfft, fgl;
 
 const
   // ParamH: TRadioDataStream
-  // ParamL: index of data
+  // ParamL: (Port shl 16) or (index of data)
   // Note: call TRadioDataStream.Release after processed
   RM_DATA            = 0;
   // RM_DATA_DONE       = 1;  // this is stupid
@@ -84,8 +84,8 @@ type
     procedure Lock;
     procedure Unlock;
 
-    function AllocWait(out Index: Integer): PComplex;
     function Alloc(out Index: Integer): PComplex;
+    function TryAlloc(out Index: Integer): PComplex;
     procedure Broadcast(const Index: Integer; Listeners: TList);
     procedure Release(const Index: Integer); // Listeners call this to release buffer
 
@@ -183,13 +183,11 @@ type
     procedure UnLock;
     procedure WorkerIdle(Worker: TRadioThread);
   public
-    constructor Create(const SMP: Integer = 2);
+    constructor Create(const SMP: Integer = 4);
     destructor Destroy; override;
     procedure Request(Job: TRadioMessageQueue);
     procedure Terminate;
   end;
-
-  TProcessingType = (ptBackground, ptForeground);
 
   { TRadioMessageQueue }
 
@@ -225,13 +223,19 @@ type
     property Name: string read FName write FName;
   end;
 
+  TDataListener = record
+    M: TRadioModule;
+    Port: Integer;
+  end;
+  PDataListener = ^TDataListener;
+
   { TRadioModule }
 
   TRadioModule = class(TRadioMessageQueue)
   private
     FDefOutput: TRadioDataStream;
-
     FRunning: Boolean;
+    function FindDataListener(Listener: TRadioModule): Integer;
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
@@ -265,14 +269,15 @@ type
 
     procedure Draw(ACanvas: TCanvas; ARect: TRect); virtual;
 
-    procedure AddDataListener(Listener: TRadioModule);
+    procedure AddDataListener(Listener: TRadioModule; const Port: Integer);
     procedure AddFeatureListener(Listener: TRadioModule);
     procedure RemoveDataListener(Listener: TRadioModule);
     procedure RemoveFeatureListener(Listener: TRadioModule);
     procedure ClearDataListeners;
     procedure ClearFeatureListeners;
 
-    procedure ReceiveData(const P: PComplex; const Len: Integer); virtual;
+    procedure ReceiveData(const P: PComplex; const Len: Integer); virtual; overload;
+    procedure ReceiveData(const Port: Integer; const P: PComplex; const Len: Integer); virtual;
 
     property DefOutput: TRadioDataStream read FDefOutput;
     property Running: Boolean read FRunning;
@@ -1329,19 +1334,17 @@ begin
   RadioGlobalUnlock;
 end;
 
-function TRadioDataStream.AllocWait(out Index: Integer): PComplex;
-var
-  I: Integer;
+function TRadioDataStream.Alloc(out Index: Integer): PComplex;
 begin
-  Result := DefOutput.Alloc(I);
+  Result := TryAlloc(Index);
   while Result = nil do
   begin
     Sleep(10);
-    Result := DefOutput.Alloc(I);
+    Result := TryAlloc(Index);
   end;
 end;
 
-function TRadioDataStream.Alloc(out Index: Integer): PComplex;
+function TRadioDataStream.TryAlloc(out Index: Integer): PComplex;
 var
   I: Integer;
 begin
@@ -1367,6 +1370,7 @@ procedure TRadioDataStream.Broadcast(const Index: Integer; Listeners: TList);
 var
   M: TRadioMessage;
   P: Pointer;
+  L: PDataListener;
 begin
   Lock;
   FBuffers[Index].Counter := Listeners.Count;
@@ -1379,13 +1383,16 @@ begin
     Id := RM_DATA;
     Sender := FModule.Name;
     ParamH := PtrInt(Self);
-    ParamL := Index;
   end;
 
   if FBuffers[Index].Allocated then
   begin
     for P in Listeners do
-      TRadioModule(P).PostMessage(M);
+    begin
+      L := PDataListener(P);
+      M.ParamL := (L^.Port shl 16) or Index;
+      L^.M.PostMessage(M);
+    end;
   end
   else;
 end;
@@ -1432,6 +1439,17 @@ begin
   Broadcast(M);
 end;
 
+function TRadioModule.FindDataListener(Listener: TRadioModule): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := 0 to FDataListeners.Count - 1 do
+  begin
+    if PDataListener(FDataListeners[I])^.M = Listener then Exit(I);
+  end;
+end;
+
 procedure TRadioModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
@@ -1458,10 +1476,15 @@ end;
 procedure TRadioModule.RMData(const Msg: TRadioMessage; var Ret: Integer);
 var
   B: TRadioDataStream;
+  Port: Integer;
 begin
   B := TRadioDataStream(Pointer(Msg.ParamH));
-  ReceiveData(B.Buffer[Msg.ParamL], B.BufferSize);
-  B.Release(Msg.ParamL);
+  Port := Msg.ParamL shr 16;
+  if Port = 0 then
+    ReceiveData(B.Buffer[Msg.ParamL], B.BufferSize)
+  else
+    ReceiveData(Port, B.Buffer[Msg.ParamL and $FFFF], B.BufferSize);
+  B.Release(Msg.ParamL and $FFFF);
 end;
 
 procedure TRadioModule.RMSetFeature(const Msg: TRadioMessage; var Ret: Integer);
@@ -1561,10 +1584,18 @@ begin
 
 end;
 
-procedure TRadioModule.AddDataListener(Listener: TRadioModule);
+procedure TRadioModule.AddDataListener(Listener: TRadioModule;
+  const Port: Integer);
+var
+  P: PDataListener;
 begin
-  with FDataListeners do
-    if IndexOf(Listener) < 0 then Add(Listener);
+  if FindDataListener(Listener) < 0 then
+  begin
+    New(P);
+    P^.M := Listener;
+    P^.Port := Port;
+    FDataListeners.Add(P);
+  end;
 end;
 
 procedure TRadioModule.AddFeatureListener(Listener: TRadioModule);
@@ -1574,8 +1605,17 @@ begin
 end;
 
 procedure TRadioModule.RemoveDataListener(Listener: TRadioModule);
+var
+  I: Integer;
+  P: PDataListener;
 begin
-  FDataListeners.Remove(Listener);
+  I := FindDataListener(Listener);
+  if I >= 0 then
+  begin
+    P := PDataListener(FDataListeners[I]);
+    FDataListeners.Delete(I);
+    Dispose(P);
+  end;
 end;
 
 procedure TRadioModule.RemoveFeatureListener(Listener: TRadioModule);
@@ -1584,7 +1624,10 @@ begin
 end;
 
 procedure TRadioModule.ClearDataListeners;
+var
+  P: Pointer;
 begin
+  for P in FDataListeners do Dispose(PDataListener(P));
   FDataListeners.Clear;
 end;
 
@@ -1594,6 +1637,12 @@ begin
 end;
 
 procedure TRadioModule.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+
+end;
+
+procedure TRadioModule.ReceiveData(const Port: Integer; const P: PComplex;
+  const Len: Integer);
 begin
 
 end;

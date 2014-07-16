@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="25">
+    <Units Count="26">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -186,6 +186,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_fm"/>
       </Unit24>
+      <Unit25>
+        <Filename Value="rm_pll.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_pll"/>
+      </Unit25>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

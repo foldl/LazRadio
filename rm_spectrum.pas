@@ -381,10 +381,9 @@ begin
   B := Enable <> 0;
   if FBandPicker[Index].Enable = B then Exit;
   FBandPicker[Index].Enable := B;
-  Z := FFreq - FSampleRate div 4;
-  S := FSampleRate div 2 div (High(FBandPicker) + 1);
-  FBandPicker[Index].Freq := Z + Index * S + S div 2;
-  FBandPicker[Index].Bandwidth := S div 4;
+  S := (FEndFreq - FStartFreq) div 4;
+  FBandPicker[Index].Freq := FStartFreq + Index * S + S div 2;
+  FBandPicker[Index].Bandwidth := S div 2;
   FRt.Draw2Paint;
   DrawPickers(0, 0);
   FRt.Paint;
@@ -467,6 +466,7 @@ end;
 function TRadioSpectrum.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
+  if FFReq = Freq then Exit;
   FFreq := Freq;
   FCenterFreq := Freq;
   DrawRealtimeFrame;
@@ -476,6 +476,7 @@ end;
 function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
+  if FSampleRate = Rate then Exit;
   FSampleRate := Rate;
   DrawRealtimeFrame;
   Result := 0;
@@ -987,13 +988,15 @@ begin
   FWf := TDoubleBuffer.Create;
   FWf.DrawBuffer.PixelFormat := pf24bit;
 
-  FMinInterval := 10 / MSecsPerDay;
+  FMinInterval := 20 / MSecsPerDay;
   FYRange := 30;
   FFFTSize := 1024 * 16;
   FWindow := wfRect;
   FFFTPlan := BuildFFTPlan(FFFTSize, False);
   FSpan := -1;
   FWaterfallTickInterval := 5;
+
+  FSelectedBand := -1;
 
   FFlow := TWindowNode.Create;
   FFlow.LastNode.OnSendToNext := @ReceiveWindowedData;

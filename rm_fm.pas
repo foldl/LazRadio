@@ -5,7 +5,7 @@ unit rm_fm;
 interface
 
 uses
-  Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math;
+  Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math, SignalBasic;
 
 type
 
@@ -21,6 +21,7 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
   protected
+    function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -30,6 +31,9 @@ type
   end;
 
 implementation
+
+uses
+  rm_spectrum;
 
 { TRadioFMDemod }
 
@@ -45,6 +49,10 @@ begin
   inherited;
 end;
 
+// Reference: http://www.digitalsignallabs.com/Digradio.pdf
+// y[n] = A/2 exp(-j (2 pi f0 n Ts + f_delta integrate[x(tao), 0, n Ts]))
+// y[n] * conj[y[n - 1]] = A^2 / 4 exp(-j (2 pi f0 Ts + f_delta Ts x(nTs)))
+// arctan2 is in (-pi, pi)
 procedure TRadioFMDemod.ReceiveRegulatedData(const P: PComplex;
   const Len: Integer);
 var
@@ -56,24 +64,37 @@ var
   F: Double;
 begin
   if FSampleRate = 0 then Exit;
-  F := 2 * Pi * FCarrierFreq / FSampleRate;
-  O := AllocWait(I);
+  F := 2 * Pi * FCarrierFreq / FSampleRate;   // in [0, Pi]
+  O := DefOutput.Alloc(I);
   T := FLastValue;
   for J := 0 to Len - 1 do
   begin
     X := P[J] * cong(T);
     T := P[J];
-    O[J].re := arctan2(X.im, X.re) - F;
     O[J].im := 0;
+    if X.re <> 0 then
+      O[J].re := arctan2(X.im, X.re) + F
+    else
+      O[J].re := IfThen(X.im > 0, Pi / 2, -Pi / 2) + F;
+    if O[J].re > 2 * Pi then O[J].re := O[J].re - 2 * Pi;
   end;
+  CancelDC(O, Len);
   FLastValue := T;
+  DefOutput.Broadcast(I, FDataListeners);
+end;
+
+function TRadioFMDemod.RMSetFrequency(const Msg: TRadioMessage;
+  const Freq: Cardinal): Integer;
+begin
+  Result := 0;
 end;
 
 function TRadioFMDemod.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FSampleRate := Rate;
-  Result := 0;
+  Result := inherited;
+  Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, FSampleRate div 4);
 end;
 
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);
@@ -94,6 +115,10 @@ procedure TRadioFMDemod.ReceiveData(const P: PComplex; const Len: Integer);
 begin
   FRegulator.ReceiveData(P, Len);
 end;
+
+initialization
+
+  RegisterModule('FMDemod', TRadioModuleClass(TRadioFMDemod.ClassType));
 
 end.
 

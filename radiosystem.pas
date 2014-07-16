@@ -31,7 +31,9 @@ type
     procedure Reset;
 
     function AddModule(const Name, T: string): Boolean;
-    function ConnectModuel(const ModuleFrom, ModuleTo: string): Boolean;
+    function ConnectBoth(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
+    function ConnectData(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
+    function ConnectFeature(const ModuleFrom, ModuleTo: string): Boolean;
     function ConfigModule(const Name: string): Boolean;
 
     property Module[const Name: string]: TRadioModule read GetModule;
@@ -186,8 +188,8 @@ Quit:
   Unlock;
 end;
 
-function TRadioSystem.ConnectModuel(const ModuleFrom, ModuleTo: string
-  ): Boolean;
+function TRadioSystem.ConnectBoth(const ModuleFrom, ModuleTo: string;
+  const ToPort: Integer): Boolean;
 var
   MF, MT: TRadioModule;
 begin
@@ -196,8 +198,28 @@ begin
   if Assigned(MF) and Assigned(MT) then
   begin
     MF.AddFeatureListener(MT);
-    MF.AddDataListener(MT);
+    MF.AddDataListener(MT, ToPort);
   end;
+end;
+
+function TRadioSystem.ConnectData(const ModuleFrom, ModuleTo: string;
+  const ToPort: Integer): Boolean;
+var
+  MF, MT: TRadioModule;
+begin
+  MF := Module[ModuleFrom];
+  MT := Module[ModuleTo];
+  if Assigned(MF) and Assigned(MT) then MF.AddDataListener(MT, ToPort);
+end;
+
+function TRadioSystem.ConnectFeature(const ModuleFrom, ModuleTo: string
+  ): Boolean;
+var
+  MF, MT: TRadioModule;
+begin
+  MF := Module[ModuleFrom];
+  MT := Module[ModuleTo];
+  if Assigned(MF) and Assigned(MT) then MF.AddFeatureListener(MT);
 end;
 
 function TRadioSystem.ConfigModule(const Name: string): Boolean;

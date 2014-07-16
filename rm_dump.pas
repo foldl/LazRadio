@@ -180,11 +180,11 @@ var
   I: Integer;
   D: PComplex;
 begin
-  D := DefOutput.Alloc(I);
-  while D = nil do
+  D := DefOutput.TryAlloc(I);
+  while (D = nil) and (not FThread.Terminated) do
   begin
-    Sleep(20);
-    D := DefOutput.Alloc(I);
+    Sleep(10);
+    D := DefOutput.TryAlloc(I);
   end;
   Move(P^, D^, Len * SizeOf(P^));
   DefOutput.Broadcast(I, FDataListeners);

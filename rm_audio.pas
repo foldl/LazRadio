@@ -393,7 +393,7 @@ var
   K: Integer;
 begin
   waveInUnprepareHeader(FHandle, @FHDRs[Index], Sizeof(FHDRs[Index]));
-  P := DefOutput.Alloc(I);
+  P := DefOutput.TryAlloc(I);
   if Assigned(P) then
   begin
     J := Min(FHDRs[Index].dwBytesRecorded, DefOutput.BufferSize);

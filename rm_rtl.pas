@@ -112,7 +112,7 @@ var
 
 begin
   if FClosing then Exit;
-  P := DefOutput.Alloc(I);
+  P := DefOutput.TryAlloc(I);
   if not Assigned(P) then
   begin
     TRadioLogger.Report(llWarn, 'TRtlModule.DataIn: data lost');
@@ -131,7 +131,7 @@ begin
     else
       Fill;
       DefOutput.Broadcast(I, FDataListeners);
-      P := DefOutput.Alloc(I);
+      P := DefOutput.TryAlloc(I);
       Inc(Buf, Len div 2);
       if not Assigned(P) then
       begin
