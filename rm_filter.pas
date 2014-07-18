@@ -90,7 +90,7 @@ begin
   end
   else
     I := Len;
-  X := DefOutput.Alloc(J);
+  X := Alloc(DefOutput, J);
   if not Assigned(X) then
   begin
     TRadioLogger.Report(llWarn,

@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex, kissfft, fgl;
+  Classes, SysUtils, Graphics, UComplex, Genfft, fgl;
 
 const
   // ParamH: TRadioDataStream
@@ -84,7 +84,6 @@ type
     procedure Lock;
     procedure Unlock;
 
-    function Alloc(out Index: Integer): PComplex;
     function TryAlloc(out Index: Integer): PComplex;
     procedure Broadcast(const Index: Integer; Listeners: TList);
     procedure Release(const Index: Integer); // Listeners call this to release buffer
@@ -156,6 +155,7 @@ type
     destructor Destroy; override;
     property Job: TRadioMessageQueue read FJob write FJob;
     property Node: PRadioThreadNode read FNode write FNode;
+    property Terminated;
   end;
 
   TRadioThreadNode = record
@@ -201,6 +201,8 @@ type
     FLastMsg: PRadioMessageNode;
     FMessageFilter: TRadioMessageIdSet;
     FRunQueue: TRadioRunQueue;
+    FCPUTime: TTime;
+    FRunThread: TRadioThread;
     function GetNotEmpty: Boolean;
     procedure SetInQueue(AValue: Boolean);
     procedure SetMessageFilter(AValue: TRadioMessageIdSet);
@@ -221,6 +223,8 @@ type
     property InQueue: Boolean read FInQueue write SetInQueue;
 
     property Name: string read FName write FName;
+    property CPUTime: TTime read FCPUTime;
+    property RunThread: TRadioThread read FRunThread write FRunThread;
   end;
 
   TDataListener = record
@@ -239,6 +243,8 @@ type
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
+
+    function Alloc(Stream: TRadioDataStream; out Index: Integer): PComplex;
 
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
 
@@ -896,10 +902,8 @@ begin
   UnLock;
   Dispose(P);
 
-  TRadioLogger.Report(llVerbose, 'in thread ' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
-
+  TRadioLogger.Report(llVerbose, 'in thread #' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
   ProccessMessage(Msg, Ret);
-
   TRadioLogger.Report(llVerbose, Name + ' msg exec done');
 end;
 
@@ -1140,6 +1144,7 @@ end;
 procedure TRadioThread.Execute;
 var
   J: TRadioMessageQueue;
+  T: TTime;
 begin
   while not Terminated do
   begin
@@ -1153,7 +1158,17 @@ begin
       J := FJob;
       FJob := nil;
 
-      while J.NotEmpty do J.MessageExceute;
+      T := Now;
+
+      J.RunThread := Self;
+      while J.NotEmpty do
+      begin
+        J.MessageExceute;
+        if Terminated then Break;
+      end;
+      J.RunThread := nil;
+      J.FCPUTime := J.FCPUTime + Now - T;
+
       FRunQueue.WorkerIdle(Self);
       J.InQueue := False;
     end
@@ -1334,16 +1349,6 @@ begin
   RadioGlobalUnlock;
 end;
 
-function TRadioDataStream.Alloc(out Index: Integer): PComplex;
-begin
-  Result := TryAlloc(Index);
-  while Result = nil do
-  begin
-    Sleep(10);
-    Result := TryAlloc(Index);
-  end;
-end;
-
 function TRadioDataStream.TryAlloc(out Index: Integer): PComplex;
 var
   I: Integer;
@@ -1447,6 +1452,17 @@ begin
   for I := 0 to FDataListeners.Count - 1 do
   begin
     if PDataListener(FDataListeners[I])^.M = Listener then Exit(I);
+  end;
+end;
+
+function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
+  ): PComplex;
+begin
+  Result := Stream.TryAlloc(Index);
+  while (not RunThread.Terminated) and (Result = nil) do
+  begin
+    Sleep(10);
+    Result := Stream.TryAlloc(Index);
   end;
 end;
 

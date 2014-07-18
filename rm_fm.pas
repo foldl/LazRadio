@@ -65,7 +65,12 @@ var
 begin
   if FSampleRate = 0 then Exit;
   F := 2 * Pi * FCarrierFreq / FSampleRate;   // in [0, Pi]
-  O := DefOutput.Alloc(I);
+  O := Alloc(DefOutput, I);
+  if not Assigned(O) then
+  begin
+    TRadioLogger.Report(llWarn, 'TRadioFMDemod.ReceiveRegulatedData: data lost');
+    Exit;
+  end;
   T := FLastValue;
   for J := 0 to Len - 1 do
   begin
@@ -100,6 +105,7 @@ end;
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
+  DefOutput.BufferSize := 50 * 1024;
   FRegulator := TStreamRegulator.Create;
   FRegulator.Size := DefOutput.BufferSize;
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;

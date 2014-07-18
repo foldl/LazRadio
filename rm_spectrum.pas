@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Types, Graphics, ExtCtrls, FPImage, RadioModule, UComplex, SignalBasic,
-  KissFFT, formspectrum, Forms, Math, Controls;
+  GenFFT, formspectrum, Forms, Math, Controls;
 
 const
 
@@ -919,7 +919,7 @@ begin
   FillByte(FLine[0], (High(FLine) + 1) * SizeOf(FLine[0]), 0);
 
   FFT(FFFTPlan, P, @FF[0]);
-  PowArg(@FF[0], FFFTSize);
+  Pow(@FF[0], FFFTSize);
   for I := 0 to High(FPower) do
     FPower[I] := FF[I].re;
 
@@ -994,6 +994,7 @@ begin
   FWindow := wfRect;
   FFFTPlan := BuildFFTPlan(FFFTSize, False);
   FSpan := -1;
+  FAutoY := True;
   FWaterfallTickInterval := 5;
 
   FSelectedBand := -1;

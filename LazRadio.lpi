@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="26">
+    <Units Count="29">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -191,6 +191,21 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_pll"/>
       </Unit25>
+      <Unit26>
+        <Filename Value="dsp\fft2.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="FFT2"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="dsp\genfft.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GenFFT"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="dsp\fftw.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="FFTW"/>
+      </Unit28>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -42,7 +42,7 @@ var
 implementation
 
 uses
-  kissfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger,
+  Genfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger,
   formfilter, rm_dump;
 
 {$R *.lfm}
@@ -85,9 +85,9 @@ begin
   //FSystem.ConnectBoth('f', 'u');
  // FSystem.ConnectBoth('dump', 'u');
 
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 44100 div 4, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, -1, 's');
+ // RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 44100 div 4, 's');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
+ // RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, -1, 's');
  // RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 3000, 's');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
@@ -102,7 +102,17 @@ begin
 end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
+var
+  X: array [0..3] of Complex;
+  P: PFFTPlan;
 begin
+ { FillChar(X[0], (High(X) + 1) * SizeOf(X[0]), 0);
+  X[1].re := 100;
+  P := BuildFFTPlan(High(X) + 1, False);
+  FFT(P, @X[0], @X[0]);
+  FinalizePlan(P);
+  exit;
+  }
   RadioPostMessage(RM_DUMP_STOP, 0, 0, 'dump');
 end;
 

@@ -53,7 +53,7 @@ var
 implementation
 
 uses
-  SignalBasic, KissFFT, rm_filter, RadioSystem;
+  SignalBasic, GenFFT, rm_filter, RadioSystem;
 
 {$R *.lfm}
 

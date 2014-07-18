@@ -24,6 +24,10 @@ procedure ModArg(IO: PComplex; const N: Integer);
 procedure PowArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
 procedure PowArg(IO: PComplex; const N: Integer);
 
+// Output.re = power
+procedure Pow(Input: PComplex; Output: PComplex; const N: Integer); overload;
+procedure Pow(IO: PComplex; const N: Integer);
+
 procedure CreateWindowFunction(P: PDouble; const N: Integer; const Func: TWindowFunction;
   Param: Double = -1);
 
@@ -39,6 +43,8 @@ procedure FIRDesign(Coef: PDouble; const N: Integer;
   const AType: TFilterType;
   const OmegaC: Double; const Bandwidth: Double;
   const Wf: TWindowFunction; const WfParam: Double);
+
+function ToString(Input: PComplex; const N: Integer): string;
 
 var
   gWindowFunctionNames: array [TWindowFunction] of string =
@@ -219,6 +225,22 @@ begin
     Coef[J] := Coef[J] * W[J];
 end;
 
+function ToString(Input: PComplex; const N: Integer): string;
+var
+  I: Integer;
+begin
+  if N > 0 then
+  begin
+    Result := '[' + cstr(Input[0]);
+    for I := 1 to N - 1 do
+      Result := Result + ',' + cstr(Input[I]);
+    Result := StringReplace(Result + ']', 'i', 'j', [rfReplaceAll]);
+  end
+  else begin
+    Result := '[]';
+  end;
+end;
+
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
 var
   I: Integer;
@@ -264,6 +286,26 @@ begin
     T := IO[I];
     IO[I].re := T.re * T.re + T.im * T.im;
     IO[I].im := carg(T);
+  end;
+end;
+
+procedure Pow(Input: PComplex; Output: PComplex; const N: Integer);
+var
+  I: Integer;
+begin
+  for I := 0 to N - 1 do
+  begin
+    Output[I].re := Input[I].re * Input[I].re + Input[I].im * Input[I].im;
+  end;
+end;
+
+procedure Pow(IO: PComplex; const N: Integer);
+var
+  I: Integer;
+begin
+  for I := 0 to N - 1 do
+  begin
+    IO[I].re := IO[I].re * IO[I].re + IO[I].im * IO[I].im;
   end;
 end;
 

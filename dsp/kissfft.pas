@@ -2,7 +2,8 @@ unit KissFFT;
 
 // Port KissFFT to Pascal
 
-{$mode objfpc}{$H+}
+{$mode delphi}
+{$O+}
 
 interface
 
@@ -34,14 +35,10 @@ procedure FFT(Plan: PFFTPlan;
               Input: PComplex;
               Output: PComplex); overload;
 
-procedure FFT(Plan: PFFTPlan;
-              Input: PComplex;
-              Output: PComplex;
-              const Stride: Integer);
+procedure FFT(Plan: PFFTPlan; Input: PComplex; Output: PComplex;
+  const Stride: Integer); overload;
 
 function NextFastSize(N: Integer): Integer;
-
-function ToString(Input: PComplex; const N: Integer): string;
 
 implementation
 
@@ -49,7 +46,7 @@ uses
   Math;
 
 procedure Butterfly2(Out1: PComplex; const Stride: Integer; var State: TFFTState;
-                     const M: Integer);
+                     const M: Integer); inline;
 var
   Out2: PComplex;
   Tw: PComplex;
@@ -70,7 +67,7 @@ begin
 end;
 
 procedure Butterfly4(Out1: PComplex; const Stride: Integer; var State: TFFTState;
-                     const M: Integer);
+                     const M: Integer); inline;
 var
   Tw1, Tw2, Tw3: PComplex;
   Scratch: array [0..5] of Complex;
@@ -129,7 +126,7 @@ begin
 end;
 
 procedure Butterfly3(Out1: PComplex; const Stride: Integer; var State: TFFTState;
-                     const M: Integer);
+                     const M: Integer); inline;
 var
   Tw1, Tw2: PComplex;
   Scratch: array [0..3] of Complex;
@@ -177,7 +174,7 @@ begin
 end;
 
 procedure Butterfly5(Output: PComplex; const Stride: Integer; var State: TFFTState;
-                     const M: Integer);
+                     const M: Integer); inline;
 var
   Twiddles: PComplex;
   Tw: PComplex;
@@ -236,7 +233,7 @@ begin
 end;
 
 procedure ButterflyGeneric(Output: PComplex; const Stride: Integer; var State: TFFTState;
-                     M, P: Integer);
+                     M, P: Integer); inline;
 var
   U, K, Q, I, J: Integer;
   Twiddles: PComplex;
@@ -412,22 +409,6 @@ begin
     Inc(N);
   end;
   Result := N;
-end;
-
-function ToString(Input: PComplex; const N: Integer): string;
-var
-  I: Integer;
-begin
-  if N > 0 then
-  begin
-    Result := '[' + cstr(Input[0]);
-    for I := 1 to N - 1 do
-      Result := Result + ',' + cstr(Input[I]);
-    Result := StringReplace(Result + ']', 'i', 'j', [rfReplaceAll]);
-  end
-  else begin
-    Result := '[]';
-  end;
 end;
 
 end.

@@ -186,7 +186,12 @@ begin
 
   H := WaitForMultipleObjects(High(FEvents) + 1, @FEvents[0], False, INFINITE) - WAIT_OBJECT_0;
 
-  if H < 0 then Exit;
+  if H < 0 then
+  begin
+    TRadioLogger.Report(llWarn, 'TRadioAudioOut.ReceiveRegulatedData: no buffer, data lost');
+    Exit;
+  end;
+
   ResetEvent(FEvents[H]);
   W := @FBufs[H][0];
   N := Min(Len - 1, High(FBufs[H]) div 2);

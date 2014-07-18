@@ -154,10 +154,10 @@ var
 begin
   for A in FModuleDict do
   begin
-    TRadioLogger.Report(llWarn, 'free %s', [A.Name]);
     M := TRadioModule(Pointer(A.Value.AsInteger));
+    TRadioLogger.Report(llWarn, 'free %s, cpu time %.f', [A.Name, M.CPUTime * MSecsPerDay]);
     M.Free;
-  end;
+  end;                                     ;
   TRadioLogger.Report(llWarn, 'all freed');
   FModuleDict.Clear(True);
 end;

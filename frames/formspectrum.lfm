@@ -1,7 +1,7 @@
 object SpectrumForm: TSpectrumForm
-  Left = 485
+  Left = 804
   Height = 601
-  Top = 182
+  Top = 634
   Width = 772
   Caption = 'SpectrumForm'
   ClientHeight = 601
