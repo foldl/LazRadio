@@ -124,8 +124,8 @@ begin
       begin
         for J := 0 to (Len div 2) - 1 do
         begin
-          P[J].im := FByteMapping[Buf[2 * J + 0]];
-          P[J].re := FByteMapping[Buf[2 * J + 1]];
+          P[J].re := FByteMapping[Buf[2 * J + 0]];
+          P[J].im := FByteMapping[Buf[2 * J + 1]];
         end;
       end;
     else
@@ -256,13 +256,14 @@ function TRtlModule.RMSetFrequency(const Msg: TRadioMessage;
 begin
   Result := 0;
   FFreq := Freq;
-  if Assigned(FDev) then RtlSdrSetCenterFreq(FDev, Freq);
+  RtlSdrSetCenterFreq(FDev, Freq);
   Result := inherited;
 end;
 
 function TRtlModule.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
+  if Assigned(FDev) then RtlSdrSetSampleRate(FDev, Rate);
   FSampleRate := Rate;
   Result := inherited;
 end;

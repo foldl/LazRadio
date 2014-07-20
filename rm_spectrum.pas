@@ -354,7 +354,7 @@ begin
   D := FWndNode.Overlap / FFFTSize;
   FFFTSize := Integer(ASize);
   SetLength(FF, FFFTSize);
-  SetLength(FPower, FFFTSize div 2);
+  SetLength(FPower, FFFTSize);
   ChangePlan(FFFTPlan, FFFTSize, False);
   ConfigWndNode(FWindow, FFFTSize, D);
   FWndNode.ReleaseHold;
@@ -430,13 +430,13 @@ var
 begin
   if FSelectedBand < 0 then Exit;
 
-  Z := FFreq - (FSampleRate div 4);
+  Z := FFreq;
   Z := FBandPicker[FSelectedBand].Freq - Z;
 
   // send out notification message
   Broadcast(RM_SPECTRUM_BAND_SELECT_1 + FSelectedBand,
-            EnsureRange(Z - FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate div 2),
-            EnsureRange(Z + FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate div 2));
+            EnsureRange(Z - FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate),
+            EnsureRange(Z + FBandPicker[FSelectedBand].Bandwidth div 2, 0, FSampleRate));
 
   FSelectedBand := -1;
 end;
@@ -467,7 +467,7 @@ function TRadioSpectrum.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
   if FFReq = Freq then Exit;
-  FFreq := Freq;
+  FFreq := Freq - FSampleRate div 2;
   FCenterFreq := Freq;
   DrawRealtimeFrame;
   Result := 0;
@@ -477,6 +477,9 @@ function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   if FSampleRate = Rate then Exit;
+  FCenterFreq := FFreq + FSampleRate * 2;
+  FFreq := FCenterFreq - Rate div 2;
+
   FSampleRate := Rate;
   DrawRealtimeFrame;
   Result := 0;
@@ -516,13 +519,13 @@ begin
 
   if FSpan < 0 then
   begin
-    FStartFreq := Max(0, FFreq - (FSampleRate div 4));
-    FEndFreq := FFreq + (FSampleRate div 4);
+    FStartFreq := FFreq;
+    FEndFreq := FFreq + FSampleRate;
   end
   else if FSpan > 0 then
   begin
-    FStartFreq := Max(0, FCenterFreq - (FSpan div 2));
-    FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + (FSampleRate div 4));
+    FStartFreq := Max(FFreq, FCenterFreq - (FSpan div 2));
+    FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + FSampleRate);
   end;
 
   with FRt.Background.Canvas do
@@ -919,15 +922,13 @@ begin
   FillByte(FLine[0], (High(FLine) + 1) * SizeOf(FLine[0]), 0);
 
   FFT(FFFTPlan, P, @FF[0]);
-  Pow(@FF[0], FFFTSize);
-  for I := 0 to High(FPower) do
-    FPower[I] := FF[I].re;
+  SpectrumPower(@FF[0], @FPower[0], FFFTSize);
 
   F0 := 1;
   if FSampleRate > 0 then
     F0 := FSampleRate / FFFTSize;
 
-  ZeroFreq := FFreq - (FSampleRate div 4);
+  ZeroFreq := FFreq;
   BStart := FStartFreq - ZeroFreq;
   BEnd   := FEndFreq - ZeroFreq;
 
@@ -952,7 +953,7 @@ begin
     //FAutoY := False;
     Ma := 0.0;
     Mi := 0.0;
-    for J := 0 to High(FLine) do
+    for J := Li to Lj do
     begin
       if FLine[J] > 0 then
       begin
@@ -961,7 +962,7 @@ begin
         Break;
       end;
     end;
-    for I := J + 1 to High(FLine) do
+    for I := J + 1 to Lj do
     begin
       Ma := Max(Ma, FLine[I]);
       Mi := Min(Mi, FLine[I]);

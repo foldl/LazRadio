@@ -271,7 +271,7 @@ object RTLForm: TRTLForm
     EditLabel.ParentColor = False
     LabelPosition = lpLeft
     TabOrder = 12
-    Text = '103000000'
+    Text = '97000000'
     OnKeyUp = FreqEditKeyUp
   end
 end

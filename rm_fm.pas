@@ -64,7 +64,7 @@ var
   F: Double;
 begin
   if FSampleRate = 0 then Exit;
-  F := 2 * Pi * FCarrierFreq / FSampleRate;   // in [0, Pi]
+  F := Pi; // 2 * Pi  * FCarrierFreq / FSampleRate;   // in [0, Pi]
   O := Alloc(DefOutput, I);
   if not Assigned(O) then
   begin
@@ -81,7 +81,7 @@ begin
       O[J].re := arctan2(X.im, X.re) + F
     else
       O[J].re := IfThen(X.im > 0, Pi / 2, -Pi / 2) + F;
-    if O[J].re > 2 * Pi then O[J].re := O[J].re - 2 * Pi;
+    //if O[J].re > 2 * Pi then O[J].re := O[J].re - 2 * Pi;
   end;
   CancelDC(O, Len);
   FLastValue := T;
@@ -99,7 +99,7 @@ function TRadioFMDemod.RMSetSampleRate(const Msg: TRadioMessage;
 begin
   FSampleRate := Rate;
   Result := inherited;
-  Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, FSampleRate div 4);
+  Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
 end;
 
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);

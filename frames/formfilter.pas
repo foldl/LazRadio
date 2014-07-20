@@ -16,6 +16,7 @@ type
   TFilterForm = class(TForm)
     BtnGo: TBitBtn;
     BtnGo1: TBitBtn;
+    BtnGo2: TBitBtn;
     Chart: TChart;
     ChartAxisTransformations1AutoScaleAxisTransform1: TAutoScaleAxisTransform;
     ChartAxisTransformations2: TChartAxisTransformations;
@@ -31,11 +32,13 @@ type
     EditBandwidth: TLabeledEdit;
     FilterType: TRadioGroup;
     procedure BtnGo1Click(Sender: TObject);
+    procedure BtnGo2Click(Sender: TObject);
     procedure BtnGoClick(Sender: TObject);
     procedure FilterTypeClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    function  ReadAndCheck(const MinEqFreq: Double): Boolean;
   private
-    FCoeff: array of Double;
+    FCoeff: array of Complex;
     FModule: TRadioModule;
     FRate: Integer;
     FOmega: Double;
@@ -88,11 +91,60 @@ begin
   WindowFuncSel.ItemIndex := Ord(wfKaiser);
 end;
 
+function TFilterForm.ReadAndCheck(const MinEqFreq: Double): Boolean;
+begin
+  Result := False;
+  FTaps := StrToIntDef(EditTaps.Text, 0);
+  FRate := StrToIntDef(EditRate.Text, 0);
+  if (FTaps < 10) or (FTaps >= 256) then
+  begin
+    ShowMessage('Taps out of range. only support [10, 255]');
+    Exit;
+  end;
+
+  if FRate < 1000 then
+  begin
+    ShowMessage('Sample rate too small. at least 1000.');
+    Exit;
+  end;
+  if WindowFuncSel.ItemIndex < 0 then
+  begin
+    ShowMessage('Please select a window function');
+    Exit;
+  end;
+
+  SetLength(FCoeff, FTaps);
+  FillChar(FCoeff[0], FTaps * SizeOf(FCoeff[0]), 0);
+
+  FOmega := StrToIntDef(EditCenterFreq.Text, 0) / FRate * 2;
+  if not InRange(FOmega, MinEqFreq, 1) then
+  begin
+    ShowMessage(EditCenterFreq.EditLabel.Caption + ' is out of range.');
+    Exit;
+  end;
+
+  case TFilterType(FilterType.ItemIndex) of
+    ftBPF, ftBSF:
+      begin
+        FBandwidth := StrToIntDef(EditBandwidth.Text, 0) / FRate * 2;
+        if not InRange(FOmega - FBandwidth / 2, MinEqFreq, 1) or
+           not InRange(FOmega + FBandwidth / 2, MinEqFreq, 1) then
+        begin
+          ShowMessage('Band is out of range.');
+          Exit;
+        end;
+      end;
+  end;
+
+  Result := True;
+end;
+
 procedure TFilterForm.ShowFIR;
 type
   SelFunc = function (A, B: Double): Double;
 var
   T: array of Complex;
+  A: array of Complex;
   F: array of Double;
   P: PFFTPlan;
   I, J: Integer;
@@ -122,12 +174,15 @@ var
 begin
   SetLength(T, Max(1024, High(FCoeff) + 1));
   SetLength(F, High(T) + 1);
+  SetLength(A, High(T) + 1);
   for I := 0 to High(FCoeff) do
-    T[I].re := FCoeff[I];
+    T[I]:= FCoeff[I];
   P := BuildFFTPlan(High(T) + 1, False);
-  FFT(P, @T[0], @T[0]);
+  FFT(P, @T[0], @A[0]);
   FinalizePlan(P);
-  PowArg(@T[0], High(T) + 1);
+  F0 := FRate / (High(T) + 1);
+
+  SpectrumPowArg(@A[0], @T[0], High(T) + 1);
   Chart.Series.Clear;
   S1 := TLineSeries.Create(Chart);
   S2 := TLineSeries.Create(Chart);
@@ -135,11 +190,11 @@ begin
   S1.AxisIndexY := 0; S2.AxisIndexY := 1;
   S1.Title := '|H(f)|'; S2.Title := 'Arg';
   S1.SeriesColor := clRed; S2.SeriesColor := clBlue;
-  F0 := FRate / (High(T) + 1);
-  for I := 0 to High(T) div 2 do
+
+  for I := 0 to High(T) do
   begin
     T[I].re := 10 * Log10(T[I].re + 1e-20);
-    F[I] := I * F0;
+    F[I] := I * F0 - FRate div 2;
     S1.AddXY(F[I], T[I].re);
     S2.AddXY(F[I], T[I].im);
   end;
@@ -232,53 +287,69 @@ begin
 end;
 
 procedure TFilterForm.BtnGo1Click(Sender: TObject);
+var
+  FIR: array of Double;
+  I: Integer;
 begin
-  FTaps := StrToIntDef(EditTaps.Text, 0);
-  FRate := StrToIntDef(EditRate.Text, 0);
-  if (FTaps < 10) or (FTaps >= 256) then
-  begin
-    ShowMessage('Taps out of range. only support [10, 255]');
-    Exit;
-  end;
+  if not ReadAndCheck(0) then Exit;
+  SetLength(FIR, FTaps);
 
-  if FRate < 1000 then
-  begin
-    ShowMessage('Sample rate too small. at least 1000.');
-    Exit;
-  end;
-  if WindowFuncSel.ItemIndex < 0 then
-  begin
-    ShowMessage('Please select a window function');
-    Exit;
-  end;
-
-  SetLength(FCoeff, FTaps);
-  FillChar(FCoeff[0], FTaps * SizeOf(FCoeff[0]), 0);
-
-  FOmega := StrToIntDef(EditCenterFreq.Text, 0) / FRate * 2;
-  if (FOmega < 0) or (FOmega > 1) then
-  begin
-    ShowMessage(EditCenterFreq.EditLabel.Caption + ' is out of range.');
-    Exit;
-  end;
-
-  case TFilterType(FilterType.ItemIndex) of
-    ftBPF, ftBSF:
-      begin
-        FBandwidth := StrToIntDef(EditBandwidth.Text, 0) / FRate * 2;
-        if (FOmega - FBandwidth / 2 < 0) or (FOmega + FBandwidth / 2 > 1) then
-        begin
-          ShowMessage('Band is out of range.');
-          Exit;
-        end;
-        EditCenterFreq.EditLabel.Caption := 'Passband center freq (Hz)';
-      end;
-  end;
-
-  FIRDesign(@FCoeff[0], FTaps, TFilterType(FilterType.ItemIndex),
+  FIRDesign(@FIR[0], FTaps, TFilterType(FilterType.ItemIndex),
             FOmega, FBandwidth,
             TWindowFunction(WindowFuncSel.ItemIndex),
             StrToFloatDef(EditBandwidth1.Text, -1));
+
+  for I := 0 to FTaps - 1 do
+  begin
+    FCoeff[I].re := FIR[I];
+    FCoeff[I].im := 0;
+  end;
+
+  ShowFIR;
+end;
+
+procedure TFilterForm.BtnGo2Click(Sender: TObject);
+var
+  FIR: array of Double;
+  I: Integer;
+  Bw: Double;
+  Freq: Double;
+  Phase: Complex;
+begin
+  if not ReadAndCheck(-1) then Exit;
+  SetLength(FIR, FTaps);
+
+  // base-band design
+  case TFilterType(FilterType.ItemIndex) of
+    ftBPF:
+      begin
+        Bw := FBandwidth;
+        FIRDesign(@FIR[0], FTaps, ftLPF,
+            Bw / 2, 0,
+            TWindowFunction(WindowFuncSel.ItemIndex),
+            StrToFloatDef(EditBandwidth1.Text, -1));
+        Freq := StrToFloatDef(EditCenterFreq.Text, 0);
+      end;
+    ftBSF:
+      begin
+        Bw := FBandwidth;
+        FIRDesign(@FIR[0], FTaps, ftHPF,
+            Bw / 2, 0,
+            TWindowFunction(WindowFuncSel.ItemIndex),
+            StrToFloatDef(EditBandwidth1.Text, -1));
+        Freq := StrToFloatDef(EditCenterFreq.Text, 0);
+      end;
+    else
+      BtnGo1Click(Sender);
+      Exit;
+  end;
+
+  Phase.re := 0;
+  for I := 0 to FTaps - 1 do
+  begin
+    Phase.im := Freq * 2 * Pi * I / FRate;
+    FCoeff[I] := FIR[I] * cexp(Phase);
+  end;
   ShowFIR;
 end;
 

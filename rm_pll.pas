@@ -91,7 +91,6 @@ begin
   FTolerance := 1e-2;
   FSampleRate := 1024;
   FDefaultFrequency := 10;
-
 end;
 
 destructor TPLLNode.Destroy;

@@ -28,6 +28,9 @@ procedure PowArg(IO: PComplex; const N: Integer);
 procedure Pow(Input: PComplex; Output: PComplex; const N: Integer); overload;
 procedure Pow(IO: PComplex; const N: Integer);
 
+procedure SpectrumPower(Spectrum: PComplex; P: PDouble; const N: Integer);
+procedure SpectrumPowArg(Spectrum: PComplex; P: PComplex; const N: Integer);
+
 procedure CreateWindowFunction(P: PDouble; const N: Integer; const Func: TWindowFunction;
   Param: Double = -1);
 
@@ -306,6 +309,44 @@ begin
   for I := 0 to N - 1 do
   begin
     IO[I].re := IO[I].re * IO[I].re + IO[I].im * IO[I].im;
+  end;
+end;
+
+procedure SpectrumPower(Spectrum: PComplex; P: PDouble; const N: Integer);
+var
+  I, J, L: Integer;
+  function X(const C: Complex): Double; inline;
+  begin
+    Result := C.re * C.re + C.im * C.im;
+  end;
+begin
+  J := N div 2;
+  L := N - J;
+  for I := 0 to J - 1 do
+    P[I + L] := X(Spectrum[I]);
+  for I := 0 to L - 1 do
+    P[I] := X(Spectrum[I + J]);
+end;
+
+procedure SpectrumPowArg(Spectrum: PComplex; P: PComplex; const N: Integer);
+var
+  I, J, L: Integer;
+  function X(const C: Complex): Double; inline;
+  begin
+    Result := C.re * C.re + C.im * C.im;
+  end;
+begin
+  J := N div 2;
+  L := N - J;
+  for I := 0 to J - 1 do
+  begin
+    P[I + L].re := X(Spectrum[I]);
+    P[I + L].im := carg(Spectrum[I]);
+  end;
+  for I := 0 to L - 1 do
+  begin
+    P[I].re := X(Spectrum[I + J]);
+    P[I].im := carg(Spectrum[I + J]);
   end;
 end;
 

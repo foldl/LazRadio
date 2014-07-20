@@ -309,7 +309,11 @@ var
   X: TDataBlob;
 begin
   if FFile = nil then Exit;
-  if FFile.Size > FQuota then FreeAndNil(FFile);
+  if FFile.Size > FQuota then
+  begin
+    FreeAndNil(FFile);
+    Exit;
+  end;
   X.Tag := dtDataBlob;
   X.SampleRate := FSampleRate;
   X.Len := Len;

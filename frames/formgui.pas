@@ -13,6 +13,8 @@ type
 
   TGUIForm = class(TForm)
     PaintBox1: TPaintBox;
+    ScrollBox1: TScrollBox;
+    procedure FormCreate(Sender: TObject);
   private
     { private declarations }
   public
@@ -25,6 +27,13 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TGUIForm }
+
+procedure TGUIForm.FormCreate(Sender: TObject);
+begin
+
+end;
 
 end.
 

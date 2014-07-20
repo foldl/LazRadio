@@ -66,34 +66,41 @@ begin
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'Rtl');
-    FSystem.AddModule('dump', 'DumpPlayer');
+    FSystem.AddModule('src', 'DumpPlayer');
+    FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FMDemod');
   end;
-  FSystem.ConnectBoth('dump', 's');
-  FSystem.ConnectBoth('dump', 'f');
+  FSystem.ConfigModule('f');
+  exit;
+
+  FSystem.ConnectBoth('src', 's');
+  FSystem.ConnectBoth('src', 'f');
   FSystem.ConnectFeature('s', 'f');
+  FSystem.ConnectBoth('f', 's2');
+{
   FSystem.ConnectBoth('f', 'fm');
   FSystem.ConnectFeature('s', 'fm');
   FSystem.ConnectBoth('fm', 's2');
   FSystem.ConnectBoth('fm', 'f2');
   FSystem.ConnectFeature('s2', 'f2');
   FSystem.ConnectBoth('f2', 'u');
-
+}
   //FSystem.ConnectBoth('r', 'dump');
 
  // FSystem.ConnectBoth('f', 's2');
   //FSystem.ConnectBoth('f', 'u');
  // FSystem.ConnectBoth('dump', 'u');
 
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 44100 div 4, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
 //  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, -1, 's');
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 3000, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 30000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 15000, 's2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  FSystem.ConfigModule('dump');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\dump', fmOpenRead)), 0, 'src');
+  //FSystem.ConfigModule('src');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);

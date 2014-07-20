@@ -116,6 +116,6 @@ begin
 end;
 
 initialization
-  SelectFFTProvider(fpFFT2);
+  SelectFFTProvider(fpFFTW);
 end.
 

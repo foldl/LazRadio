@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="29">
+    <Units Count="30">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -206,6 +206,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="FFTW"/>
       </Unit28>
+      <Unit29>
+        <Filename Value="graph\gen_graph.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="gen_graph"/>
+      </Unit29>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -216,7 +221,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="frames;..\superobject;dsp"/>
+      <OtherUnitFiles Value="frames;..\superobject;dsp;graph"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>

@@ -454,7 +454,7 @@ begin
         PrepareBufs(FHandle, DWord(Msg.ParamL));
         waveInStart(FHandle);
         Broadcast(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, Msg.ParamL);
-        Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, Msg.ParamL div 4);
+        Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
       end;
     RM_AUDIO_IN_STOP: CloseDev;
     PRIV_RM_AUDIO_IN_DATA: waveInData(Integer(Msg.ParamH));

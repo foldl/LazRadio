@@ -9,7 +9,7 @@ uses
   rm_spectrum, Math;
 
 const
-  RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PDouble); ParamL: (SampleRate << 8) or (Filter taps)
+  RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PComplex); ParamL: (SampleRate << 8) or (Filter taps)
   RM_FILTER_REDESIGN = RM_USER + 1;         // Apply RM_FILTER_CONFIG settings
   RM_FILTER_CONFIG   = RM_USER + 2;
                    FILTER_TYPE       = 0;   // ParamL: TFilterType
@@ -105,7 +105,7 @@ procedure TFilterModule.DesignBPF(LowFreq, HighFreq: Cardinal);
 var
   F: Cardinal;
 begin
-  F := FResampleNode.OutputRate div 2;
+  F := FResampleNode.OutputRate;
   FType := ftBPF;
   FOmega := (LowFreq + HighFreq) div 2;
   FBandwidth := HighFreq - LowFreq;
@@ -137,7 +137,7 @@ begin
     RM_FILTER_SET:
       begin
         FResampleNode.OutputRate := Cardinal(Msg.ParamL) shr 8;
-        FFIRNode.SetFIR(PDouble(Msg.ParamH), Msg.ParamL and $FF);
+        FFIRNode.SetFIR(PComplex(Msg.ParamH), Msg.ParamL and $FF, False);
       end;
     RM_FILTER_REDESIGN:
       begin
