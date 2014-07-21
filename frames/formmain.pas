@@ -70,21 +70,19 @@ begin
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FMDemod');
   end;
-  FSystem.ConfigModule('f');
-  exit;
 
   FSystem.ConnectBoth('src', 's');
   FSystem.ConnectBoth('src', 'f');
   FSystem.ConnectFeature('s', 'f');
-  FSystem.ConnectBoth('f', 's2');
-{
+  // FSystem.ConnectBoth('f', 's2');
+
   FSystem.ConnectBoth('f', 'fm');
   FSystem.ConnectFeature('s', 'fm');
   FSystem.ConnectBoth('fm', 's2');
   FSystem.ConnectBoth('fm', 'f2');
   FSystem.ConnectFeature('s2', 'f2');
   FSystem.ConnectBoth('f2', 'u');
-}
+
   //FSystem.ConnectBoth('r', 'dump');
 
  // FSystem.ConnectBoth('f', 's2');
@@ -99,7 +97,7 @@ begin
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\dump', fmOpenRead)), 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\1.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
 end;
 
@@ -120,7 +118,7 @@ begin
   FinalizePlan(P);
   exit;
   }
-  RadioPostMessage(RM_DUMP_STOP, 0, 0, 'dump');
+  RadioPostMessage(RM_DUMP_STOP, 0, 0, 'src');
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);

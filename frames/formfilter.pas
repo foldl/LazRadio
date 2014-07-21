@@ -225,8 +225,8 @@ begin
         BandHigh := 1;
       end;
   end;
-  BandLowI := Round(BandLow * FRate / 2 / F0);
-  BandHighI := Round(BandHigh * FRate / 2 / F0);
+  BandLowI := Round((BandLow + 1) * FRate / 2 / F0);
+  BandHighI := Round((BandHigh + 1) * FRate / 2 / F0);
 
   M := T[BandLowI].re;
   for I := BandLowI + 1 to BandHighI do

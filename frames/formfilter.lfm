@@ -9,7 +9,7 @@ object FilterForm: TFilterForm
   Font.Height = -12
   Font.Name = 'Arial'
   OnCreate = FormCreate
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   object EditRate: TLabeledEdit
     Left = 16
     Height = 23

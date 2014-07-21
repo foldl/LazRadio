@@ -9,23 +9,29 @@ uses
   rm_spectrum, Math;
 
 const
-  RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PComplex); ParamL: (SampleRate << 8) or (Filter taps)
+  RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PComplex); ParamL: Filter taps
   RM_FILTER_REDESIGN = RM_USER + 1;         // Apply RM_FILTER_CONFIG settings
   RM_FILTER_CONFIG   = RM_USER + 2;
                    FILTER_TYPE       = 0;   // ParamL: TFilterType
-                   FILTER_OMEGA      = 1;   // ParamL: Omega (Hz)
+                   FILTER_OMEGA      = 1;   // ParamL: Omega (Hz) (cast from Integer)
                    FILTER_BANDWIDTH  = 2;   // ParamL: Bandwidth (Hz)
                    FILTER_TAPS       = 3;   // ParamL: Taps
                    FILTER_WINDOW     = 4;   // ParamL: TWindowFunction
                    FILTER_WINDOW_PARAM = 5; // ParamL: param1 of window function (Single)
+                   FILTER_COEFF_DOMAIN = 6;   // ParamL: filter coefficients domain (complex (0 - default) or real (1))
+
+  FILTER_COEFF_DOMAIN_COMPLEX = 0;
+  FILTER_COEFF_DOMAIN_REAL    = 1;
+
 type
 
   { TFilterModule }
 
   TFilterModule = class(TRadioModule)
   private
+    FCoeffDomain: Integer;
+    FSampleRate: Cardinal;
     FNode: TDataFlowNode;
-    FResampleNode: TResampleNode;
     FFIRNode: TFIRNode;
     FTaps: Integer;
     FType: TFilterType;
@@ -36,8 +42,12 @@ type
     FConfig: TFilterForm;
     FBandIndex: Integer;
     procedure Redesign;
+    procedure RedesignReal;
+    procedure RedesignComplex;
     procedure ReceiveFIRData(const P: PComplex; const Len: Integer);
-    procedure DesignBPF(LowFreq, HighFreq: Cardinal);
+    procedure DesignBPF(LowFreq, HighFreq: Integer);
+    procedure DesignBPFReal(LowFreq, HighFreq: Integer);
+    procedure DesignBPFComplex(LowFreq, HighFreq: Integer);
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
@@ -55,6 +65,14 @@ implementation
 { TFilterModule }
 
 procedure TFilterModule.Redesign;
+begin
+  if FCoeffDomain = FILTER_COEFF_DOMAIN_REAL then
+    RedesignReal
+  else
+    RedesignComplex;
+end;
+
+procedure TFilterModule.RedesignReal;
 var
   Omega: Double;
   Bw: Double;
@@ -62,17 +80,79 @@ var
   N: Integer;
 begin
   N := FTaps;
-  if FResampleNode.OutputRate < 1 then Exit;
+  if FSampleRate < 1 then Exit;
   if N < 5 then Exit;
-  if (FType = ftHPF) and (not odd(N)) then Inc(N);
+  if (FType = ftHPF) and (not Odd(N)) then Inc(N);
   SetLength(Coeff, N);
-  Omega := FOmega / FResampleNode.OutputRate * 2;
-  Bw := FBandwidth / FResampleNode.OutputRate * 2;
+  Omega := FOmega / FSampleRate * 2;
+  Bw := FBandwidth / FSampleRate * 2;
   FIRDesign(@Coeff[0], N, FType,
             Omega, Bw,
             FWnd,
             FWndParam);
   FFIRNode.SetFIR(PDouble(@Coeff[0]), N);
+end;
+
+procedure TFilterModule.RedesignComplex;
+var
+  Omega: Double;
+  Coeff: array of Double;
+  C: array of Complex;
+  N: Integer;
+  I: Integer;
+  P: Complex = (re: 0; im: 0);
+begin
+  case FType of
+    ftLPF, ftHPF:
+      begin
+        RedesignReal;
+        Exit;
+      end;
+  end;
+  N := FTaps;
+  if FSampleRate < 1 then Exit;
+  if N < 5 then Exit;
+  SetLength(Coeff, N);
+  SetLength(C, N);
+
+  Omega := FBandwidth / FSampleRate;
+  if Omega >= 1 then
+  begin
+    case FType of
+      ftBPF:
+        begin
+          Omega := 1;
+          FFIRNode.SetFIR(PDouble(@Omega), 1);
+        end;
+      ftBSF:
+        begin
+          Omega := 0;
+          FFIRNode.SetFIR(PDouble(@Omega), 1);
+        end;
+    end;
+    Exit;
+  end;
+
+  case FType of
+    ftBPF:
+      FIRDesign(@Coeff[0], N, ftLPF,
+            Omega, 0,
+            FWnd,
+            FWndParam);
+    ftBSF:
+      FIRDesign(@Coeff[0], N, ftHPF,
+            Omega, 0,
+            FWnd,
+            FWndParam);
+  end;
+
+  Omega := FOmega;
+  for I := 0 to N - 1 do
+  begin
+    P.im := 2 * Pi * FOmega * I / FSampleRate;
+    C[I] := Coeff[I] * cexp(P);
+  end;
+  FFIRNode.SetFIR(PComplex(@C[0]), N);
 end;
 
 procedure TFilterModule.ReceiveFIRData(const P: PComplex; const Len: Integer);
@@ -101,26 +181,49 @@ begin
   DefOutput.Broadcast(J, FDataListeners);
 end;
 
-procedure TFilterModule.DesignBPF(LowFreq, HighFreq: Cardinal);
-var
-  F: Cardinal;
+procedure TFilterModule.DesignBPF(LowFreq, HighFreq: Integer);
 begin
-  F := FResampleNode.OutputRate;
+  if FCoeffDomain = FILTER_COEFF_DOMAIN_REAL then
+    DesignBPFReal(LowFreq, HighFreq)
+  else
+    DesignBPFComplex(LowFreq, HighFreq);
+end;
+
+procedure TFilterModule.DesignBPFReal(LowFreq, HighFreq: Integer);
+var
+  K: Double = 1.0;
+begin
   FType := ftBPF;
   FOmega := (LowFreq + HighFreq) div 2;
   FBandwidth := HighFreq - LowFreq;
-  if LowFreq / F < 1e-3 then
+  if LowFreq / FSampleRate < 1e-3 then
   begin
     FType := ftLPF;
     FOmega := HighFreq;
   end;
-  if HighFreq / F > (1 - 1e-3) then
+  if HighFreq / FSampleRate > (1 - 1e-3) then
   begin
-    FType := ftHPF;
-    FOmega := LowFreq;
+    if FType = ftBPF then
+    begin
+      FType := ftHPF;
+      FOmega := LowFreq;
+    end
+    else begin
+      // full pass
+      FFIRNode.SetFIR(PDouble(@K), 1);
+      Exit;
+    end;
   end;
 
-  Redesign;
+  RedesignReal;
+end;
+
+procedure TFilterModule.DesignBPFComplex(LowFreq, HighFreq: Integer);
+begin
+  FType := ftBPF;
+  FOmega := (LowFreq + HighFreq) div 2;
+  FBandwidth := HighFreq - LowFreq;
+  RedesignComplex;
 end;
 
 procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
@@ -128,22 +231,16 @@ procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
   begin
-    FResampleNode.OutputRate := FResampleNode.InputRate;
-    DesignBPF(Msg.ParamH, Msg.ParamL);
+    DesignBPF(Integer(Msg.ParamH), Integer(Msg.ParamL));
     Exit;
   end;
 
   case Msg.Id of
     RM_FILTER_SET:
       begin
-        FResampleNode.OutputRate := Cardinal(Msg.ParamL) shr 8;
-        FFIRNode.SetFIR(PComplex(Msg.ParamH), Msg.ParamL and $FF, False);
+        FFIRNode.SetFIR(PComplex(Msg.ParamH), Msg.ParamL, False);
       end;
-    RM_FILTER_REDESIGN:
-      begin
-        FResampleNode.OutputRate := FResampleNode.InputRate;
-        Redesign;
-      end;
+    RM_FILTER_REDESIGN:  Redesign;
     RM_FILTER_CONFIG:
       begin
         case Msg.ParamH of
@@ -163,14 +260,14 @@ end;
 function TFilterModule.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
-  FResampleNode.InputRate := Rate;
+  FSampleRate := Rate;
   FConfig.EditRate.Text := IntToStr(Rate);
   Result := inherited;
 end;
 
 procedure TFilterModule.DoConfigure;
 begin
-  FConfig.EditRate.Text := IntToStr(FResampleNode.InputRate);
+  FConfig.EditRate.Text := IntToStr(FSampleRate);
   FConfig.Show;
 end;
 
@@ -179,12 +276,10 @@ var
   R: TRegulatorNode;
 begin
   inherited Create(RunQueue);
-  FResampleNode := TResampleNode.Create;
   FFIRNode      := TFIRNode.Create;
   R             := TRegulatorNode.Create;
-  FResampleNode.Connect(FFIRNode);
   FFIRNode.Connect(R);
-  FNode         := FResampleNode;
+  FNode         := FFIRNode;
   R.Regulator.Size := DefOutput.BufferSize;
   R.OnSendToNext := @ReceiveFIRData;
   FWnd           := wfKaiser;
