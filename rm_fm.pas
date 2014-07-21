@@ -80,9 +80,10 @@ end;
 function TRadioFMDemod.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
+ // if FSampleRate = Rate then Exit;
   FSampleRate := Rate;
   Result := inherited;
-  Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, FSampleRate div 2);
+  Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
 end;
 
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);

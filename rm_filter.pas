@@ -250,6 +250,7 @@ begin
           FILTER_TAPS:                       FTaps := Msg.ParamL;
           FILTER_WINDOW:                     FWnd := TWindowFunction(Msg.ParamL);
           FILTER_WINDOW_PARAM:               FWndParam := PSingle(@Msg.ParamL)^;
+          FILTER_COEFF_DOMAIN:               FCoeffDomain := Msg.ParamL;
         end;
       end;
   else

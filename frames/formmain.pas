@@ -43,7 +43,7 @@ implementation
 
 uses
   Genfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger,
-  formfilter, rm_dump;
+  formfilter, rm_dump, rm_filter;
 
 {$R *.lfm}
 
@@ -66,7 +66,7 @@ begin
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'Rtl');
-    FSystem.AddModule('src', 'DumpPlayer');
+    FSystem.AddModule('src', 'Rtl');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FMDemod');
   end;
@@ -93,12 +93,14 @@ begin
 //  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 30000, 's2');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 15000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\1.dump', fmOpenRead)), 0, 'src');
-  //FSystem.ConfigModule('src');
+ // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\dump', fmOpenRead)), 0, 'src');
+  FSystem.ConfigModule('src');
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);

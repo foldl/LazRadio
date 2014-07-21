@@ -22,6 +22,10 @@ const
                   SET_Y_MAX         = 8;
                   SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
                   SET_DRAW_MIN_INTERVAL = 10; // minimal interval between updates in milli-second
+                  SET_DATA_DOMAIN   = 11; // set data domain: complex(0: default), real (1)
+
+  SPECTRUM_DATA_DOMAIN_COMPLEX = 0;
+  SPECTRUM_DATA_DOMAIN_REAL    = 1;
 
   // ParamH: Baseband low freq (Hz), ParamL: Baseband high freq (Hz)
   RM_SPECTRUM_BAND_SELECT_1 = RM_USER + 1001;
@@ -84,11 +88,11 @@ type
 
   TRadioSpectrum = class(TRadioModule)
   private
-    FFreq: Cardinal;
+    FFreq: Integer;
     FSampleRate: Cardinal;
     FCenterFreq: Integer;
-    FStartFreq: Cardinal;
-    FEndFreq: Cardinal;
+    FStartFreq: Integer;
+    FEndFreq: Integer;
     FHzPerPixel: Double;
     FAutoY: Boolean;
     FSpan: Integer;
@@ -115,6 +119,7 @@ type
     FBandPicker: array [0..3] of TBandInfo;
     FSelectedBand: Integer;
     FMouseTool: TSpectrumMouse;
+    FDomain: Integer;
     function ScreenToBaseFreq(const X: Integer): Integer;
     function BaseFreqToScreen(const F: Integer): Integer;
 
@@ -467,7 +472,6 @@ function TRadioSpectrum.RMSetFrequency(const Msg: TRadioMessage;
 begin
   if FFReq = Freq then Exit;
   FFreq := Freq - FSampleRate div 2;
-  FCenterFreq := Freq;
   DrawRealtimeFrame;
   Result := 0;
 end;
@@ -476,9 +480,7 @@ function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   if FSampleRate = Rate then Exit;
-  FCenterFreq := FFreq + FSampleRate * 2;
-  FFreq := FCenterFreq - Rate div 2;
-
+  FFreq := FFreq + FSampleRate * 2 - Rate div 2;
   FSampleRate := Rate;
   DrawRealtimeFrame;
   Result := 0;
@@ -526,6 +528,9 @@ begin
     FStartFreq := Max(FFreq, FCenterFreq - (FSpan div 2));
     FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + FSampleRate);
   end;
+
+  if FDomain = SPECTRUM_DATA_DOMAIN_REAL then
+    FStartFreq := Max(0, FStartFreq);
 
   with FRt.Background.Canvas do
   begin
@@ -855,7 +860,6 @@ begin
         SET_SPAN:
           begin
             FSpan := Integer(Msg.ParamL);
-
             DrawRealtimeFrame;
           end;
         SET_CENTER_FREQ:
@@ -865,6 +869,11 @@ begin
           end;
         SET_DRAW_MIN_INTERVAL:
           FMinInterval := Msg.ParamL / MSecsPerDay;
+        SET_DATA_DOMAIN:
+          begin
+            FDomain := Msg.ParamL;
+            DrawRealtimeFrame;
+          end;
       end;
     else
       inherited ProccessMessage(Msg, Ret);
