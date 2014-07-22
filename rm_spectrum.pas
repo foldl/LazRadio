@@ -6,32 +6,9 @@ interface
 
 uses
   Classes, SysUtils, Types, Graphics, ExtCtrls, FPImage, RadioModule, UComplex, SignalBasic,
-  GenFFT, formspectrum, Forms, Math, Controls;
+  GenFFT, formspectrum, Forms, Math, Controls, radiomessage, Utils;
 
 const
-
-  RM_SPECTRUM_CFG = RM_USER;
-                  SET_WND_FUNC      = 0;
-                  SET_OVERLAP_PER   = 1;
-                  SET_FFT_SIZE      = 2;
-                  GUI_RESET         = 3;  // gui resize
-                  SET_Y_RANGE       = 4;  // y range in dB
-                  SET_AUTO_Y        = 5;  // set y range automatically, ParamL: enable (1), disable (0)
-                  SET_SPAN          = 6;  // set x span in Hz (full span: sample rate / 2 (-1))
-                  SET_CENTER_FREQ   = 7;  // set center frequency in x span (freq of the input data stream)
-                  SET_Y_MAX         = 8;
-                  SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
-                  SET_DRAW_MIN_INTERVAL = 10; // minimal interval between updates in milli-second
-                  SET_DATA_DOMAIN   = 11; // set data domain: complex(0: default), real (1)
-
-  SPECTRUM_DATA_DOMAIN_COMPLEX = 0;
-  SPECTRUM_DATA_DOMAIN_REAL    = 1;
-
-  // ParamH: Baseband low freq (Hz), ParamL: Baseband high freq (Hz)
-  RM_SPECTRUM_BAND_SELECT_1 = RM_USER + 1001;
-  RM_SPECTRUM_BAND_SELECT_2 = RM_USER + 1002;
-  RM_SPECTRUM_BAND_SELECT_3 = RM_USER + 1003;
-  RM_SPECTRUM_BAND_SELECT_4 = RM_USER + 1004;
 
   PRIV_RM_SPECTRUM_ENABLE_PICKER = RM_USER + 10; // ParamH: Picker index (0..); ParamL: enable(1) or disable(0)
   PRIV_RM_SPECTRUM_MOUSE_DOWN    = RM_USER + 11; // ParamH: Button, ParamL: (X shl 16) or Y
@@ -48,41 +25,6 @@ type
   end;
 
   TSpectrumMouse = (smCenter, smBandwidth);
-
-  { TDoubleBuffer }
-
-  TDoubleBuffer = class
-  private
-    FDrawBuffer: TBitmap;
-    FPaintBox: TPaintBox;
-    FPaintBuffer: TBitmap;
-    procedure OnPaint(Sender: TObject);
-    procedure SetPaintBox(AValue: TPaintBox);
-    procedure Draw2Paint2;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure Draw2Paint;
-    procedure Paint;
-
-    procedure SetSize(const W, H: Integer); virtual;
-    property DrawBuffer: TBitmap read FDrawBuffer;
-    property PaintBuffer: TBitmap read FPaintBuffer;
-    property PaintBox: TPaintBox read FPaintBox write SetPaintBox;
-  end;
-
-  { TTripleBuffer }
-
-  TTripleBuffer = class(TDoubleBuffer)
-  private
-    FBackground: TBitmap;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure SetSize(const W, H: Integer); override;
-    property Background: TBitmap read FBackground;
-  end;
 
   { TRadioSpectrum }
 
@@ -260,74 +202,6 @@ begin
   I := Round(V0 / Step);
   Start := I * Step;
   if Start > V0 then Start := Start - Step;
-end;
-
-{ TTripleBuffer }
-
-constructor TTripleBuffer.Create;
-begin
-  inherited;
-  FBackground := TBitmap.Create;
-end;
-
-destructor TTripleBuffer.Destroy;
-begin
-  FBackground.Free;
-  inherited Destroy;
-end;
-
-procedure TTripleBuffer.SetSize(const W, H: Integer);
-begin
-  FBackground.SetSize(W, H);
-  inherited;
-end;
-
-{ TDoubleBuffer }
-
-procedure TDoubleBuffer.OnPaint(Sender: TObject);
-begin
-  FPaintBox.Canvas.Draw(0, 0, FPaintBuffer);
-end;
-
-procedure TDoubleBuffer.SetPaintBox(AValue: TPaintBox);
-begin
-  if FPaintBox = AValue then Exit;
-  FPaintBox := AValue;
-  FPaintBox.OnPaint := @OnPaint;
-end;
-
-procedure TDoubleBuffer.Draw2Paint2;
-begin
-  //FPaintBox.Canvas.Draw(0, 0, FPaintBuffer);
-  FPaintBox.Refresh;
-end;
-
-constructor TDoubleBuffer.Create;
-begin
-  FDrawBuffer := TBitmap.Create;
-  FPaintBuffer := TBitmap.Create;
-end;
-
-destructor TDoubleBuffer.Destroy;
-begin
-  FDrawBuffer.Free;
-  FPaintBuffer.Free;
-end;
-
-procedure TDoubleBuffer.Draw2Paint;
-begin
-  FPaintBuffer.Canvas.Draw(0, 0, FDrawBuffer);
-end;
-
-procedure TDoubleBuffer.Paint;
-begin
-  TThread.Synchronize(nil, @Draw2Paint2);
-end;
-
-procedure TDoubleBuffer.SetSize(const W, H: Integer);
-begin
-  FDrawBuffer.SetSize(W, H);
-  FPaintBuffer.SetSize(W, H);
 end;
 
 { TRadioSpectrum }

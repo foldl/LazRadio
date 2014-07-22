@@ -5,51 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex, Genfft, fgl;
-
-const
-  // ParamH: TRadioDataStream
-  // ParamL: (Port shl 16) or (index of data)
-  // Note: call TRadioDataStream.Release after processed
-  RM_DATA            = 0;
-  // RM_DATA_DONE       = 1;  // this is stupid
-
-  // ParamH: Frequency   (0)    ParamL: in Hz
-  // ParamH: Sample rate (1)    ParamL: in samples per second
-  // ParamH: Bandwidth   (2)    ParamL: in Hz
-  // ParamH: Phase ad    (3)    ParamL: in rad (cast from Float)
-  RM_SET_FEATURE     = 2;
-                     RM_FEATURE_FREQ        = 0;
-                     RM_FEATURE_SAMPLE_RATE = 1;
-                     RM_FEATURE_BANDWIDTH   = 2;
-                     RM_FEATURE_PHASE_ADJ   = 3;
-
-  // ParamH: RUN   (0)    ParamL: ignore
-  // ParamH: PAUSE (1)    ParamL: ignore
-  // ParamH: RESET (2)    ParamL: ignore
-  RM_CONTROL         = 3;
-                     RM_CONTROL_RUN   = 0;
-                     RM_CONTROL_PAUSE = 1;
-                     RM_CONTROL_RESET = 2;
-
-  // ParamH: timer id    ParamL: timer interval
-  RM_TIMER           = 4;
-
-  // ParamH: error   (0)    ParamL: code
-  // ParamH: warning (1)    ParamL: code
-  // ParamH: info    (2)    ParamL: code
-  // ParamH: debug   (3)    ParamL: code
-  RM_REPORT          = 5;
-
-  // ParamH: module id (high) timer id (low)  ParamL: timer interval
-  RM_CREATE_TIMER    = 6;
-
-  // ParamH: module id (high) timer id (low)  ParamL: ignore
-  RM_DELETE_TIMER    = 7;
-
-  RM_CONFIGURE       = 8;
-
-  RM_USER            = 100;
+  Classes, SysUtils, Graphics, UComplex, Genfft, radiomessage;
 
 type
 
@@ -120,15 +76,6 @@ type
 
   TRadioMessageId      = 0..31;
   TRadioMessageIdSet   = Cardinal;
-
-  { TRadioMessage }
-
-  TRadioMessage = record
-    Sender: string; // TObject;
-    Id: Integer;
-    ParamH: PtrUInt;
-    ParamL: PtrUInt;
-  end;
 
   PRadioMessageNode = ^TRadioMessageNode;
   TRadioMessageNode = record

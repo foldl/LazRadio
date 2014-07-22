@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, LCLType, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  Buttons, ExtCtrls, ComCtrls, Spin, RadioModule, RadioSystem;
+  Buttons, ExtCtrls, ComCtrls, Spin, RadioModule, RadioSystem, radiomessage;
 
 type
 
@@ -64,7 +64,7 @@ var
 implementation
 
 uses
-  RtlSdr, Async, rm_rtl, utils;
+  RtlSdr, Async;
 
 {$R *.lfm}
 

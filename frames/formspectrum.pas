@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, LCLType, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  ComCtrls, StdCtrls, RadioModule, RadioSystem, Math;
+  ComCtrls, StdCtrls, RadioModule, RadioSystem, Math, radiomessage;
 
 type
 

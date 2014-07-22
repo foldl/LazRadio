@@ -5,14 +5,7 @@ unit rm_dump;
 interface
 
 uses
-  Classes, SysUtils, Dialogs, UComplex, RadioModule, RadioSystem;
-
-const
-  RM_DUMP_START = RM_USER + 0;              // ParamH: TStream, ParamL: MaxSize
-  RM_DUMP_STOP  = RM_USER + 1;              // no param, TStream is closed here
-
-  RM_DUMP_PLAYER_START = RM_USER + 0;       // ParamH: TStream
-  RM_DUMP_PLAYER_STOP  = RM_USER + 1;       // no param, TStream is closed here
+  Classes, SysUtils, Dialogs, UComplex, RadioModule, RadioSystem, RadioMessage;
 
 type
 

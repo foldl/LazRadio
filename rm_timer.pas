@@ -5,7 +5,7 @@ unit rm_timer;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, ExtCtrls;
+  Classes, SysUtils, RadioModule, ExtCtrls, radiomessage;
 
 type
 
@@ -59,7 +59,7 @@ begin
   P := PTimerNode(Pointer(T.Tag));
   with M do
   begin
-    Id := RadioModule.RM_TIMER;
+    Id := radiomessage.RM_TIMER;
     Sender := Name;
     ParamH := P^.Id and $FFFF;
     ParamL := T.Interval;

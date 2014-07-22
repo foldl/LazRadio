@@ -5,10 +5,7 @@ unit rm_pll;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, RadioSystem, UComplex, Math;
-
-//const
-//  RM_PLL_CONFIGURE = RM_USER;
+  Classes, SysUtils, RadioModule, RadioSystem, UComplex, Math, radiomessage;
 
 type
 

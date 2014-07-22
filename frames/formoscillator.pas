@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, ExtCtrls,
-  ButtonPanel, Buttons, StdCtrls, RadioModule, RadioSystem, LCLType;
+  ButtonPanel, Buttons, StdCtrls, RadioModule, RadioSystem, LCLType, radiomessage;
 
 type
 
@@ -37,9 +37,6 @@ var
   OscillatorForm: TOscillatorForm;
 
 implementation
-
-uses
-  rm_oscillator;
 
 {$R *.lfm}
 

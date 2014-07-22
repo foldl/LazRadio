@@ -5,15 +5,7 @@ unit rm_oscillator;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, UComplex, formoscillator;
-
-const
-
-  RM_OSC_WAVE = RM_USER;
-                  SET_WAVE_SIN      = 0;
-                  SET_WAVE_RECT     = 1;  // ParamL = DutyRadio (in percentage)
-                  SET_WAVE_TRIANGLE = 2;  // ParamL = VertexPostition
-                                          //          (in percentage: 0 = reverse sawtooth; 50 = triangle; 100 = (almost) sawtooth)
+  Classes, SysUtils, RadioModule, UComplex, formoscillator, RadioMessage;
 
 type
 

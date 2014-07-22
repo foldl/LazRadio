@@ -5,29 +5,11 @@ unit rm_rtl;
 interface
 
 uses
-  Classes, SysUtils, UComplex, Math, RadioModule, RtlSdr, formrtl;
+  Classes, SysUtils, UComplex, Math, RadioModule, RtlSdr, formrtl, RadioMessage;
 
 const
-  // ParamH: Device index
-  RM_RTL_START = RM_USER + 0;
-  RM_RTL_STOP  = RM_USER + 1;
-
-  RM_RTL_DEV_CTL = RM_USER + 2;
-                 RTL_SET_FREQ_CORRECTION  = 0;   // ParamL = (ppm)
-                 RTL_SET_TUNNER_GAIN_MODE = 1;   // ParamL: 0 (auto), 1 (manual), 2 (software)
-                                          RTL_TUNNER_GAIN_AUTO     = 0;
-                                          RTL_TUNNER_GAIN_MANUAL   = 1;
-                                          RTL_TUNNER_GAIN_SOFTWARE = 2;
-                 RTL_SET_TUNNER_GAIN      = 2;   // ParamL = gain (Integer)
-                 RTL_SET_TUNNER_IF_GAIN   = 3;   // ParamL = Stage << 16 | Gain (tenth dB)
-                 RTL_SET_AGC_MODE         = 4;   // ParamL: Enable (1) or disable (0) the internal digital AGC
-                 RTL_SET_DIRECT_SAMPLING  = 5;   // ParamL: 0 means disabled, 1 I-ADC input enabled, 2 Q-ADC input enabled
-                                          RTL_SAMPLING_QUAD = 0;
-                                          RTL_SAMPLING_I    = 1;
-                                          RTL_SAMPLING_Q    = 2;
-                 RTL_SET_OFFSET_TUNNING   = 6;   // ParamL: 0 means disabled, 1 enabled
-
   PRIV_RM_RTL_DATA = RM_USER + 3;         // ParamH: PByte; ParamL: Len
+
 type
 
   { TRtlModule }

@@ -5,7 +5,8 @@ unit rm_fm;
 interface
 
 uses
-  Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math, SignalBasic;
+  Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math, SignalBasic,
+  radiomessage;
 
 type
 

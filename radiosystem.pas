@@ -5,7 +5,7 @@ unit RadioSystem;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, SuperObject;
+  Classes, SysUtils, RadioModule, SuperObject, radiomessage;
 
 type
 

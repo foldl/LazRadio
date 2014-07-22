@@ -1,29 +1,29 @@
 object GUIForm: TGUIForm
-  Left = 318
-  Height = 436
-  Top = 116
-  Width = 502
+  Left = 224
+  Height = 536
+  Top = 198
+  Width = 820
   Caption = 'FormGui'
-  ClientHeight = 436
-  ClientWidth = 502
+  ClientHeight = 536
+  ClientWidth = 820
   OnCreate = FormCreate
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   object ScrollBox1: TScrollBox
     Left = 0
-    Height = 436
+    Height = 536
     Top = 0
-    Width = 502
-    HorzScrollBar.Increment = 48
-    HorzScrollBar.Page = 481
+    Width = 820
+    HorzScrollBar.Increment = 60
+    HorzScrollBar.Page = 600
     HorzScrollBar.Smooth = True
     HorzScrollBar.Tracking = True
-    VertScrollBar.Increment = 41
-    VertScrollBar.Page = 415
+    VertScrollBar.Increment = 43
+    VertScrollBar.Page = 432
     VertScrollBar.Smooth = True
     VertScrollBar.Tracking = True
     Align = alClient
-    ClientHeight = 415
-    ClientWidth = 481
+    ClientHeight = 532
+    ClientWidth = 816
     TabOrder = 0
     object PaintBox1: TPaintBox
       Left = 0

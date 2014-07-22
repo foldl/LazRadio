@@ -11,7 +11,7 @@ uses
   radiosystem, superobject, rm_spectrum, rm_timer, formgui,
   rm_audio, rm_filter, formspectrum, kissfft, signalbasic, formoscillator,
   formauin, utils, rm_dump, logger, tachartlazaruspkg, formfilter, rm_fm, 
-rm_pll, fft2, genfft, fftw, gen_graph;
+rm_pll, fft2, genfft, fftw, gen_graph, radiomessage;
 
 {$R *.res}
 

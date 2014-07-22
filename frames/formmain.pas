@@ -42,8 +42,8 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, rm_spectrum, rm_oscillator, logger,
-  formfilter, rm_dump, rm_filter;
+  Genfft, UComplex, SignalBasic, logger,
+  formfilter, radiomessage;
 
 {$R *.lfm}
 

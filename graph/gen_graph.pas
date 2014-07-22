@@ -5,7 +5,27 @@ unit gen_graph;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, Graphics, ExtCtrls, Utils;
+
+type
+
+  TGenLevelGraph = class;
+
+  TGenEntity = class
+
+  end;
+
+  TGenNode = class
+
+  end;
+
+  TGenConnection = class
+
+  end;
+
+  TGenLevelGraph = class
+
+  end;
 
 implementation
 

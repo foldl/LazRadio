@@ -6,21 +6,9 @@ interface
 
 uses
   Classes, SysUtils, RadioModule, UComplex, SignalBasic, Math, mmsystem,
-  Windows, formauin;
+  Windows, formauin, radiomessage;
 
 const
-
-  RM_AUDIO_IN_START = RM_USER;   // ParamH = dev id; ParamL = samples per sec
-  RM_AUDIO_IN_STOP  = RM_USER + 1;
-
-  RM_AUDIO_OUT_FMT  = RM_USER;  // ParamH as follows:
-                    AUDIO_OUT_FMT_MONO_I = 0;
-                    AUDIO_OUT_FMT_MONO_Q = 1;
-                    AUDIO_OUT_FMT_STEREO_IQ = 2;   // I -> left, Q -> right
-                    AUDIO_OUT_FMT_STEREO_QI = 3;   // Q -> left, I -> right
-  RM_AUDIO_OUT_GAIN      = RM_USER + 1; // ParamH: gain in dB (cast from Integer)
-  RM_AUDIO_OUT_GAIN_AUTO = RM_USER + 2; // auto adjust gain for one-shot
-
 
   // private messages
   PRIV_RM_AUDIO_IN_DATA  = RM_USER + 100;  // ParamH = WAVEHDR index

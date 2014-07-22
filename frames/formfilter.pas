@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, TAGraph, TATransformations, TASeries, Forms,
   Controls, Graphics, Dialogs, ComCtrls, ExtCtrls, Buttons, StdCtrls,
-  UComplex, Math, RadioModule;
+  UComplex, Math, RadioModule, radiomessage;
 
 type
 

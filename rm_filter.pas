@@ -6,22 +6,8 @@ interface
 
 uses
   Classes, SysUtils, RadioSystem, RadioModule, SignalBasic, UComplex, formfilter,
-  rm_spectrum, Math;
+  rm_spectrum, Math, radiomessage;
 
-const
-  RM_FILTER_SET      = RM_USER;             // ParamH: Coeff(PComplex); ParamL: Filter taps
-  RM_FILTER_REDESIGN = RM_USER + 1;         // Apply RM_FILTER_CONFIG settings
-  RM_FILTER_CONFIG   = RM_USER + 2;
-                   FILTER_TYPE       = 0;   // ParamL: TFilterType
-                   FILTER_OMEGA      = 1;   // ParamL: Omega (Hz) (cast from Integer)
-                   FILTER_BANDWIDTH  = 2;   // ParamL: Bandwidth (Hz)
-                   FILTER_TAPS       = 3;   // ParamL: Taps
-                   FILTER_WINDOW     = 4;   // ParamL: TWindowFunction
-                   FILTER_WINDOW_PARAM = 5; // ParamL: param1 of window function (Single)
-                   FILTER_COEFF_DOMAIN = 6;   // ParamL: filter coefficients domain (complex (0 - default) or real (1))
-
-  FILTER_COEFF_DOMAIN_COMPLEX = 0;
-  FILTER_COEFF_DOMAIN_REAL    = 1;
 
 type
 

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  Buttons, mmsystem, RadioModule, RadioSystem;
+  Buttons, mmsystem, RadioModule, RadioSystem, radiomessage;
 
 type
 
@@ -39,7 +39,7 @@ var
 implementation
 
 uses
-  rm_audio, utils;
+  utils;
 
 {$R *.lfm}
 
