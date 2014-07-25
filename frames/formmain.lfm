@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 253
+  Left = 450
   Height = 574
-  Top = 129
+  Top = 310
   Width = 854
   Caption = 'LazRadio'
   ClientHeight = 554
@@ -32,8 +32,8 @@ object MainForm: TMainForm
       Left = 1
       Height = 404
       Top = 27
-      Width = 852
-      Align = alClient
+      Width = 378
+      Align = alLeft
       Font.Height = -13
       Font.Name = 'Courier New'
       Font.Pitch = fpFixed
@@ -559,6 +559,36 @@ object MainForm: TMainForm
       Caption = 'Button2'
       OnClick = Button2Click
       TabOrder = 3
+    end
+    object Splitter2: TSplitter
+      Left = 379
+      Height = 404
+      Top = 27
+      Width = 5
+    end
+    object ScrollBox1: TScrollBox
+      Left = 384
+      Height = 404
+      Top = 27
+      Width = 469
+      HorzScrollBar.Increment = 43
+      HorzScrollBar.Page = 431
+      HorzScrollBar.Smooth = True
+      HorzScrollBar.Tracking = True
+      VertScrollBar.Increment = 36
+      VertScrollBar.Page = 366
+      VertScrollBar.Smooth = True
+      VertScrollBar.Tracking = True
+      Align = alClient
+      ClientHeight = 383
+      ClientWidth = 448
+      TabOrder = 5
+      object PaintBox1: TPaintBox
+        Left = 0
+        Height = 432
+        Top = 0
+        Width = 600
+      end
     end
   end
   object Memo1: TMemo

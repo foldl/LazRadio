@@ -20,8 +20,11 @@ type
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
+    PaintBox1: TPaintBox;
     Panel1: TPanel;
+    ScrollBox1: TScrollBox;
     Splitter1: TSplitter;
+    Splitter2: TSplitter;
     StatusBar1: TStatusBar;
     SynEdit1: TSynEdit;
     ToolBar1: TToolBar;
