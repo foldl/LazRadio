@@ -45,7 +45,7 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, logger,
+  Genfft, UComplex, SignalBasic, logger, gen_graph,
   formfilter, radiomessage;
 
 {$R *.lfm}
@@ -61,6 +61,7 @@ begin
   if not Assigned(FSystem) then
   begin
     FSystem := TRadioSystem.Create;
+    FSystem.Graph.PaintBox := PaintBox1;
     FSystem.AddModule('s', 'Spectrum');
     FSystem.AddModule('s2', 'Spectrum');
     FSystem.AddModule('a', 'AudioIn');
@@ -103,7 +104,8 @@ begin
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\dump', fmOpenRead)), 0, 'src');
-  FSystem.ConfigModule('src');
+  //FSystem.ConfigModule('src');
+  FSystem.ShowSystem;
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);

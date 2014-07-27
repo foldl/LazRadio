@@ -901,9 +901,13 @@ end;
 
 destructor TRadioSpectrum.Destroy;
 begin
+  FinalizePlan(FFFTPlan);
+  FFFTPlan := nil;
+  FRt.Free;
+  FWf.Free;
   FForm.Free;
   FFlow.Free;
-  FinalizePlan(FFFTPlan);
+
   inherited Destroy;
 end;
 

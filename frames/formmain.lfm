@@ -1,14 +1,14 @@
 object MainForm: TMainForm
-  Left = 450
+  Left = 277
   Height = 574
-  Top = 310
+  Top = 107
   Width = 854
   Caption = 'LazRadio'
   ClientHeight = 554
   ClientWidth = 854
   Menu = MainMenu1
   OnClose = FormClose
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.2.2.0'
   object Panel1: TPanel
     Left = 0
     Height = 432
@@ -551,15 +551,6 @@ object MainForm: TMainForm
         Style = tbsCheck
       end
     end
-    object Button2: TButton
-      Left = 440
-      Height = 25
-      Top = 48
-      Width = 75
-      Caption = 'Button2'
-      OnClick = Button2Click
-      TabOrder = 3
-    end
     object Splitter2: TSplitter
       Left = 379
       Height = 404
@@ -571,18 +562,16 @@ object MainForm: TMainForm
       Height = 404
       Top = 27
       Width = 469
-      HorzScrollBar.Increment = 43
-      HorzScrollBar.Page = 431
-      HorzScrollBar.Smooth = True
+      HorzScrollBar.Increment = 80
+      HorzScrollBar.Page = 448
       HorzScrollBar.Tracking = True
-      VertScrollBar.Increment = 36
-      VertScrollBar.Page = 366
-      VertScrollBar.Smooth = True
+      VertScrollBar.Increment = 80
+      VertScrollBar.Page = 383
       VertScrollBar.Tracking = True
       Align = alClient
       ClientHeight = 383
       ClientWidth = 448
-      TabOrder = 5
+      TabOrder = 4
       object PaintBox1: TPaintBox
         Left = 0
         Height = 432
@@ -622,13 +611,22 @@ object MainForm: TMainForm
     Panels = <>
   end
   object Button3: TButton
-    Left = 440
+    Left = 120
     Height = 25
-    Top = 96
+    Top = 120
     Width = 75
     Caption = 'Button3'
     OnClick = Button3Click
     TabOrder = 4
+  end
+  object Button2: TButton
+    Left = 120
+    Height = 25
+    Top = 64
+    Width = 75
+    Caption = 'Button2'
+    OnClick = Button2Click
+    TabOrder = 5
   end
   object MainMenu1: TMainMenu
     left = 256

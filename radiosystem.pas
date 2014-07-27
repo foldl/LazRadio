@@ -5,7 +5,7 @@ unit RadioSystem;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, SuperObject, radiomessage;
+  Classes, SysUtils, RadioModule, SuperObject, radiomessage, gen_graph;
 
 type
 
@@ -19,6 +19,7 @@ type
     FSuspended: Boolean;
     FModuleDict: TSuperTableString;
     FInstance: TRadioSystem; static;
+    FGraph: TGenGraph;
     function GetModule(const Name: string): TRadioModule;
     procedure SetSuspended(AValue: Boolean);
   protected
@@ -30,6 +31,8 @@ type
 
     procedure Reset;
 
+    procedure ShowSystem;
+
     function AddModule(const Name, T: string): Boolean;
     function ConnectBoth(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
     function ConnectData(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
@@ -39,6 +42,8 @@ type
     property Module[const Name: string]: TRadioModule read GetModule;
     property Suspended: Boolean read FSuspended write SetSuspended;
     class property Instance: TRadioSystem read FInstance;
+
+    property Graph: TGenGraph read FGraph write FGraph;
   end;
 
 procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
@@ -136,6 +141,7 @@ begin
   FRunQueue   := TRadioRunQueue.Create;
   FModuleDict := TSuperTableString.Create;
   FInstance := Self;
+  FGraph := TGenGraph.Create;
 end;
 
 destructor TRadioSystem.Destroy;
@@ -144,6 +150,7 @@ begin
   Reset;
   FModuleDict.Free;
   FRunQueue.Free;
+  FGraph.Free;
   inherited;
 end;
 
@@ -160,6 +167,32 @@ begin
   end;                                     ;
   TRadioLogger.Report(llWarn, 'all freed');
   FModuleDict.Clear(True);
+end;
+
+procedure TRadioSystem.ShowSystem;
+var
+  A: TSuperAvlEntry;
+  M: TRadioModule;
+  N: TGenEntityNode;
+begin
+  FGraph.BeginUpdate;
+  FGraph.Clear;
+  for A in FModuleDict do
+  begin
+    M := TRadioModule(Pointer(A.Value.AsInteger));
+    N := TGenEntityNode.Create;
+    N.Drawable := M;
+    M.GraphNode := N;
+    FGraph.AddEntity(N);
+  end;
+
+  // add connections
+  for A in FModuleDict do
+  begin
+    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M.ShowConnections(FGraph);
+  end;
+  FGraph.EndUpdate;
 end;
 
 function TRadioSystem.AddModule(const Name, T: string): Boolean;

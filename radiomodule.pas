@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex, Genfft, radiomessage;
+  Classes, SysUtils, Graphics, UComplex, Genfft, radiomessage, gen_graph;
 
 type
 
@@ -182,11 +182,24 @@ type
 
   { TRadioModule }
 
-  TRadioModule = class(TRadioMessageQueue)
+  TRadioModule = class(TRadioMessageQueue, IGenDrawable)
   private
+    FGraphNode: TGenEntityNode;
+    FRefCount: Integer;
     FDefOutput: TRadioDataStream;
     FRunning: Boolean;
     function FindDataListener(Listener: TRadioModule): Integer;
+  protected
+{$IFDEF FPC}
+    function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid: tguid; out obj): longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+{$ELSE}
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+{$ENDIF}
+    function _AddRef: Integer; virtual; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    function _Release: Integer; virtual; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    procedure Measure(out Extent: TPoint);
+    procedure Draw(ACanvas: TCanvas; ARect: TRect);
+    procedure MouseClick(const Pt: TPoint; Shifts: TShiftState);
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
@@ -212,6 +225,9 @@ type
     function DoStart: Boolean; virtual;
     function DoStop: Boolean; virtual;
   public
+    procedure ShowConnections(Graph: TGenGraph);
+    property GraphNode: TGenEntityNode read FGraphNode write FGraphNode;
+  public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
@@ -220,7 +236,8 @@ type
     procedure Broadcast(const Msg: TRadioMessage); overload;
     procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
 
-    procedure Draw(ACanvas: TCanvas; ARect: TRect); virtual;
+    procedure DoDraw(ACanvas: TCanvas; ARect: TRect); virtual;
+    procedure DoMeasure(out Extent: TPoint); virtual;
 
     procedure AddDataListener(Listener: TRadioModule; const Port: Integer);
     procedure AddFeatureListener(Listener: TRadioModule);
@@ -929,13 +946,13 @@ end;
 function TBackgroundRadioModule.DoStart: Boolean;
 begin
   FThread.Suspended := False;
-  inherited;
+  Result := inherited;
 end;
 
 function TBackgroundRadioModule.DoStop: Boolean;
 begin
   FThread.Suspended := True;
-  inherited;
+  Result := inherited;
 end;
 
 constructor TBackgroundRadioModule.Create(RunQueue: TRadioRunQueue);
@@ -1402,6 +1419,57 @@ begin
   end;
 end;
 
+function TRadioModule.QueryInterface(constref iid: tguid; out obj): longint;
+  stdcall;
+begin
+   if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+function TRadioModule._AddRef: Integer; stdcall;
+begin
+  Result := InterlockedIncrement(FRefCount);
+end;
+
+function TRadioModule._Release: Integer; stdcall;
+begin
+  Result := InterlockedDecrement(FRefCount);
+  //if Result = 0 then
+  //  Destroy;
+end;
+
+procedure TRadioModule.Measure(out Extent: TPoint);
+begin
+  DoMeasure(Extent);
+  Inc(Extent.y, 20);
+  Extent.x := Max(Extent.x, 100);
+end;
+
+procedure TRadioModule.Draw(ACanvas: TCanvas; ARect: TRect);
+begin
+  with ACanvas do
+  begin
+    Pen.Width := 2;
+    Pen.Color := TColor($00AAFF);
+    Font.Name := 'Ariel';
+    Font.Size := 10;
+    RoundRect(ARect, 8, 8);
+    TextRect(ARect, ARect.Left + 2, ARect.Top + 2, Name);
+
+
+    Pen.Width := 1;
+    Line(ARect.Left, ARect.Top + 15, ARect.Right, ARect.Top + 15);
+  end;
+
+end;
+
+procedure TRadioModule.MouseClick(const Pt: TPoint; Shifts: TShiftState);
+begin
+
+end;
+
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
   ): PComplex;
 begin
@@ -1509,6 +1577,27 @@ begin
   Result := True;
 end;
 
+procedure TRadioModule.ShowConnections(Graph: TGenGraph);
+const
+  PORT_FEATURE = 0;
+  PORT_DATA    = 1;
+var
+  I: Integer;
+  P: Pointer;
+begin
+  for P in FDataListeners do
+  begin
+    Graph.AddConnection(GraphNode, PDataListener(P)^.M.GraphNode,
+                        PORT_DATA, PDataListener(P)^.Port + PORT_DATA);
+  end;
+
+  for P in FFeatureListeners do
+  begin
+    Graph.AddConnection(GraphNode, TRadioModule(P).GraphNode,
+                        PORT_FEATURE, PORT_FEATURE);
+  end;
+end;
+
 constructor TRadioModule.Create(RunQueue: TRadioRunQueue);
 begin
   inherited;
@@ -1520,6 +1609,7 @@ end;
 
 destructor TRadioModule.Destroy;
 begin
+  ClearDataListeners;
   FDefOutput.SafeFree;
   FDataListeners.Free;
   FFeatureListeners.Free;
@@ -1542,9 +1632,15 @@ begin
 
 end;
 
-procedure TRadioModule.Draw(ACanvas: TCanvas; ARect: TRect);
+procedure TRadioModule.DoDraw(ACanvas: TCanvas; ARect: TRect);
 begin
 
+end;
+
+procedure TRadioModule.DoMeasure(out Extent: TPoint);
+begin
+  Extent.x := 100;
+  Extent.y := 10;
 end;
 
 procedure TRadioModule.AddDataListener(Listener: TRadioModule;
