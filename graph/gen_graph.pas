@@ -173,6 +173,7 @@ type
   TGenRouteNodeRec = record
     W: Float;
     D: Word;
+    WOffset: Word;
     Status: Byte;
     Pre: PGenRouteNodeRec;             // for backtracing
   end;
@@ -191,6 +192,9 @@ type
     FWorking: array of TGenRouteNodeRec;
     FSize: TPoint;
     FSize1: TPoint;
+    procedure MarkBlockWOffset(const R: TRect);
+    procedure MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
+    procedure MarkPathWOffset(Conn: TGenEntityConnection);
     procedure MarkBlock(const R: TRect);
     procedure InitGrid(Entities: TList; BoundingBox: TRect);
     procedure Restore;
@@ -290,6 +294,69 @@ end;
 
 { TGenRoute }
 
+procedure TGenRoute.MarkBlockWOffset(const R: TRect);
+const
+  RANGE = 10;
+var
+  I, J: Integer;
+
+begin
+  for I := Max(0, R.Top - RANGE) to R.Top - 1 do
+  begin
+    for J := Max(0, R.Left - Range) to Min(FSize.x, R.Right + Range) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE + 1 + I - R.Top);
+  end;
+  for I := R.Bottom + 1 to Min(FSize.y, R.Bottom + RANGE) do
+  begin
+    for J := Max(0, R.Left - Range) to Min(FSize.x, R.Right + Range) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE - 1 + I - R.Bottom);
+  end;
+
+  for I := R.Top to R.Bottom do
+  begin
+    for J := Max(0, R.Left - Range) to R.Left - 1 do
+      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE + 1 + I - R.Left);
+    for J := R.Right + 1 to Min(FSize.x, R.Right + Range) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE - 1 + I - R.Right);
+  end;
+end;
+
+procedure TGenRoute.MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
+const
+  RANGE = 20;
+var
+  O: Integer;
+  I: Integer;
+  J: Integer;
+begin
+  if X0 = X1 then
+  begin
+    for I := Max(0, X0 - RANGE) to Min(FSize.x, X0 + RANGE) do
+    begin
+      for J := Y0 to Y1 do
+        Inc(FGrid[J * FSize1.x + I].WOffset, 50 *  Abs(RANGE + I - X0));
+    end;
+  end
+  else begin
+    for I := Max(0, Y0 - RANGE) to Min(FSize.y, Y0 + RANGE) do
+    begin
+      for J := X0 to X1 do
+        Inc(FGrid[I * FSize1.x + J].WOffset, 50 * Abs(RANGE + I - Y0));
+    end;
+  end;
+end;
+
+procedure TGenRoute.MarkPathWOffset(Conn: TGenEntityConnection);
+var
+  I: Integer;
+begin
+  Conn.FCtrlPts[0] := Conn.FromPt;
+  Conn.FCtrlPts[High(Conn.FCtrlPts)] := Conn.ToPt;
+  for I := 1 to High(Conn.FCtrlPts) do
+    MarkPathWOffset(Conn.FCtrlPts[I - 1].x, Conn.FCtrlPts[I - 1].y,
+                    Conn.FCtrlPts[I - 0].x, Conn.FCtrlPts[I - 0].y);
+end;
+
 procedure TGenRoute.MarkBlock(const R: TRect);
 var
   I, J: Integer;
@@ -317,6 +384,7 @@ begin
     with TGenEntityNode(P) do
     begin
       MarkBlock(Box);
+      MarkBlockWOffset(Box);
     end;
   end;
 end;
@@ -503,6 +571,7 @@ begin
   Conn.SetCtrlPointsNumber(I);
   for D := 0 to I - 1 do
     Conn.CtrlPoints[D] := C[I - 1 - D];
+  // MarkPathWOffset(Conn);
 end;
 
 constructor TGenRoute.Create;
@@ -667,7 +736,7 @@ var
       end;
 
       ANode^.D := D + 1;      //;
-      ANode^.W := ANode^.D + 3 * (Abs(AX - E.x) + Abs(AY - E.y));
+      ANode^.W := ANode^.D + ANode^.WOffset + (Abs(AX - E.x) + Abs(AY - E.y));
       ANode^.Pre := This;
       InsertOpenNode(ANode);
       ANode^.Status := VISITED;
