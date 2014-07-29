@@ -11,6 +11,9 @@ uses
 
 type
 
+  TLayoutAlgorithm = (laLevel, laForceDirected);
+  TRouteAlgorithm = (raMazeRouting);
+
   IGenDrawable = interface
     procedure Measure(out Extent: TPoint);
     procedure Draw(ACanvas: TCanvas; ARect: TRect);
@@ -50,6 +53,8 @@ type
     property Invalidated: Boolean read FInValidated;
   end;
 
+  TGenAlgoFactory = class;
+
   { TGenEntityNode }
 
   TGenEntityNode = class(TGenEntity)
@@ -58,7 +63,7 @@ type
     FDegOut: Integer;
     FDrawable: IGenDrawable;
     //FDrawRect: TRect;
-    FLevel: Integer;
+    FTag: Integer;
     //FNodeRect: TRect;
     FInPorts: array of string;
     FOutPorts: array of string;
@@ -84,7 +89,7 @@ type
     function  GetPortConnectPos(T: TGenEntityPortType; Index: Integer): TPoint;
     property Drawable: IGenDrawable read FDrawable write FDrawable;
 
-    property Level: Integer read FLevel write FLevel;
+    property Tag: Integer read FTag write FTag;
     property DegIn: Integer read FDegIn write FDegIn;
     property DegOut: Integer read FDegOut write FDegOut;
   end;
@@ -128,13 +133,16 @@ type
     FEntities: TList;
     FConns: TList;
     FUpdateCount: Integer;
+    FFactory: TGenAlgoFactory;
+    FLayoutAlgo: TLayoutAlgorithm;
+    FRouteAlgo: TRouteAlgorithm;
     function GetPaintBox: TPaintBox;
     procedure SetPaintBox(AValue: TPaintBox);
     function  FindConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
       AToPort: Integer): TGenEntityConnection;
   protected
     procedure Layout;
-    procedure Route;
+    procedure Route(const BoundingBox: TRect);
   public
     procedure FullRender;
     procedure PartialRender;
@@ -154,11 +162,110 @@ type
     property PaintBox: TPaintBox read GetPaintBox write SetPaintBox;
   end;
 
+  { TGenLayout }
+
+  TGenLayout = class
+  public
+    procedure Layout(Entities, Conns: TList); virtual; abstract;
+  end;
+
+  PGenRouteNodeRec = ^TGenRouteNodeRec;
+  TGenRouteNodeRec = record
+    W: Float;
+    D: Word;
+    Status: Byte;
+    Pre: PGenRouteNodeRec;             // for backtracing
+  end;
+
+  { TGenRoute }
+
+  TGenRoute = class
+  const
+    EMPTY     = 0;
+    VISITED   = 1;
+    WIRE_USED = 2;
+    FORBID_PT = 120;
+  protected
+    FSortedOpenNode: TList;
+    FGrid: array of TGenRouteNodeRec;
+    FWorking: array of TGenRouteNodeRec;
+    FSize: TPoint;
+    FSize1: TPoint;
+    procedure MarkBlock(const R: TRect);
+    procedure InitGrid(Entities: TList; BoundingBox: TRect);
+    procedure Restore;
+    function  At(const X, Y: Integer): PGenRouteNodeRec; overload;
+    function  At(const Pt: TPoint): PGenRouteNodeRec;
+
+    function  GridAt(const X, Y: Integer): PGenRouteNodeRec; overload;
+    function  GridAt(const Pt: TPoint): PGenRouteNodeRec;
+
+    procedure DbgPrint(const R: TRect);
+
+    procedure ClearOpenNode;
+    procedure RemoteOpenNode(N: PGenRouteNodeRec);
+    procedure InsertOpenNode(N: PGenRouteNodeRec);
+    procedure UpdateOpenNode(N: PGenRouteNodeRec);
+    function  PopOpenNode: PGenRouteNodeRec;
+
+    procedure PtoXY(N: PGenRouteNodeRec; out X, Y: Integer);
+    function  GetNeighbors(N: PGenRouteNodeRec; var A: array of PGenRouteNodeRec): Integer; overload;
+    function  GetNeighbors(const X, Y: Integer; var A: array of PGenRouteNodeRec): Integer; overload;
+
+    procedure Backtrace(Conn: TGenEntityConnection);
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Route(Entities, Conntections: TList; BoundingBox: TRect); virtual; abstract;
+  end;
+
+  { TGenAlgoFactory }
+
+  TGenAlgoFactory = class
+  private
+    FLayout: TGenLayout;
+    FRoute: TGenRoute;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function GetLayout(const ALayout: TLayoutAlgorithm): TGenLayout;
+    function GetRoute(const ARoute: TRouteAlgorithm): TGenRoute;
+  end;
+
 implementation
 
 const
   PORT_MARK_SIZE   = 6;
   PORT_MARK_MARGIN = 2 * PORT_MARK_SIZE;
+
+type
+
+  { TGenLevelLayout }
+
+  TGenLevelLayout = class(TGenLayout)
+  public
+    procedure Layout(Entities, Conns: TList); override;
+  end;
+
+  { TGenForceDirectedLayout }
+
+  TGenForceDirectedLayout = class(TGenLayout)
+  public
+    procedure Layout(Entities, Conns: TList); override;
+  end;
+
+  { TGenAStarRoute }
+
+  TGenAStarRoute = class(TGenRoute)
+  private
+    function  CalcWeight(const X, Y: Integer): Integer;
+    function  TryRouteOne(Conn: TGenEntityConnection; const Frame: TRect): Boolean;
+    procedure RouteOne(Conn: TGenEntityConnection);
+  public
+    procedure Route(Entities, Conntections: TList; BoundingBox: TRect); override;
+  end;
 
 function MergeRect(const R1, R2: TRect): TRect;
 begin
@@ -168,6 +275,630 @@ begin
     Right := Max(R1.Right, R2.Right);
     Top   := Min(R1.Top, R2.Top);
     Bottom := Max(R1.Bottom, R2.Bottom);
+  end;
+end;
+
+function IsPtInRect(const X, Y: Integer; const R: TRect): Boolean; overload;
+begin
+  Result := InRange(X, R.Left, R.Right) and InRange(Y, R.Top, R.Bottom);
+end;
+
+function IsPtInRect(const Pt: TPoint; const R: TRect): Boolean;
+begin
+  Result := InRange(Pt.x, R.Left, R.Right) and InRange(Pt.y, R.Top, R.Bottom);
+end;
+
+{ TGenRoute }
+
+procedure TGenRoute.MarkBlock(const R: TRect);
+var
+  I, J: Integer;
+begin
+  for I := R.Top to R.Bottom do
+  begin
+    for J := R.Left to R.Right do
+      FGrid[I * FSize1.x + J].Status := FORBID_PT;
+  end;
+end;
+
+procedure TGenRoute.InitGrid(Entities: TList; BoundingBox: TRect);
+var
+  P: Pointer;
+begin
+  FSize.x := BoundingBox.Right;
+  FSize.y := BoundingBox.Bottom;
+  FSize1.x := FSize.x + 1;
+  FSize1.y := FSize.y + 1;
+  SetLength(FGrid, FSize1.x * FSize1.y);
+  SetLength(FWorking, FSize1.x * FSize1.y);
+  FillByte(FGrid[0], FSize1.x * SizeOf(FGrid[0]), 0);
+  for P in Entities do
+  begin
+    with TGenEntityNode(P) do
+    begin
+      MarkBlock(Box);
+    end;
+  end;
+end;
+
+procedure TGenRoute.Restore;
+begin
+  Move(FGrid[0], FWorking[0], SizeOf(FGrid[0]) * (High(FGrid) + 1));
+end;
+
+function TGenRoute.At(const X, Y: Integer): PGenRouteNodeRec;
+begin
+  if InRange(X, 0, FSize.x) and InRange(Y, 0, FSize.y) then
+    Result := @FWorking[Y * FSize1.x + X]
+  else
+    Result := nil;
+end;
+
+function TGenRoute.At(const Pt: TPoint): PGenRouteNodeRec;
+begin
+  Result := At(Pt.x, Pt.y);
+end;
+
+function TGenRoute.GridAt(const X, Y: Integer): PGenRouteNodeRec;
+begin
+  if InRange(X, 0, FSize.x) and InRange(Y, 0, FSize.y) then
+    Result := @FGrid[Y * FSize1.x + X]
+  else
+    Result := nil;
+end;
+
+function TGenRoute.GridAt(const Pt: TPoint): PGenRouteNodeRec;
+begin
+  Result := GridAt(Pt.x, Pt.y);
+end;
+
+procedure TGenRoute.DbgPrint(const R: TRect);
+var
+  I, J: Integer;
+  F: TFileStream;
+  S: string;
+begin
+  F := TFileStream.Create('route_dbg.txt', fmCreate);
+  try
+    for I := R.Top to R.Bottom do
+    begin
+      for J := R.Left to R.Right do
+      begin
+        S := Format('  %5.8f', [FWorking[I * FSize1.x + J].W]);
+        F.WriteBuffer(S[1], Length(S));
+      end;
+      S := #13#10;
+      F.WriteBuffer(S[1], Length(S));
+    end;
+  finally
+    F.Free;
+  end;
+end;
+
+procedure TGenRoute.ClearOpenNode;
+begin
+  FSortedOpenNode.Clear;
+end;
+
+procedure TGenRoute.RemoteOpenNode(N: PGenRouteNodeRec);
+begin
+  FSortedOpenNode.Remove(N);
+end;
+
+procedure TGenRoute.InsertOpenNode(N: PGenRouteNodeRec);
+var
+  I: Integer;
+begin
+  for I := 0 to FSortedOpenNode.Count - 1 do
+  begin
+    if PGenRouteNodeRec(FSortedOpenNode[I])^.W < N^.W then Break;
+  end;
+  FSortedOpenNode.Insert(I, N);
+end;
+
+procedure TGenRoute.UpdateOpenNode(N: PGenRouteNodeRec);
+begin
+  FSortedOpenNode.Remove(N);
+  InsertOpenNode(N);
+end;
+
+function TGenRoute.PopOpenNode: PGenRouteNodeRec;
+begin
+  Result := nil;
+  if FSortedOpenNode.Count > 0 then
+  begin
+    Result := FSortedOpenNode.Last;
+    FSortedOpenNode.Delete(FSortedOpenNode.Count - 1);
+  end;
+end;
+
+procedure TGenRoute.PtoXY(N: PGenRouteNodeRec; out X, Y: Integer);
+var
+  T: Integer;
+begin
+  T := (Cardinal(N) - Cardinal(@FWorking[0])) div SizeOf(FWorking[0]);
+  Y := T div FSize1.x;
+  X := T mod FSize1.x;
+end;
+
+function TGenRoute.GetNeighbors(N: PGenRouteNodeRec;
+  var A: array of PGenRouteNodeRec): Integer;
+var
+  X, Y: Integer;
+begin
+  PtoXY(N, X, Y);
+  GetNeighbors(X, Y, A);
+end;
+
+function TGenRoute.GetNeighbors(const X, Y: Integer;
+  var A: array of PGenRouteNodeRec): Integer;
+
+  procedure Check(X0, Y0: Integer);
+  var
+    P: PGenRouteNodeRec;
+  begin
+    P := At(X0, Y0);
+    if Assigned(P) and (P^.Status <> FORBID_PT) then
+    begin
+      A[GetNeighbors] := P;
+      Inc(GetNeighbors);
+    end;
+  end;
+
+begin
+  GetNeighbors := 0;
+  Check(X + 1, Y);
+  Check(X, Y + 1);
+  Check(X - 1, Y);
+  Check(X, Y - 1);
+end;
+
+procedure TGenRoute.Backtrace(Conn: TGenEntityConnection);
+var
+  P1, P2: PGenRouteNodeRec;
+  S: TPoint;
+  E: TPoint;
+  C: array [0..100] of TPoint;
+  I: Integer = 0;
+  D: Integer;
+  D2: Integer;
+  LP: TPoint;
+  Adj: array [0..3] of Integer;
+  Pts: array [0..3] of TPoint;
+  X0, Y0, X1, Y1: Integer;
+
+  function GetDir: Integer;
+  begin
+    PtoXY(P2, X1, Y1);
+    if X0 = X1 then
+      Result := IfThen(Y0 < Y1, 1, 3)
+    else if Y0 = Y1 then
+      Result := IfThen(X0 < X1, 0, 2);
+  end;
+
+begin
+  P1 := At(Conn.ToPt);
+  P2 := P1^.Pre;
+  PtoXY(P1, X0, Y0);
+  D := GetDir;
+  while Assigned(P1^.Pre) do
+  begin
+    P2 := P1^.Pre;
+    D2 := GetDir;
+    if D <> D2 then
+    begin
+      C[I].x := X0;
+      C[I].y := Y0;
+      Inc(I);
+      if I > High(C) then
+      begin
+        Break;
+      end;
+    end;
+    D := D2;
+    P1 := P2;
+    X0 := X1;
+    Y0 := Y1;
+  end;
+  Conn.SetCtrlPointsNumber(I);
+  for D := 0 to I - 1 do
+    Conn.CtrlPoints[D] := C[I - 1 - D];
+end;
+
+constructor TGenRoute.Create;
+begin
+  inherited;
+  FSortedOpenNode := TList.Create;
+end;
+
+destructor TGenRoute.Destroy;
+begin
+  FSortedOpenNode.Free;
+  inherited Destroy;
+end;
+
+{ TGenForceDirectedLayout }
+
+procedure TGenForceDirectedLayout.Layout(Entities, Conns: TList);
+begin
+end;
+
+{ TGenAlgoFactory }
+
+constructor TGenAlgoFactory.Create;
+begin
+
+end;
+
+destructor TGenAlgoFactory.Destroy;
+begin
+  if Assigned(FLayout) then FLayout.Free;
+  if Assigned(FRoute) then FRoute.Free;
+  inherited Destroy;
+end;
+
+function TGenAlgoFactory.GetLayout(const ALayout: TLayoutAlgorithm): TGenLayout;
+begin
+  case ALayout of
+    laLevel:
+      begin
+        if Assigned(FLayout) and (FLayout is TGenLevelLayout) then Exit(FLayout);
+        FLayout.Free;
+        FLayout := TGenLevelLayout.Create;
+      end;
+    laForceDirected:
+      begin
+        if Assigned(FLayout) and (FLayout is TGenForceDirectedLayout) then Exit(FLayout);
+        FLayout.Free;
+        FLayout := TGenForceDirectedLayout.Create;
+      end;
+  end;
+  Result := FLayout;
+end;
+
+function TGenAlgoFactory.GetRoute(const ARoute: TRouteAlgorithm): TGenRoute;
+begin
+  case ARoute of
+    raMazeRouting:
+      begin
+        if Assigned(FRoute) and (FRoute is TGenAStarRoute) then Exit(FRoute);
+        FRoute.Free;
+        FRoute := TGenAStarRoute.Create;
+      end;
+  end;
+  Result := FRoute;
+end;
+
+{ TGenMazeRoute }
+
+function TGenAStarRoute.CalcWeight(const X, Y: Integer): Integer;
+const
+  PANISH_RANGE = 20;
+var
+  I: Integer;
+  T: Integer;
+  function CheckPt(const Index: Integer): Boolean; inline;
+  var
+    V: Integer;
+  begin
+    V := FGrid[Index].Status;
+    Result := (V = FORBID_PT) or (V = WIRE_USED);
+  end;
+
+begin
+  T := FSize.x + 1 - X;
+  for I := X + 1 to FSize.x do
+  begin
+    if CheckPt(Y * FSize1.x + I) then
+    begin
+      T := Min(I - X, T);
+      Break;
+    end;
+  end;
+
+  for I := X - 1 downto 0 do
+  begin
+    if CheckPt(Y * FSize1.x + I) then
+    begin
+      T := Min(X - I, T);
+      Break;
+    end;
+  end;
+
+  for I := Y + 1 to FSize.y do
+  begin
+    if CheckPt(I * FSize1.x + X) then
+    begin
+      T := Min(I - Y, T);
+      Break;
+    end;
+  end;
+
+  for I := Y - 1 downto 0 do
+  begin
+    if CheckPt(I * FSize1.x + X) then
+    begin
+      T := Min(Y - I, T);
+      Break;
+    end;
+  end;
+
+  if T < PANISH_RANGE then
+    Result := PANISH_RANGE - T
+  else
+    Result := 1;
+end;
+
+function TGenAStarRoute.TryRouteOne(Conn: TGenEntityConnection;
+  const Frame: TRect): Boolean;
+var
+  S: TPoint;
+  E: TPoint;
+  T: Integer;
+
+  function Propagate: Integer;
+  var
+    I: Integer;
+    D: Integer;
+    Neighbors: array [0..3] of PGenRouteNodeRec;
+    NN: Integer;
+    This: PGenRouteNodeRec;
+    function Check(ANode: PGenRouteNodeRec): Boolean;
+    var
+      P: PInteger;
+      W: Integer;
+      AX, AY: Integer;
+    begin
+      Result := False;
+      if ANode^.Status = VISITED then
+      begin
+        if ANode^.D > D + 1 then
+          RemoteOpenNode(ANode)
+        else
+          Exit;
+      end;
+
+      PtoXY(ANode, AX, AY);
+      if not IsPtInRect(AX, AY, Frame) then Exit;
+      if (AX = E.x) and (AY = E.y) then
+      begin
+        At(E)^.Pre := This;
+        Exit(True);
+      end;
+
+      ANode^.D := D + 1;      //;
+      ANode^.W := ANode^.D + 3 * (Abs(AX - E.x) + Abs(AY - E.y));
+      ANode^.Pre := This;
+      InsertOpenNode(ANode);
+      ANode^.Status := VISITED;
+    end;
+  begin
+    Result := -1;
+    This := PopOpenNode;
+    D := This^.D;
+    NN := GetNeighbors(This, Neighbors);
+    for I := 0 to NN - 1 do
+    begin
+      if Check(Neighbors[I]) then Exit;
+    end;
+    Result := 1;
+  end;
+
+begin
+  S := Conn.FromPt;
+  E := Conn.ToPt;
+  with At(S)^ do
+  begin
+    Status := VISITED;
+  end;
+  with At(E)^ do
+  begin
+    Status := EMPTY;
+  end;
+  ClearOpenNode;
+
+  InsertOpenNode(At(S));
+  while FSortedOpenNode.Count > 0 do
+  begin
+    T := Propagate;
+    if T < 0 then Break;
+  end;
+
+  Result := T < 0;
+  if Result then
+    Backtrace(Conn)
+  else;
+
+  with At(S)^ do
+  begin
+    Status := FORBID_PT;
+  end;
+  with At(E)^ do
+  begin
+    Status := FORBID_PT;
+  end;
+end;
+
+procedure TGenAStarRoute.RouteOne(Conn: TGenEntityConnection);
+var
+  Frame: TRect;
+  I: Integer;
+  J: Integer = 0;
+begin
+  Frame := Conn.Box;
+  for J := 0 to 2 do
+  begin
+    Restore;
+    I := Round((Frame.Right - Frame.Left) * 0.1);
+    Frame.Left := Max(0, Frame.Left - I);
+    Frame.Right := Min(FSize.x, Frame.Right + I);
+    I := Round((Frame.Bottom - Frame.Top) * 0.1);
+    Frame.Top := Max(0, Frame.Top - I);
+    Frame.Bottom := Min(FSize.y, Frame.Bottom + I);
+    if TryRouteOne(Conn, Frame) then
+      Break;
+  end;
+end;
+
+
+procedure TGenAStarRoute.Route(Entities, Conntections: TList; BoundingBox: TRect
+  );
+var
+  P: Pointer;
+begin
+  InitGrid(Entities, BoundingBox);
+  for P in Conntections do
+    RouteOne(TGenEntityConnection(P));
+end;
+
+function GenEntityCompare(Item1, Item2: TGenEntityNode): Integer;
+begin
+  Result := Item1.Tag - Item2.Tag;
+  if Result = 0 then
+    Result := (Item1.DegIn + Item1.DegOut) - (Item2.DegIn + Item2.DegOut);
+end;
+
+{ TGenLevelLayout }
+
+procedure TGenLevelLayout.Layout(Entities, Conns: TList);
+const
+  V_MARGIN = 50;
+  H_MARGIN = 100;
+var
+  P: Pointer;
+  C: Pointer;
+  Dirty: Boolean;
+  L: TList;
+  I: Integer;
+  J: Integer;
+  K: Integer;
+  V: Integer;
+  S: array of TRect;
+  M: Integer;
+  A: array of Pointer;
+begin
+  if Entities.Count < 1 then Exit;
+
+  // here we use TGenEntityNode.Tag as Level
+
+  for P in Entities do
+  begin
+    TGenEntityNode(P).Pos.x := -1;
+    TGenEntityNode(P).DegIn := 0;
+    TGenEntityNode(P).DegOut := 0;
+  end;
+
+  for C in Conns do
+    with TGenEntityConnection(C) do
+    begin
+      ToPort.Entity.DegIn := ToPort.Entity.DegIn + 1;
+      FromPort.Entity.DegOut := FromPort.Entity.DegOut + 1;
+    end;
+
+  for P in Entities do
+  begin
+    with TGenEntityNode(P) do
+    begin
+      Tag := IfThen(DegIn = 0, 0, MaxInt);
+    end;
+  end;
+
+  repeat
+    Dirty := False;
+    for C in Conns do
+    begin
+      with TGenEntityConnection(C) do
+      begin
+        if FromPort.Entity.Tag = MaxInt then Continue;
+        if ToPort.Entity.Tag > FromPort.Entity.Tag + 1 then
+        begin
+          ToPort.Entity.Tag := FromPort.Entity.Tag + 1;
+          Dirty := True;
+          Break;
+        end;
+      end;
+    end;
+  until not Dirty;
+
+  Entities.Sort(TListSortCompare(@GenEntityCompare));
+
+  // level should be continous
+  I := 0;
+  for I := 0 to Entities.Count - 1 do
+  begin
+    if TGenEntityNode(Entities[I]).Tag - V > 1 then
+    begin
+      K := TGenEntityNode(Entities[I]).Tag - V - 1;
+      for J := I to Entities.Count - 1 do
+        TGenEntityNode(Entities[J]).Tag := TGenEntityNode(Entities[J]).Tag - K;
+    end;
+    V := TGenEntityNode(Entities[I]).Tag;
+  end;
+
+  // sort Entities that have the same Level: maximum is at center, sides follows
+  I := 0;
+  while I < Entities.Count do
+  begin
+    J := I + 1;
+    while J < Entities.Count do
+    begin
+      if TGenEntityNode(Entities[J]).Tag = TGenEntityNode(Entities[I]).Tag then
+        Inc(J)
+      else
+        Break;
+    end;
+    SetLength(A, J - I);
+    for K := 0 to J - I - 1 do
+    begin
+      if Odd(K) then
+        A[J - I - 1 - (K - 1) div 2] := Entities[K + I]
+      else
+        A[K div 2] := Entities[K + I]
+    end;
+
+    for K := 0 to J - I - 1 do
+      Entities[K + I] := A[K];
+
+    I := J;
+  end;
+
+  // size of each level
+  SetLength(S, TGenEntityNode(Entities[Entities.Count - 1]).Tag + 1);
+  for P in Entities do
+  begin
+    with TGenEntityNode(P) do
+    begin
+      S[Tag].Right  := Max(S[Tag].Right, Extent.x);
+      S[Tag].Bottom := S[Tag].Bottom + V_MARGIN + Extent.y;
+    end;
+  end;
+
+  // get max v-size
+  K := 0;
+  for I := 0 to High(S) do
+    K := Max(K, S[I].Bottom);
+
+  // Left
+  J := H_MARGIN div 2;
+  for I := 0 to High(S) do
+  begin
+    with S[I] do
+    begin
+      Left := J;
+      Top := (K - Bottom) div 2;
+      Inc(J, Right + H_MARGIN);
+    end;
+  end;
+
+  // layout
+  for P in Entities do
+  begin
+    with TGenEntityNode(P) do
+    begin
+      Pos.x := S[Tag].Left + (S[Tag].Right - Extent.x) div 2;
+      Pos.y := S[Tag].Top;
+      S[Tag].Top := S[Tag].Top + Extent.y + V_MARGIN;
+    end;
   end;
 end;
 
@@ -371,7 +1102,7 @@ end;
 constructor TGenEntityConnection.Create;
 begin
   inherited;
-  SetLength(FCtrlPts, 4);
+  SetLength(FCtrlPts, 2);
 end;
 
 procedure TGenEntityConnection.SetCtrlPointsNumber(const N: Integer);
@@ -403,7 +1134,8 @@ begin
     Pen.Style := psSolid;
     Pen.Width := 1;
     //PolyBezier(FCtrlPts);
-    Line(FCtrlPts[0], FCtrlPts[High(FCtrlPts)]);
+    //Line(FCtrlPts[0], FCtrlPts[High(FCtrlPts)]);
+    Polyline(FCtrlPts);
   end;
 end;
 
@@ -492,128 +1224,14 @@ begin
   end;
 end;
 
-function GenEntityCompare(Item1, Item2: TGenEntityNode): Integer;
-begin
-  Result := Item1.Level - Item2.Level;
-  if Result = 0 then
-    Result := (Item1.DegIn + Item1.DegOut) - (Item2.DegIn + Item2.DegOut);
-end;
-
 procedure TGenGraph.Layout;
-const
-  V_MARGIN = 50;
-  H_MARGIN = 100;
-var
-  P: Pointer;
-  C: Pointer;
-  Dirty: Boolean;
-  L: TList;
-  I: Integer;
-  J: Integer;
-  K: Integer;
-  V: Integer;
-  S: array of TRect;
-  M: Integer;
 begin
-  if FEntities.Count < 1 then Exit;
-
-  for P in FEntities do
-  begin
-    TGenEntityNode(P).Pos.x := -1;
-    TGenEntityNode(P).DegIn := 0;
-    TGenEntityNode(P).DegOut := 0;
-  end;
-
-  for C in FConns do
-    with TGenEntityConnection(C) do
-    begin
-      ToPort.Entity.DegIn := ToPort.Entity.DegIn + 1;
-      FromPort.Entity.DegOut := FromPort.Entity.DegOut + 1;
-    end;
-
-  for P in FEntities do
-  begin
-    with TGenEntityNode(P) do
-    begin
-      Level := IfThen(DegIn = 0, 0, MaxInt);
-    end;
-  end;
-
-  repeat
-    Dirty := False;
-    for C in FConns do
-    begin
-      with TGenEntityConnection(C) do
-      begin
-        if FromPort.Entity.Level = MaxInt then Continue;
-        if ToPort.Entity.Level > FromPort.Entity.Level + 1 then
-        begin
-          ToPort.Entity.Level := FromPort.Entity.Level + 1;
-          Dirty := True;
-          Break;
-        end;
-      end;
-    end;
-  until not Dirty;
-
-  FEntities.Sort(TListSortCompare(@GenEntityCompare));
-
-  // level should be continous
-  I := 0;
-  for I := 0 to FEntities.Count - 1 do
-  begin
-    if TGenEntityNode(FEntities[I]).Level - V > 1 then
-    begin
-      K := TGenEntityNode(FEntities[I]).Level - V - 1;
-      for J := I to FEntities.Count - 1 do
-        TGenEntityNode(FEntities[J]).Level := TGenEntityNode(FEntities[J]).Level - K;
-    end;
-    V := TGenEntityNode(FEntities[I]).Level;
-  end;
-
-  // size of each level
-  SetLength(S, TGenEntityNode(FEntities[FEntities.Count - 1]).Level + 1);
-  for P in FEntities do
-  begin
-    with TGenEntityNode(P) do
-    begin
-      S[Level].Right  := Max(S[Level].Right, Extent.x);
-      S[Level].Bottom := S[Level].Bottom + V_MARGIN + Extent.y;
-    end;
-  end;
-
-  // get max v-size
-  K := 0;
-  for I := 0 to High(S) do
-    K := Max(K, S[I].Bottom);
-
-  // Left
-  J := H_MARGIN div 2;
-  for I := 0 to High(S) do
-  begin
-    with S[I] do
-    begin
-      Left := J;
-      Top := (K - Bottom) div 2;
-      Inc(J, Right + H_MARGIN);
-    end;
-  end;
-
-  // layout
-  for P in FEntities do
-  begin
-    with TGenEntityNode(P) do
-    begin
-      Pos.x := S[Level].Left + (S[Level].Right - Extent.x) div 2;
-      Pos.y := S[Level].Top;
-      S[Level].Top := S[Level].Top + Extent.y + V_MARGIN;
-    end;
-  end;
+  FFactory.GetLayout(FLayoutAlgo).Layout(FEntities, FConns);
 end;
 
-procedure TGenGraph.Route;
+procedure TGenGraph.Route(const BoundingBox: TRect);
 begin
-
+  FFactory.GetRoute(FRouteAlgo).Route(FEntities, FConns, BoundingBox);
 end;
 
 procedure TGenGraph.FullRender;
@@ -627,24 +1245,25 @@ begin
   if FUpdateCount > 0 then Exit;
 
   for P in FEntities do TGenEntityNode(P).Measure;
-  Layout;
-  Route;
-  for P in FConns do TGenEntityConnection(P).Measure;
 
+  Layout;
   for P in FEntities do
-    R := MergeRect(R, TGenEntity(P).Box);
-  for P in FConns do
     R := MergeRect(R, TGenEntity(P).Box);
   Inc(R.Right, Margin_H * 2);
   Inc(R.Bottom, Margin_V * 2);
+  for P in FEntities do
+    TGenEntity(P).Move(Margin_H, Margin_V);
+
+  Route(R);
+  for P in FConns do
+  begin
+    TGenEntityConnection(P).Measure;
+    R := MergeRect(R, TGenEntity(P).Box);
+  end;
+
   FDBuffer.PaintBox.Width := R.Right;
   FDBuffer.PaintBox.Height := R.Bottom;
   FDBuffer.SetSize(R.Right, R.Bottom);
-
-  for P in FEntities do
-    TGenEntity(P).Move(Margin_H, Margin_V);
-  for P in FConns do
-    TGenEntity(P).Move(Margin_H, Margin_V);
 
   // draw background
   with FDBuffer.PaintBuffer.Canvas do
@@ -695,6 +1314,7 @@ procedure TGenGraph.AddConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
 var
   C: TGenEntityConnection;
 begin
+  //if FConns.Count > 0 then exit;
   if not Assigned(AFrom) then raise Exception.Create('not Assigned(AFrom)');
   if not Assigned(ATo) then raise Exception.Create('not Assigned(ATo)');
   if AFrom = ATo then raise Exception.Create('AFrom = ATo');
@@ -743,6 +1363,7 @@ begin
   FDBuffer.DrawBuffer.Canvas.AntialiasingMode := amOn;
   FEntities := TList.Create;
   FConns    := TList.Create;
+  FFactory  := TGenAlgoFactory.Create;
 end;
 
 destructor TGenGraph.Destroy;

@@ -1458,7 +1458,6 @@ begin
     RoundRect(ARect, 8, 8);
     TextRect(ARect, ARect.Left + 2, ARect.Top + 2, Name);
 
-
     Pen.Width := 1;
     Line(ARect.Left, ARect.Top + 15, ARect.Right, ARect.Top + 15);
   end;
@@ -1640,7 +1639,7 @@ end;
 procedure TRadioModule.DoMeasure(out Extent: TPoint);
 begin
   Extent.x := 100;
-  Extent.y := 10;
+  Extent.y := 80;
 end;
 
 procedure TRadioModule.AddDataListener(Listener: TRadioModule;

@@ -146,11 +146,11 @@ end;
 
 destructor TRadioSystem.Destroy;
 begin
+  FGraph.Free;
   FInstance := nil;
   Reset;
   FModuleDict.Free;
   FRunQueue.Free;
-  FGraph.Free;
   inherited;
 end;
 
