@@ -12,7 +12,7 @@ uses
 type
 
   TLayoutAlgorithm = (laLevel, laForceDirected);
-  TRouteAlgorithm = (raMazeRouting);
+  TRouteAlgorithm = (raDirect, raAStar);
 
   IGenDrawable = interface
     procedure Measure(out Extent: TPoint);
@@ -68,6 +68,7 @@ type
     FInPorts: array of string;
     FOutPorts: array of string;
 
+    function  CalcFirstPortY(const N: Integer): Integer;
     procedure DrawPorts(ACanvas: TCanvas);
   protected
     function GetBox: TRect; override;
@@ -100,6 +101,7 @@ type
   private
     FCtrlPts: array of TPoint;
     FFromPort: TGenEntityPortRef;
+    FPenStyle: TPenStyle;
     FToPort: TGenEntityPortRef;
     function GetCtrlPoints(const Index: Integer): TPoint;
     function GetEndPt: TPoint;
@@ -123,6 +125,7 @@ type
 
     property FromPort: TGenEntityPortRef read FFromPort write FFromPort;
     property ToPort: TGenEntityPortRef read FToPort write FToPort;
+    property PenStyle: TPenStyle read FPenStyle write FPenStyle;
   end;
 
   { TGenGraph }
@@ -149,7 +152,7 @@ type
 
     procedure RemoveEntity(AEntity: TGenEntityNode);
     procedure AddEntity(AEntity: TGenEntityNode);
-    procedure AddConnection(AFrom, ATo: TGenEntityNode; const AFromPort, AToPort: Integer);
+    function  AddConnection(AFrom, ATo: TGenEntityNode; const AFromPort, AToPort: Integer): TGenEntityConnection;
     procedure RemoveConnecttion(AFrom, ATo: TGenEntityNode; const AFromPort, AToPort: Integer);
     procedure Clear;
 
@@ -182,6 +185,7 @@ type
 
   TGenRoute = class
   const
+    NOT_GOOD  = 15;
     EMPTY     = 0;
     VISITED   = 1;
     WIRE_USED = 2;
@@ -192,6 +196,7 @@ type
     FWorking: array of TGenRouteNodeRec;
     FSize: TPoint;
     FSize1: TPoint;
+    procedure MarkPortPath(ANode: TGenEntityNode);
     procedure MarkBlockWOffset(const R: TRect);
     procedure MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
     procedure MarkPathWOffset(Conn: TGenEntityConnection);
@@ -216,6 +221,7 @@ type
     function  GetNeighbors(N: PGenRouteNodeRec; var A: array of PGenRouteNodeRec): Integer; overload;
     function  GetNeighbors(const X, Y: Integer; var A: array of PGenRouteNodeRec): Integer; overload;
 
+    function  IsSegmentClear(const Pt1, Pt2: TPoint): Boolean;
     procedure Backtrace(Conn: TGenEntityConnection);
   public
     constructor Create;
@@ -241,7 +247,7 @@ type
 implementation
 
 const
-  PORT_MARK_SIZE   = 6;
+  PORT_MARK_SIZE   = 10;
   PORT_MARK_MARGIN = 2 * PORT_MARK_SIZE;
 
 type
@@ -266,6 +272,16 @@ type
   private
     function  CalcWeight(const X, Y: Integer): Integer;
     function  TryRouteOne(Conn: TGenEntityConnection; const Frame: TRect): Boolean;
+    procedure AStarRouteOne(Conn: TGenEntityConnection);
+    procedure RouteOne(Conn: TGenEntityConnection);
+  public
+    procedure Route(Entities, Conntections: TList; BoundingBox: TRect); override;
+  end;
+
+  { TGenDirectRoute }
+
+  TGenDirectRoute = class(TGenAStarRoute)
+  private
     procedure RouteOne(Conn: TGenEntityConnection);
   public
     procedure Route(Entities, Conntections: TList; BoundingBox: TRect); override;
@@ -292,38 +308,164 @@ begin
   Result := InRange(Pt.x, R.Left, R.Right) and InRange(Pt.y, R.Top, R.Bottom);
 end;
 
+{ TGenDirectRoute }
+
+procedure TGenDirectRoute.RouteOne(Conn: TGenEntityConnection);
+const
+  HEADER = 15;
+var
+  I: Integer;
+  Pt1, Pt2: TPoint;
+  Y1, Y2: Integer;
+begin;
+  Pt1 := Conn.FromPt;
+  Inc(Pt1.x, HEADER * (Conn.FromPort.Index + 1));
+  Pt2 := Conn.ToPt;
+  Dec(Pt2.x, HEADER * (Conn.ToPort.Index + 1));
+
+  if Pt1.y = Pt2.y then Exit;
+  if Pt1.x = Pt2.x then
+  begin
+    Conn.SetCtrlPointsNumber(2);
+    Conn.CtrlPoints[0] := Pt1;
+    Conn.CtrlPoints[1] := Pt2;
+    Exit;
+  end;
+
+  if Pt1.x < Pt2.x then
+  begin
+    Conn.SetCtrlPointsNumber(2);
+    //Pt1.x := (Pt1.x + Pt2.x) div 2;
+    Pt2.x := Pt1.x;
+    Conn.CtrlPoints[0] := Pt1;
+    Conn.CtrlPoints[1] := Pt2;
+  end;
+
+  Conn.SetCtrlPointsNumber(4);
+  Conn.CtrlPoints[0] := Pt1;
+  Conn.CtrlPoints[3] := Pt2;
+  Y1 := Min(Pt1.y, Pt2.y);
+  Y2 := Max(Pt1.y, Pt2.y);
+  for I := (Y1 + Y2) div 2 to Y2 do
+  begin
+    Pt1.y := I;
+    Pt2.y := I;
+    if IsSegmentClear(Pt1, Pt2) then
+    begin
+      Conn.CtrlPoints[1] := Pt1;
+      Conn.CtrlPoints[2] := Pt2;
+      Exit;
+    end;
+  end;
+  for I := Y1 to (Y1 + Y2) div 2 do
+  begin
+    Pt1.y := I;
+    Pt2.y := I;
+    if IsSegmentClear(Pt1, Pt2) then
+    begin
+      Conn.CtrlPoints[1] := Pt1;
+      Conn.CtrlPoints[2] := Pt2;
+      Exit;
+    end;
+  end;
+  Pt1.y := (Y1 + Y2) div 2;
+  Pt2.y := Pt1.y;
+  Conn.CtrlPoints[1] := Pt1;
+  Conn.CtrlPoints[2] := Pt2;
+end;
+
+procedure TGenDirectRoute.Route(Entities, Conntections: TList;
+  BoundingBox: TRect);
+var
+  P: Pointer;
+begin
+  InitGrid(Entities, BoundingBox);
+  for P in Conntections do
+    RouteOne(TGenEntityConnection(P));
+end;
+
 { TGenRoute }
+
+procedure TGenRoute.MarkPortPath(ANode: TGenEntityNode);
+  procedure MarkIn(const N: Integer);
+  var
+    I, K: Integer;
+    Pt: TPoint;
+  begin
+    for K := 0 to N do
+    begin
+      Pt := ANode.GetPortConnectPos(epIn, K);
+      for I := Max(0, Pt.x - NOT_GOOD) to Pt.x do
+        FGrid[Pt.y * FSize1.x + I].WOffset := 0;
+    end;
+  end;
+  procedure MarkOut(const N: Integer);
+  var
+    I, K: Integer;
+    Pt: TPoint;
+  begin
+    for K := 0 to N do
+    begin
+      Pt := ANode.GetPortConnectPos(epOut, K);
+      for I := Pt.x + 1 to Min(FSize.x, Pt.x + NOT_GOOD) do
+        FGrid[Pt.y * FSize1.x + I].WOffset := 0;
+    end;
+  end;
+begin
+  MarkIn(High(ANode.FInPorts));
+  MarkOut(High(ANode.FOutPorts));
+end;
 
 procedure TGenRoute.MarkBlockWOffset(const R: TRect);
 const
-  RANGE = 10;
+  MULTI = 10;
 var
   I, J: Integer;
-
 begin
-  for I := Max(0, R.Top - RANGE) to R.Top - 1 do
+  for I := Max(0, R.Top - NOT_GOOD) to R.Top - 1 do
   begin
-    for J := Max(0, R.Left - Range) to Min(FSize.x, R.Right + Range) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE + 1 + I - R.Top);
+    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+      FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
-  for I := R.Bottom + 1 to Min(FSize.y, R.Bottom + RANGE) do
+  for I := R.Bottom to Min(FSize.y, R.Bottom + NOT_GOOD) do
   begin
-    for J := Max(0, R.Left - Range) to Min(FSize.x, R.Right + Range) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE - 1 + I - R.Bottom);
+    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+      FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
 
   for I := R.Top to R.Bottom do
   begin
-    for J := Max(0, R.Left - Range) to R.Left - 1 do
-      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE + 1 + I - R.Left);
-    for J := R.Right + 1 to Min(FSize.x, R.Right + Range) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, RANGE - 1 + I - R.Right);
+    for J := Max(0, R.Left - NOT_GOOD) to R.Left - 1 do
+      FGrid[I * FSize1.x + J].Status := FORBID_PT;
+    for J := R.Right + 1 to Min(FSize.x, R.Right + NOT_GOOD) do
+      FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
+{
+  for I := Max(0, R.Top - NOT_GOOD) to R.Top - 1 do
+  begin
+    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD + 1 + I - R.Top));
+  end;
+  for I := R.Bottom + 1 to Min(FSize.y, R.Bottom + NOT_GOOD) do
+  begin
+    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD - 1 + I - R.Bottom));
+  end;
+
+  for I := R.Top to R.Bottom do
+  begin
+    for J := Max(0, R.Left - NOT_GOOD) to R.Left - 1 do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD + 1 + I - R.Left));
+    for J := R.Right + 1 to Min(FSize.x, R.Right + NOT_GOOD) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD - 1 + I - R.Right));
+  end;
+}
 end;
 
 procedure TGenRoute.MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
 const
-  RANGE = 20;
+  RANGE = 10;
+  MULTI = 3;
 var
   O: Integer;
   I: Integer;
@@ -333,15 +475,62 @@ begin
   begin
     for I := Max(0, X0 - RANGE) to Min(FSize.x, X0 + RANGE) do
     begin
-      for J := Y0 to Y1 do
-        Inc(FGrid[J * FSize1.x + I].WOffset, 50 *  Abs(RANGE + I - X0));
+      if Y0 < Y1 then
+        for J := Y0 to Y1 do
+          FGrid[J * FSize1.x + I].Status := FORBID_PT
+      else
+        for J := Y1 to Y0 do
+          FGrid[J * FSize1.x + I].Status := FORBID_PT;
+    end;
+  end
+  else if Y0 = Y1 then
+  begin
+    for I := Max(0, Y0 - RANGE) to Min(FSize.y, Y0 + RANGE) do
+    begin
+      if X0 < X1 then
+        for J := X0 to X1 do
+          FGrid[I * FSize1.x + J].Status := FORBID_PT
+      else
+        for J := X1 to X0 do
+          FGrid[I * FSize1.x + J].Status := FORBID_PT;
+    end;
+  end;
+  exit;
+
+  if X0 = X1 then
+  begin
+    for J := Y0 to Y1 do
+      FGrid[J * FSize1.x + X0].Status := FORBID_PT;
+  end
+  else if Y0 = Y1 then
+  begin
+    for J := X0 to X1 do
+      FGrid[Y0 * FSize1.x + J].Status := FORBID_PT;
+  end;
+
+  exit;
+
+  if X0 = X1 then
+  begin
+    for I := Max(0, X0 - NOT_GOOD) to Min(FSize.x, X0 + RANGE) do
+    begin
+      if Y0 < Y1 then
+        for J := Y0 + 1 to Y1 - 1 do
+          Inc(FGrid[J * FSize1.x + I].WOffset, MULTI *  Abs(RANGE + I - X0))
+      else
+        for J := Y1 + 1 to Y0 - 1 do
+          Inc(FGrid[J * FSize1.x + I].WOffset, MULTI *  Abs(RANGE + I - X0));
     end;
   end
   else begin
-    for I := Max(0, Y0 - RANGE) to Min(FSize.y, Y0 + RANGE) do
+    for I := Max(0, Y0 - NOT_GOOD) to Min(FSize.y, Y0 + RANGE) do
     begin
-      for J := X0 to X1 do
-        Inc(FGrid[I * FSize1.x + J].WOffset, 50 * Abs(RANGE + I - Y0));
+      if X0 < X1 then
+        for J := X0 + 1 to X1 - 1 do
+          Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * Abs(RANGE + I - Y0))
+      else
+        for J := X1 + 1 to X0 - 1 do
+          Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * Abs(RANGE + I - Y0));
     end;
   end;
 end;
@@ -386,6 +575,7 @@ begin
       MarkBlock(Box);
       MarkBlockWOffset(Box);
     end;
+    MarkPortPath(TGenEntityNode(P));
   end;
 end;
 
@@ -521,6 +711,52 @@ begin
   Check(X, Y - 1);
 end;
 
+function TGenRoute.IsSegmentClear(const Pt1, Pt2: TPoint): Boolean;
+var
+  X0, Y0, X1, Y1: Integer;
+  K: Double;
+  X, Y: Integer;
+begin
+  Result := True;
+  X0 := Pt1.x;
+  Y0 := Pt1.y;
+  X1 := Pt2.x;
+  Y1 := Pt2.y;
+  if X0 <> X1 then
+  begin
+    if X0 > X1 then
+    begin
+      Result := IsSegmentClear(Pt2, Pt1);
+      Exit;
+    end;
+    K := (Y1 - Y0) / (X1 - X0);
+    for X := 1 to X1 - X0 - 1 do
+    begin
+      Y := Round(X * K) + Y0;
+      if FWorking[Y * FSize1.x + X + X0].Status = FORBID_PT then
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;
+  end
+  else begin
+    if Y0 > Y1 then
+    begin
+      Result := IsSegmentClear(Pt2, Pt1);
+      Exit;
+    end;
+    for Y := Y0 + 1 to Y1 - 1 do
+    begin
+      if FWorking[Y * FSize1.x + X0].Status = FORBID_PT then
+      begin
+        Result := False;
+        Exit;
+      end;
+    end;
+  end;
+end;
+
 procedure TGenRoute.Backtrace(Conn: TGenEntityConnection);
 var
   P1, P2: PGenRouteNodeRec;
@@ -571,7 +807,7 @@ begin
   Conn.SetCtrlPointsNumber(I);
   for D := 0 to I - 1 do
     Conn.CtrlPoints[D] := C[I - 1 - D];
-  // MarkPathWOffset(Conn);
+  MarkPathWOffset(Conn);
 end;
 
 constructor TGenRoute.Create;
@@ -628,11 +864,17 @@ end;
 function TGenAlgoFactory.GetRoute(const ARoute: TRouteAlgorithm): TGenRoute;
 begin
   case ARoute of
-    raMazeRouting:
+    raAStar:
       begin
         if Assigned(FRoute) and (FRoute is TGenAStarRoute) then Exit(FRoute);
         FRoute.Free;
         FRoute := TGenAStarRoute.Create;
+      end;
+    raDirect:
+      begin
+        if Assigned(FRoute) and (FRoute is TGenDirectRoute) then Exit(FRoute);
+        FRoute.Free;
+        FRoute := TGenDirectRoute.Create;
       end;
   end;
   Result := FRoute;
@@ -788,7 +1030,7 @@ begin
   end;
 end;
 
-procedure TGenAStarRoute.RouteOne(Conn: TGenEntityConnection);
+procedure TGenAStarRoute.AStarRouteOne(Conn: TGenEntityConnection);
 var
   Frame: TRect;
   I: Integer;
@@ -809,6 +1051,19 @@ begin
   end;
 end;
 
+procedure TGenAStarRoute.RouteOne(Conn: TGenEntityConnection);
+  procedure Walk(const I, J: Integer);
+  begin
+    if not IsSegmentClear(Conn.FCtrlPts[I], Conn.FCtrlPts[J]) then
+      AStarRouteOne(Conn);
+  end;
+begin
+  Restore;
+  Conn.SetCtrlPointsNumber(0);
+  Conn.FCtrlPts[0] := Conn.FromPt;
+  Conn.FCtrlPts[1] := Conn.ToPt;
+  Walk(0, 1);
+end;
 
 procedure TGenAStarRoute.Route(Entities, Conntections: TList; BoundingBox: TRect
   );
@@ -831,7 +1086,7 @@ end;
 
 procedure TGenLevelLayout.Layout(Entities, Conns: TList);
 const
-  V_MARGIN = 50;
+  V_MARGIN = 80;
   H_MARGIN = 100;
 var
   P: Pointer;
@@ -973,6 +1228,14 @@ end;
 
 { TGenEntityNode }
 
+function TGenEntityNode.CalcFirstPortY(const N: Integer): Integer;
+begin
+  Result := 0;
+  if N > 0 then
+   Result := Box.Bottom - Box.Top - (N - 1) * (PORT_MARK_MARGIN + PORT_MARK_SIZE) - PORT_MARK_SIZE;
+  Result := Box.Top + Result div 2;
+end;
+
 procedure TGenEntityNode.DrawPorts(ACanvas: TCanvas);
 var
   R: TRect;
@@ -995,7 +1258,7 @@ begin
   begin
     Left := DrawRect.Left;
     Right := Left + PORT_MARK_SIZE;
-    Top  := DrawRect.Top + PORT_MARK_MARGIN div 2;
+    Top  := CalcFirstPortY(High(FInPorts) + 1);
     Bottom := Top + PORT_MARK_SIZE;
   end;
   with ACanvas do
@@ -1003,16 +1266,16 @@ begin
     Pen.Width := 1;
     Pen.Color := clBlack;
     Pen.Style := psSolid;
-    Brush.Color := TColor($ffaaaa);
+    Brush.Color := clFuchsia;
     Brush.Style := bsSolid;
   end;
   DrawIt(High(FInPorts) + 1);
-  ACanvas.Brush.Color := TColor($aaaaff);
+  ACanvas.Brush.Color := clGreen;
   with R do
   begin
     Left := DrawRect.Right - PORT_MARK_SIZE;
     Right := DrawRect.Right;
-    Top  := DrawRect.Top + PORT_MARK_MARGIN div 2;
+    Top  := CalcFirstPortY(High(FOutPorts) + 1);
     Bottom := Top + PORT_MARK_SIZE;
   end;
   DrawIt(High(FOutPorts) + 1);
@@ -1113,21 +1376,22 @@ begin
   case T of
     epIn:
       begin
+        Result.x := Pos.x;
         if InRange(Index, 0, High(FInPorts)) then
-          Result.y := Pos.y + (PORT_MARK_MARGIN div 2) + (PORT_MARK_MARGIN + PORT_MARK_SIZE) * Index
+          Result.y := CalcFirstPortY(High(FInPorts) + 1) + (PORT_MARK_MARGIN + PORT_MARK_SIZE) * Index
                    + PORT_MARK_SIZE div 2
         else
           Result.y := Pos.y;
-        Result.x := Pos.x;
+
       end;
     epOut:
       begin
+        Result.x := Pos.x + FExtent.x;
         if InRange(Index, 0, High(FOutPorts)) then
-          Result.y := Pos.y + (PORT_MARK_MARGIN div 2) + (PORT_MARK_MARGIN + PORT_MARK_SIZE) * Index
+          Result.y := CalcFirstPortY(High(FOutPorts) + 1) + (PORT_MARK_MARGIN + PORT_MARK_SIZE) * Index
                    + PORT_MARK_SIZE div 2
         else
           Result.y := Pos.y;
-        Result.x := Pos.x + FExtent.x
       end;
   end;
 end;
@@ -1172,6 +1436,7 @@ constructor TGenEntityConnection.Create;
 begin
   inherited;
   SetLength(FCtrlPts, 2);
+  FPenStyle := psSolid;
 end;
 
 procedure TGenEntityConnection.SetCtrlPointsNumber(const N: Integer);
@@ -1199,9 +1464,9 @@ begin
   FCtrlPts[High(FCtrlPts)] := ToPt;
   with ACanvas do
   begin
-    Pen.Color := clBlack;
-    Pen.Style := psSolid;
-    Pen.Width := 1;
+    Pen.Color := clGray;
+    Pen.Style := FPenStyle;
+    Pen.Width := 2;
     //PolyBezier(FCtrlPts);
     //Line(FCtrlPts[0], FCtrlPts[High(FCtrlPts)]);
     Polyline(FCtrlPts);
@@ -1378,30 +1643,28 @@ begin
   FEntities.Clear;
 end;
 
-procedure TGenGraph.AddConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
-  AToPort: Integer);
-var
-  C: TGenEntityConnection;
+function TGenGraph.AddConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
+  AToPort: Integer): TGenEntityConnection;
 begin
-  //if FConns.Count > 0 then exit;
+  Result := nil;
   if not Assigned(AFrom) then raise Exception.Create('not Assigned(AFrom)');
   if not Assigned(ATo) then raise Exception.Create('not Assigned(ATo)');
   if AFrom = ATo then raise Exception.Create('AFrom = ATo');
 
   AFrom.SetPortsNumAtLeast(epOut, AFromPort + 1);
   ATo.SetPortsNumAtLeast(epIn, AToPort + 1);
-  C := TGenEntityConnection.Create;
-  with C.FromPort do
+  Result := TGenEntityConnection.Create;
+  with Result.FromPort do
   begin
     Entity := AFrom;
     Index := AFromPort;
   end;
-  with C.ToPort do
+  with Result.ToPort do
   begin
     Entity := ATo;
     Index := AToPort;
   end;
-  FConns.Add(C);
+  FConns.Add(Result);
 end;
 
 procedure TGenGraph.RemoveConnecttion(AFrom, ATo: TGenEntityNode;

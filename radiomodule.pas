@@ -1593,7 +1593,7 @@ begin
   for P in FFeatureListeners do
   begin
     Graph.AddConnection(GraphNode, TRadioModule(P).GraphNode,
-                        PORT_FEATURE, PORT_FEATURE);
+                        PORT_FEATURE, PORT_FEATURE).PenStyle := psDash;
   end;
 end;
 
