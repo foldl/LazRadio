@@ -65,8 +65,8 @@ type
     //FDrawRect: TRect;
     FTag: Integer;
     //FNodeRect: TRect;
-    FInPorts: array of string;
-    FOutPorts: array of string;
+    FInPorts: array of Char;
+    FOutPorts: array of Char;
 
     function  CalcFirstPortY(const N: Integer): Integer;
     procedure DrawPorts(ACanvas: TCanvas);
@@ -84,6 +84,8 @@ type
 
     procedure SetPortsNum(const T: TGenEntityPortType; const N: Integer);
     procedure SetPortsNumAtLeast(const T: TGenEntityPortType; const N: Integer);
+    function  GetPortsNum(const T: TGenEntityPortType): Integer;
+    procedure SetPortName(const T: TGenEntityPortType; const N: Cardinal; const Name: Char);
 
     procedure Move(const OffsetX, OffsetY: Integer); override;
 
@@ -247,7 +249,7 @@ type
 implementation
 
 const
-  PORT_MARK_SIZE   = 10;
+  PORT_MARK_SIZE   = 12;
   PORT_MARK_MARGIN = 2 * PORT_MARK_SIZE;
 
 type
@@ -1240,13 +1242,34 @@ procedure TGenEntityNode.DrawPorts(ACanvas: TCanvas);
 var
   R: TRect;
   DrawRect: TRect;
-  procedure DrawIt(N: Integer);
+
+  procedure DrawArrow(const N: Integer);
+  const
+    L = 10;
+    H = 3;
+  var
+    Pts: array [0..2] of TPoint;
+    I: Integer;
+  begin
+    for I := 0 to N - 1 do
+    begin
+      Pts[0] := GetPortConnectPos(epIn, I);
+      Pts[1].x := Pts[0].x - L;
+      Pts[1].y := Pts[0].y + H;
+      Pts[2].x := Pts[1].x;
+      Pts[2].y := Pts[0].y - H;
+      ACanvas.Polygon(Pts);
+    end;
+  end;
+
+  procedure DrawIt(N: Integer; const Names: array of Char);
   var
     I: Integer;
   begin
     for I := 0 to N - 1 do
     begin
       ACanvas.Rectangle(R);
+      ACanvas.TextRect(R, R.Left + 3, R.Top + 1, Names[I]);
       Inc(R.Top, PORT_MARK_MARGIN + PORT_MARK_SIZE);
       Inc(R.Bottom, PORT_MARK_MARGIN + PORT_MARK_SIZE);
     end;
@@ -1263,13 +1286,19 @@ begin
   end;
   with ACanvas do
   begin
+    Font.Color := clWhite;
+    Font.Height  := PORT_MARK_SIZE - 3;
+    Font.Bold := True;
     Pen.Width := 1;
     Pen.Color := clBlack;
     Pen.Style := psSolid;
     Brush.Color := clFuchsia;
     Brush.Style := bsSolid;
   end;
-  DrawIt(High(FInPorts) + 1);
+  DrawIt(High(FInPorts) + 1, FInPorts);
+  ACanvas.Brush.Color := clGray;
+  DrawArrow(High(FInPorts) + 1);
+
   ACanvas.Brush.Color := clGreen;
   with R do
   begin
@@ -1278,7 +1307,7 @@ begin
     Top  := CalcFirstPortY(High(FOutPorts) + 1);
     Bottom := Top + PORT_MARK_SIZE;
   end;
-  DrawIt(High(FOutPorts) + 1);
+  DrawIt(High(FOutPorts) + 1, FOutPorts);
 end;
 
 function TGenEntityNode.GetBox: TRect;
@@ -1364,6 +1393,24 @@ begin
   end;
 end;
 
+function TGenEntityNode.GetPortsNum(const T: TGenEntityPortType): Integer;
+begin
+  Result := 0;
+  case T of
+    epIn : Result := High(FInPorts) + 1;
+    epOut: Result := High(FOutPorts) + 1;
+  end;
+end;
+
+procedure TGenEntityNode.SetPortName(const T: TGenEntityPortType;
+  const N: Cardinal; const Name: Char);
+begin
+  case T of
+    epIn : if N <= High(FInPorts) then FInPorts[N] := Name;
+    epOut: if N <= High(FOutPorts) then FOutPorts[N] := Name;
+  end;
+end;
+
 procedure TGenEntityNode.Move(const OffsetX, OffsetY: Integer);
 begin
   Pos.x := Pos.x + OffsetX;
@@ -1382,7 +1429,6 @@ begin
                    + PORT_MARK_SIZE div 2
         else
           Result.y := Pos.y;
-
       end;
     epOut:
       begin

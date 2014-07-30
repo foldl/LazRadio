@@ -174,6 +174,7 @@ var
   A: TSuperAvlEntry;
   M: TRadioModule;
   N: TGenEntityNode;
+  I: Integer;
 begin
   FGraph.BeginUpdate;
   FGraph.Clear;
@@ -191,6 +192,19 @@ begin
   begin
     M := TRadioModule(Pointer(A.Value.AsInteger));
     M.ShowConnections(FGraph);
+  end;
+
+  for A in FModuleDict do
+  begin
+    M := TRadioModule(Pointer(A.Value.AsInteger));
+    if M.GraphNode.GetPortsNum(epIn) >= 1 then
+      M.GraphNode.SetPortName(epIn, 0, 'f');
+    for I := 1 to M.GraphNode.GetPortsNum(epIn) do
+      M.GraphNode.SetPortName(epIn, I, IntToStr(I - 1)[1]);
+    if M.GraphNode.GetPortsNum(epOut) >= 1 then
+      M.GraphNode.SetPortName(epOut, 0, 'f');
+    if M.GraphNode.GetPortsNum(epOut) >= 2 then
+      M.GraphNode.SetPortName(epOut, 1, 'd');
   end;
   FGraph.EndUpdate;
 end;

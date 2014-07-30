@@ -21,7 +21,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formmain"/>
-        <EditorIndex Value="10"/>
+        <EditorIndex Value="11"/>
         <WindowIndex Value="0"/>
         <TopLine Value="59"/>
         <CursorPos X="44" Y="71"/>
@@ -35,8 +35,8 @@
         <UnitName Value="RadioModule"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1582"/>
-        <CursorPos X="27" Y="1589"/>
+        <TopLine Value="1449"/>
+        <CursorPos X="30" Y="1461"/>
         <UsageCount Value="228"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -92,10 +92,11 @@
         <Filename Value="radiosystem.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioSystem"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="69"/>
-        <CursorPos X="33" Y="125"/>
+        <TopLine Value="190"/>
+        <CursorPos X="54" Y="203"/>
         <UsageCount Value="282"/>
         <Loaded Value="True"/>
       </Unit8>
@@ -114,8 +115,8 @@
         <UnitName Value="rm_spectrum"/>
         <EditorIndex Value="6"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="762"/>
-        <CursorPos X="63" Y="912"/>
+        <TopLine Value="763"/>
+        <CursorPos X="30" Y="770"/>
         <UsageCount Value="268"/>
         <Loaded Value="True"/>
       </Unit10>
@@ -204,7 +205,7 @@
         <Filename Value="utils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="utils"/>
-        <EditorIndex Value="11"/>
+        <EditorIndex Value="12"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
@@ -294,12 +295,11 @@
         <Filename Value="graph\gen_graph.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="gen_graph"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1372"/>
-        <CursorPos X="39" Y="1389"/>
-        <UsageCount Value="187"/>
+        <TopLine Value="1281"/>
+        <CursorPos X="19" Y="1291"/>
+        <UsageCount Value="190"/>
         <Loaded Value="True"/>
       </Unit28>
       <Unit29>
@@ -309,8 +309,8 @@
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
         <TopLine Value="113"/>
-        <CursorPos X="7" Y="102"/>
-        <UsageCount Value="161"/>
+        <CursorPos X="34" Y="123"/>
+        <UsageCount Value="164"/>
         <Loaded Value="True"/>
       </Unit29>
       <Unit30>
@@ -349,13 +349,13 @@
         <UsageCount Value="70"/>
       </Unit33>
       <Unit34>
-        <Filename Value="D:\lazarus1.2\lcl\graphics.pp"/>
+        <Filename Value="d:\lazarus1.2\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
         <EditorIndex Value="8"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="262"/>
-        <CursorPos X="11" Y="266"/>
-        <UsageCount Value="19"/>
+        <TopLine Value="1155"/>
+        <CursorPos X="15" Y="1165"/>
+        <UsageCount Value="20"/>
         <Loaded Value="True"/>
       </Unit34>
       <Unit35>
@@ -429,12 +429,14 @@
         <UsageCount Value="2"/>
       </Unit43>
       <Unit44>
-        <Filename Value="D:\lazarus1.2\lcl\graphtype.pp"/>
+        <Filename Value="d:\lazarus1.2\lcl\graphtype.pp"/>
         <UnitName Value="GraphType"/>
+        <EditorIndex Value="9"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="16"/>
-        <CursorPos X="39" Y="33"/>
-        <UsageCount Value="2"/>
+        <TopLine Value="25"/>
+        <CursorPos X="14" Y="36"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
       </Unit44>
       <Unit45>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\packages\fcl-image\src\fpcolcnv.inc"/>
@@ -548,12 +550,12 @@
         <UsageCount Value="6"/>
       </Unit59>
       <Unit60>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpash.inc"/>
+        <Filename Value="d:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpash.inc"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
         <TopLine Value="186"/>
         <CursorPos X="21" Y="201"/>
-        <UsageCount Value="33"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
       </Unit60>
       <Unit61>
@@ -564,12 +566,12 @@
         <UsageCount Value="6"/>
       </Unit61>
       <Unit62>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\lists.inc"/>
-        <EditorIndex Value="9"/>
+        <Filename Value="d:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\lists.inc"/>
+        <EditorIndex Value="10"/>
         <WindowIndex Value="0"/>
         <TopLine Value="791"/>
         <CursorPos X="3" Y="793"/>
-        <UsageCount Value="22"/>
+        <UsageCount Value="23"/>
         <Loaded Value="True"/>
       </Unit62>
     </Units>
@@ -578,124 +580,124 @@
     </General>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="339" Column="27" TopLine="321"/>
+        <Filename Value="radiomodule.pas"/>
+        <Caret Line="1589" Column="30" TopLine="1582"/>
       </Position1>
       <Position2>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1497" Column="1" TopLine="1478"/>
+        <Caret Line="155" Column="1" TopLine="137"/>
       </Position2>
       <Position3>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="782" Column="34" TopLine="766"/>
+        <Caret Line="1636" Column="21" TopLine="1624"/>
       </Position3>
       <Position4>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1526" Column="1" TopLine="1509"/>
+        <Caret Line="1639" Column="17" TopLine="1631"/>
       </Position4>
       <Position5>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="764" Column="43" TopLine="756"/>
+        <Caret Line="1657" Column="20" TopLine="1629"/>
       </Position5>
       <Position6>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1141" Column="46" TopLine="1117"/>
+        <Caret Line="1309" Column="3" TopLine="1304"/>
       </Position6>
       <Position7>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1032" Column="23" TopLine="1015"/>
+        <Caret Line="1260" Column="27" TopLine="1243"/>
       </Position7>
       <Position8>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="959" Column="44" TopLine="946"/>
+        <Caret Line="1264" Column="16" TopLine="1249"/>
       </Position8>
       <Position9>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="267" Column="3" TopLine="249"/>
+        <Caret Line="1309" Column="3" TopLine="1303"/>
       </Position9>
       <Position10>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="221" Column="63" TopLine="203"/>
+        <Caret Line="1252" Column="30" TopLine="1225"/>
       </Position10>
       <Position11>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="670" Column="29" TopLine="662"/>
+        <Caret Line="71" Column="62" TopLine="53"/>
       </Position11>
       <Position12>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="420" Column="17" TopLine="551"/>
+        <Caret Line="1278" Column="35" TopLine="1253"/>
       </Position12>
       <Position13>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="430" Column="10" TopLine="416"/>
+        <Caret Line="1391" Column="44" TopLine="1363"/>
       </Position13>
       <Position14>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="416" Column="37" TopLine="413"/>
+        <Caret Line="1373" Column="20" TopLine="1372"/>
       </Position14>
       <Position15>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="571" Column="19" TopLine="543"/>
+        <Filename Value="radiomodule.pas"/>
+        <Caret Line="1589" Column="20" TopLine="1582"/>
       </Position15>
       <Position16>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="430" Column="48" TopLine="557"/>
+        <Caret Line="1678" Column="37" TopLine="1667"/>
       </Position16>
       <Position17>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1459" Column="17" TopLine="1446"/>
+        <Filename Value="radiosystem.pas"/>
+        <Caret Line="194" Column="10" TopLine="177"/>
       </Position17>
       <Position18>
-        <Filename Value="radiomodule.pas"/>
-        <Caret Line="1589" Column="30" TopLine="1582"/>
+        <Filename Value="radiosystem.pas"/>
+        <Caret Line="200" Column="43" TopLine="183"/>
       </Position18>
       <Position19>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="155" Column="1" TopLine="137"/>
+        <Caret Line="87" Column="65" TopLine="75"/>
       </Position19>
       <Position20>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1636" Column="21" TopLine="1624"/>
+        <Caret Line="88" Column="73" TopLine="77"/>
       </Position20>
       <Position21>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1639" Column="17" TopLine="1631"/>
+        <Caret Line="1289" Column="26" TopLine="1280"/>
       </Position21>
       <Position22>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1657" Column="20" TopLine="1629"/>
+        <Caret Line="1272" Column="41" TopLine="1261"/>
       </Position22>
       <Position23>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1309" Column="3" TopLine="1304"/>
+        <Caret Line="1290" Column="37" TopLine="1275"/>
       </Position23>
       <Position24>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1260" Column="27" TopLine="1243"/>
+        <Filename Value="radiomodule.pas"/>
+        <Caret Line="1459" Column="11" TopLine="1449"/>
       </Position24>
       <Position25>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1264" Column="16" TopLine="1249"/>
+        <Filename Value="d:\lazarus1.2\lcl\graphics.pp"/>
+        <Caret Line="1165" Column="24" TopLine="1155"/>
       </Position25>
       <Position26>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1309" Column="3" TopLine="1303"/>
+        <Filename Value="d:\lazarus1.2\lcl\graphics.pp"/>
+        <Caret Line="1166" Column="27" TopLine="1157"/>
       </Position26>
       <Position27>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1252" Column="30" TopLine="1225"/>
+        <Filename Value="d:\lazarus1.2\lcl\graphics.pp"/>
+        <Caret Line="186" Column="3" TopLine="173"/>
       </Position27>
       <Position28>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="71" Column="62" TopLine="53"/>
+        <Filename Value="radiomodule.pas"/>
+        <Caret Line="1460" Column="60" TopLine="1449"/>
       </Position28>
       <Position29>
-        <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1278" Column="35" TopLine="1253"/>
+        <Filename Value="radiomodule.pas"/>
+        <Caret Line="1461" Column="62" TopLine="1449"/>
       </Position29>
       <Position30>
         <Filename Value="graph\gen_graph.pas"/>
-        <Caret Line="1391" Column="44" TopLine="1363"/>
+        <Caret Line="1341" Column="28" TopLine="1340"/>
       </Position30>
     </JumpHistory>
   </ProjectSession>

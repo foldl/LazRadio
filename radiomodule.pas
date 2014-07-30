@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, UComplex, Genfft, radiomessage, gen_graph;
+  Classes, SysUtils, Graphics, GraphType, UComplex, Genfft, radiomessage, gen_graph;
 
 type
 
@@ -1453,9 +1453,13 @@ begin
   begin
     Pen.Width := 2;
     Pen.Color := TColor($00AAFF);
-    Font.Name := 'Ariel';
+    //Font.Name := 'Consolas';
     Font.Size := 10;
+    Font.Color := clBlack;
+    Font.Bold  := False;
+    Brush.Color := $f0f0f0;
     RoundRect(ARect, 8, 8);
+    FloodFill(ARect.Left + 10, ARect.Top + 10, clWhite, fsSurface);
     TextRect(ARect, ARect.Left + 2, ARect.Top + 2, Name);
 
     Pen.Width := 1;
