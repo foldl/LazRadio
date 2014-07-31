@@ -191,6 +191,7 @@ type
     FRefCount: Integer;
     FDefOutput: TRadioDataStream;
     FRunning: Boolean;
+    FDescStr: TStringList;
     function FindDataListener(Listener: TRadioModule): Integer;
   protected
 {$IFDEF FPC}
@@ -1481,6 +1482,10 @@ begin
     IconRect.Top    := C.y - ICON_SIZE div 2;
     IconRect.Bottom := C.y + ICON_SIZE div 2;
     StrIconDraw(ACanvas, IconRect, 'polygon (-1,-1),(1,1),(1,-1),hello');
+
+    FDescStr.Clear;
+    FDescStr.Add('^bFreq: ^n^1100MHz');
+    StyledTextOut(ACanvas, ARect, FDescStr);
   end;
 end;
 
@@ -1624,10 +1629,12 @@ begin
   FFeatureListeners := TList.Create;
   FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
   FLastMsg := @FFirstMsg;
+  FDescStr := TStringList.Create;
 end;
 
 destructor TRadioModule.Destroy;
 begin
+  FDescStr.Free;
   ClearDataListeners;
   FDefOutput.SafeFree;
   FDataListeners.Free;

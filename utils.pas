@@ -77,7 +77,7 @@ procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
 ^_ = +fsUnderline
 ^n = []
 }
-function  SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const S: string): TRect;
+function  SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const AText: string): TRect;
 procedure StyledTextOut(ACanvas: TCanvas; ARect: TRect; const Strs: TStrings); overload;
 
 
@@ -356,18 +356,93 @@ begin
   end;
 end;
 
-function SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const S: string
+function SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const AText: string
   ): TRect;
 const
   COLORS: array [0..7] of TColor = (clBlack, clRed, clGreen, clYellow, clBlue,
                                     $EBB700, $9000FF, clWhite);
-begin
+var
+  I, J: Integer;
+  S, T: string;
+  E: TSize;
 
+  function ReadStr(var S: string; out Token: string): Boolean;
+  var
+    I: Integer;
+  begin
+    Result := True;
+    if S[1] = '^' then
+    begin
+      if Length(S) >= 2 then
+      begin
+        if S[2] <> '^' then
+        begin
+          Token := S[2];
+          Delete(S, 1, 2);
+          Exit(False);
+        end
+        else
+          Delete(S, 1, 1);
+      end;
+    end;
+    for I := 2 to Length(S) do
+    begin
+      if S[I] = '^' then
+      begin
+        Token := Copy(S, 1, I - 1);
+        Delete(S, 1, I - 1);
+        Exit;
+      end;
+    end;
+    Token := S;
+    S := '';
+  end;
+
+begin
+  Result := ARect;
+  Result.Right := Result.Left;
+  Result.Bottom := Result.Top;
+  S := AText;
+  while Length(S) > 0 do
+  begin
+    if ReadStr(S, T) then
+    begin
+      E := ACanvas.TextExtent(T);
+      ACanvas.TextRect(ARect, Result.Right, Result.Top, T);
+      Inc(Result.Right, E.cx);
+      Result.Bottom := Max(Result.Bottom - Result.Top, E.cy) + Result.Top;
+    end
+    else begin
+      case T of
+        '0'..'7':
+          ACanvas.Font.Color := COLORS[Ord(T[1]) - Ord('0')];
+        'b':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsBold];
+        'i':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsItalic];
+        's':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsStrikeOut];
+        '_':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsUnderline];
+        'n':
+          ACanvas.Font.Style := [];
+      end;
+    end;
+  end;
 end;
 
 procedure StyledTextOut(ACanvas: TCanvas; ARect: TRect; const Strs: TStrings);
+var
+  R: TRect;
+  S: string;
 begin
-
+  for S in Strs do
+  begin
+    ACanvas.Font.Color := clBlack;
+    ACanvas.Font.Style := [];
+    R := SingleLineStyledTextOut(ACanvas, ARect, S);
+    ARect.Top := R.Bottom + 2;
+  end;
 end;
 
 { TTripleBuffer }
@@ -406,6 +481,14 @@ begin
   if FPaintBox = AValue then Exit;
   FPaintBox := AValue;
   FPaintBox.OnPaint := @OnPaint;
+  with FDrawBuffer do
+  begin
+    Canvas.Font.Name := FPaintBox.Font.Name;
+  end;
+  with FPaintBuffer do
+  begin
+    Canvas.Font.Name := FPaintBox.Font.Name;
+  end;
 end;
 
 procedure TDoubleBuffer.Draw2Paint2;
