@@ -178,7 +178,6 @@ type
   TGenRouteNodeRec = record
     W: Float;
     D: Word;
-    WOffset: Word;
     Status: Byte;
     Pre: PGenRouteNodeRec;             // for backtracing
   end;
@@ -199,9 +198,9 @@ type
     FSize: TPoint;
     FSize1: TPoint;
     procedure MarkPortPath(ANode: TGenEntityNode);
-    procedure MarkBlockWOffset(const R: TRect);
-    procedure MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
-    procedure MarkPathWOffset(Conn: TGenEntityConnection);
+    procedure MarkBlockForbid(const R: TRect);
+    procedure MarkPathForbid(const X0, Y0, X1, Y1: Integer);
+    procedure MarkPathForbid(Conn: TGenEntityConnection);
     procedure MarkBlock(const R: TRect);
     procedure InitGrid(Entities: TList; BoundingBox: TRect);
     procedure Restore;
@@ -249,8 +248,8 @@ type
 implementation
 
 const
-  PORT_MARK_SIZE   = 12;
-  PORT_MARK_MARGIN = 2 * PORT_MARK_SIZE;
+  PORT_MARK_SIZE   = 15;
+  PORT_MARK_MARGIN = 25;
 
 type
 
@@ -398,7 +397,7 @@ procedure TGenRoute.MarkPortPath(ANode: TGenEntityNode);
     begin
       Pt := ANode.GetPortConnectPos(epIn, K);
       for I := Max(0, Pt.x - NOT_GOOD) to Pt.x do
-        FGrid[Pt.y * FSize1.x + I].WOffset := 0;
+        FGrid[Pt.y * FSize1.x + I].Status := EMPTY;
     end;
   end;
   procedure MarkOut(const N: Integer);
@@ -410,7 +409,7 @@ procedure TGenRoute.MarkPortPath(ANode: TGenEntityNode);
     begin
       Pt := ANode.GetPortConnectPos(epOut, K);
       for I := Pt.x + 1 to Min(FSize.x, Pt.x + NOT_GOOD) do
-        FGrid[Pt.y * FSize1.x + I].WOffset := 0;
+        FGrid[Pt.y * FSize1.x + I].Status := EMPTY;
     end;
   end;
 begin
@@ -418,9 +417,7 @@ begin
   MarkOut(High(ANode.FOutPorts));
 end;
 
-procedure TGenRoute.MarkBlockWOffset(const R: TRect);
-const
-  MULTI = 10;
+procedure TGenRoute.MarkBlockForbid(const R: TRect);
 var
   I, J: Integer;
 begin
@@ -464,12 +461,10 @@ begin
 }
 end;
 
-procedure TGenRoute.MarkPathWOffset(const X0, Y0, X1, Y1: Integer);
+procedure TGenRoute.MarkPathForbid(const X0, Y0, X1, Y1: Integer);
 const
   RANGE = 10;
-  MULTI = 3;
 var
-  O: Integer;
   I: Integer;
   J: Integer;
 begin
@@ -497,54 +492,16 @@ begin
           FGrid[I * FSize1.x + J].Status := FORBID_PT;
     end;
   end;
-  exit;
-
-  if X0 = X1 then
-  begin
-    for J := Y0 to Y1 do
-      FGrid[J * FSize1.x + X0].Status := FORBID_PT;
-  end
-  else if Y0 = Y1 then
-  begin
-    for J := X0 to X1 do
-      FGrid[Y0 * FSize1.x + J].Status := FORBID_PT;
-  end;
-
-  exit;
-
-  if X0 = X1 then
-  begin
-    for I := Max(0, X0 - NOT_GOOD) to Min(FSize.x, X0 + RANGE) do
-    begin
-      if Y0 < Y1 then
-        for J := Y0 + 1 to Y1 - 1 do
-          Inc(FGrid[J * FSize1.x + I].WOffset, MULTI *  Abs(RANGE + I - X0))
-      else
-        for J := Y1 + 1 to Y0 - 1 do
-          Inc(FGrid[J * FSize1.x + I].WOffset, MULTI *  Abs(RANGE + I - X0));
-    end;
-  end
-  else begin
-    for I := Max(0, Y0 - NOT_GOOD) to Min(FSize.y, Y0 + RANGE) do
-    begin
-      if X0 < X1 then
-        for J := X0 + 1 to X1 - 1 do
-          Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * Abs(RANGE + I - Y0))
-      else
-        for J := X1 + 1 to X0 - 1 do
-          Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * Abs(RANGE + I - Y0));
-    end;
-  end;
 end;
 
-procedure TGenRoute.MarkPathWOffset(Conn: TGenEntityConnection);
+procedure TGenRoute.MarkPathForbid(Conn: TGenEntityConnection);
 var
   I: Integer;
 begin
   Conn.FCtrlPts[0] := Conn.FromPt;
   Conn.FCtrlPts[High(Conn.FCtrlPts)] := Conn.ToPt;
   for I := 1 to High(Conn.FCtrlPts) do
-    MarkPathWOffset(Conn.FCtrlPts[I - 1].x, Conn.FCtrlPts[I - 1].y,
+    MarkPathForbid(Conn.FCtrlPts[I - 1].x, Conn.FCtrlPts[I - 1].y,
                     Conn.FCtrlPts[I - 0].x, Conn.FCtrlPts[I - 0].y);
 end;
 
@@ -575,7 +532,7 @@ begin
     with TGenEntityNode(P) do
     begin
       MarkBlock(Box);
-      MarkBlockWOffset(Box);
+      MarkBlockForbid(Box);
     end;
     MarkPortPath(TGenEntityNode(P));
   end;
@@ -687,7 +644,7 @@ var
   X, Y: Integer;
 begin
   PtoXY(N, X, Y);
-  GetNeighbors(X, Y, A);
+  Result := GetNeighbors(X, Y, A);
 end;
 
 function TGenRoute.GetNeighbors(const X, Y: Integer;
@@ -762,15 +719,10 @@ end;
 procedure TGenRoute.Backtrace(Conn: TGenEntityConnection);
 var
   P1, P2: PGenRouteNodeRec;
-  S: TPoint;
-  E: TPoint;
   C: array [0..100] of TPoint;
   I: Integer = 0;
   D: Integer;
   D2: Integer;
-  LP: TPoint;
-  Adj: array [0..3] of Integer;
-  Pts: array [0..3] of TPoint;
   X0, Y0, X1, Y1: Integer;
 
   function GetDir: Integer;
@@ -809,7 +761,7 @@ begin
   Conn.SetCtrlPointsNumber(I);
   for D := 0 to I - 1 do
     Conn.CtrlPoints[D] := C[I - 1 - D];
-  MarkPathWOffset(Conn);
+  MarkPathForbid(Conn);
 end;
 
 constructor TGenRoute.Create;
@@ -953,13 +905,11 @@ var
   var
     I: Integer;
     D: Integer;
-    Neighbors: array [0..3] of PGenRouteNodeRec;
+    Neighbors: array [0..3] of PGenRouteNodeRec = (nil, nil, nil, nil);
     NN: Integer;
     This: PGenRouteNodeRec;
     function Check(ANode: PGenRouteNodeRec): Boolean;
     var
-      P: PInteger;
-      W: Integer;
       AX, AY: Integer;
     begin
       Result := False;
@@ -980,7 +930,7 @@ var
       end;
 
       ANode^.D := D + 1;      //;
-      ANode^.W := ANode^.D + ANode^.WOffset + (Abs(AX - E.x) + Abs(AY - E.y));
+      ANode^.W := ANode^.D + (Abs(AX - E.x) + Abs(AY - E.y));
       ANode^.Pre := This;
       InsertOpenNode(ANode);
       ANode^.Status := VISITED;
@@ -1094,13 +1044,11 @@ var
   P: Pointer;
   C: Pointer;
   Dirty: Boolean;
-  L: TList;
   I: Integer;
   J: Integer;
   K: Integer;
-  V: Integer;
+  V: Integer = 0;
   S: array of TRect;
-  M: Integer;
   A: array of Pointer;
 begin
   if Entities.Count < 1 then Exit;
@@ -1269,7 +1217,7 @@ var
     for I := 0 to N - 1 do
     begin
       ACanvas.Rectangle(R);
-      ACanvas.TextRect(R, R.Left + 3, R.Top + 1, Names[I]);
+      ACanvas.TextRect(R, R.Left + PORT_MARK_SIZE div 3 - 1, R.Top + 1, Names[I]);
       Inc(R.Top, PORT_MARK_MARGIN + PORT_MARK_SIZE);
       Inc(R.Bottom, PORT_MARK_MARGIN + PORT_MARK_SIZE);
     end;
@@ -1287,7 +1235,7 @@ begin
   with ACanvas do
   begin
     Font.Color := clWhite;
-    Font.Height  := PORT_MARK_SIZE - 3;
+    Font.Height  := PORT_MARK_SIZE - 1;
     Font.Bold := True;
     Pen.Width := 1;
     Pen.Color := clBlack;
@@ -1486,10 +1434,7 @@ begin
 end;
 
 procedure TGenEntityConnection.SetCtrlPointsNumber(const N: Integer);
-var
-  T: TPoint;
 begin
-  T := ToPt;
   SetLength(FCtrlPts, N + 2);
 end;
 

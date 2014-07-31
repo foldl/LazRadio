@@ -183,6 +183,9 @@ type
   { TRadioModule }
 
   TRadioModule = class(TRadioMessageQueue, IGenDrawable)
+  const
+    ICON_SIZE = 50;
+    HEADER_SIZE = 20;
   private
     FGraphNode: TGenEntityNode;
     FRefCount: Integer;
@@ -418,7 +421,7 @@ function MakeMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
 implementation
 
 uses
-  Math, SignalBasic;
+  Math, SignalBasic, utils;
 
 var
   RadioGlobalCS: TRTLCriticalSection;
@@ -1443,29 +1446,42 @@ end;
 procedure TRadioModule.Measure(out Extent: TPoint);
 begin
   DoMeasure(Extent);
-  Inc(Extent.y, 20);
-  Extent.x := Max(Extent.x, 100);
+  Extent.y := Max(ICON_SIZE, Extent.y);
+  Extent.x := Max(ICON_SIZE, Extent.x);
+  Inc(Extent.y, HEADER_SIZE);
+  Extent.x := Max(Extent.x, HEADER_SIZE);
 end;
 
 procedure TRadioModule.Draw(ACanvas: TCanvas; ARect: TRect);
+var
+  IconRect: TRect;
+  C: TPoint;
 begin
   with ACanvas do
   begin
     Pen.Width := 2;
     Pen.Color := TColor($00AAFF);
-    //Font.Name := 'Consolas';
-    Font.Size := 10;
+    Font.Height := HEADER_SIZE - 5;
     Font.Color := clBlack;
-    Font.Bold  := False;
-    Brush.Color := $f0f0f0;
+    Font.Bold  := True;
+    Brush.Color := clCream; // $fafafa;
     RoundRect(ARect, 8, 8);
     FloodFill(ARect.Left + 10, ARect.Top + 10, clWhite, fsSurface);
     TextRect(ARect, ARect.Left + 2, ARect.Top + 2, Name);
 
     Pen.Width := 1;
-    Line(ARect.Left, ARect.Top + 15, ARect.Right, ARect.Top + 15);
-  end;
+    Inc(ARect.Top, HEADER_SIZE);
+    Line(ARect.Left, ARect.Top - 1, ARect.Right, ARect.Top - 1);
 
+    C.x := (ARect.Left + ARect.Right) div 2;
+    C.y := (ARect.Top + ARect.Bottom) div 2;
+
+    IconRect.Left   := C.x - ICON_SIZE div 2;
+    IconRect.Right  := C.x + ICON_SIZE div 2;
+    IconRect.Top    := C.y - ICON_SIZE div 2;
+    IconRect.Bottom := C.y + ICON_SIZE div 2;
+    StrIconDraw(ACanvas, IconRect, 'polygon (-1,-1),(1,1),(1,-1),hello');
+  end;
 end;
 
 procedure TRadioModule.MouseClick(const Pt: TPoint; Shifts: TShiftState);
