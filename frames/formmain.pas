@@ -57,7 +57,7 @@ begin
   TTextLogger.Level := llWarn;
   TTextLogger.Start;
   //FilterForm.Show;
-  //exit;
+  //exit;                        Mouse;
   if not Assigned(FSystem) then
   begin
     FSystem := TRadioSystem.Create;
@@ -69,7 +69,7 @@ begin
     FSystem.AddModule('o', 'Oscillator');
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
-    FSystem.AddModule('r', 'Rtl');
+    FSystem.AddModule('r', 'DumpPlayer');
     FSystem.AddModule('src', 'Rtl');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FMDemod');

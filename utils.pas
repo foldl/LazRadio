@@ -79,7 +79,10 @@ procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
 }
 function  SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const AText: string): TRect;
 procedure StyledTextOut(ACanvas: TCanvas; ARect: TRect; const Strs: TStrings); overload;
+function  SingleLineStyledTextExtent(ACanvas: TCanvas; const AText: string): TSize;
+function  StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
 
+function  IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
 
 implementation
 
@@ -147,9 +150,14 @@ var
     if Result then Delete(S, 1, 1);
   end;
 
-  function Scale(const V: Real; const X0, X1: Integer): Integer;
+  function ScaleX(const V: Real; const X0, X1: Integer): Integer;
   begin
     Result := Round((X1 - X0) * (EnsureRange(V, -1, 1) + 1) / 2 + X0);
+  end;
+
+  function ScaleY(const V: Real; const Y0, Y1: Integer): Integer;
+  begin
+    Result := Round((Y1 - Y0) * (1 - EnsureRange(V, -1, 1)) / 2 + Y0);
   end;
 
   function ExtractCommand(var S: string): string;
@@ -219,10 +227,10 @@ var
     Result := False;
     if not RequireAndDel(S, '(') then Exit;
     if not ReadValue(S, V) then Exit;
-    Pt.x := Scale(V, ARect.Left, ARect.Right);
+    Pt.x := ScaleX(V, ARect.Left, ARect.Right);
     if not RequireAndDel(S, ',') then Exit;
     if not ReadValue(S, V) then Exit;
-    Pt.y := Scale(V, ARect.Top, ARect.Bottom);
+    Pt.y := ScaleY(V, ARect.Top, ARect.Bottom);
     if not RequireAndDel(S, ')') then Exit;
     Result := True;
   end;
@@ -311,8 +319,8 @@ var
     if not ReadCoord(Param, Pt) then Exit;
     if not RequireAndDel(Param, ',') then Exit;
     if not ReadValue(Param, V) then Exit;
-    R0 := Scale(V, 0, (ARect.Right - ARect.Left) div 2);
-    R1 := Scale(V, 0, (ARect.Bottom - ARect.Top) div 2);
+    R0 := Round(V * ((ARect.Right - ARect.Left) div 2));
+    R1 := Round(V * ((ARect.Bottom - ARect.Top) div 2));
     if bFill then
       ACanvas.EllipseC(Pt.x, Pt.y, R0, R1)
     else
@@ -356,48 +364,46 @@ begin
   end;
 end;
 
+function StyleStrReadStr(var S: string; out Token: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := True;
+  if S[1] = '^' then
+  begin
+    if Length(S) >= 2 then
+    begin
+      if S[2] <> '^' then
+      begin
+        Token := S[2];
+        Delete(S, 1, 2);
+        Exit(False);
+      end
+      else
+        Delete(S, 1, 1);
+    end;
+  end;
+  for I := 2 to Length(S) do
+  begin
+    if S[I] = '^' then
+    begin
+      Token := Copy(S, 1, I - 1);
+      Delete(S, 1, I - 1);
+      Exit;
+    end;
+  end;
+  Token := S;
+  S := '';
+end;
+
 function SingleLineStyledTextOut(ACanvas: TCanvas; ARect: TRect; const AText: string
   ): TRect;
 const
   COLORS: array [0..7] of TColor = (clBlack, clRed, clGreen, clYellow, clBlue,
                                     $EBB700, $9000FF, clWhite);
 var
-  I, J: Integer;
   S, T: string;
   E: TSize;
-
-  function ReadStr(var S: string; out Token: string): Boolean;
-  var
-    I: Integer;
-  begin
-    Result := True;
-    if S[1] = '^' then
-    begin
-      if Length(S) >= 2 then
-      begin
-        if S[2] <> '^' then
-        begin
-          Token := S[2];
-          Delete(S, 1, 2);
-          Exit(False);
-        end
-        else
-          Delete(S, 1, 1);
-      end;
-    end;
-    for I := 2 to Length(S) do
-    begin
-      if S[I] = '^' then
-      begin
-        Token := Copy(S, 1, I - 1);
-        Delete(S, 1, I - 1);
-        Exit;
-      end;
-    end;
-    Token := S;
-    S := '';
-  end;
-
 begin
   Result := ARect;
   Result.Right := Result.Left;
@@ -405,7 +411,7 @@ begin
   S := AText;
   while Length(S) > 0 do
   begin
-    if ReadStr(S, T) then
+    if StyleStrReadStr(S, T) then
     begin
       E := ACanvas.TextExtent(T);
       ACanvas.TextRect(ARect, Result.Right, Result.Top, T);
@@ -443,6 +449,65 @@ begin
     R := SingleLineStyledTextOut(ACanvas, ARect, S);
     ARect.Top := R.Bottom + 2;
   end;
+  ACanvas.Font.Color := clBlack;
+  ACanvas.Font.Style := [];
+end;
+
+function SingleLineStyledTextExtent(ACanvas: TCanvas; const AText: string
+  ): TSize;
+var
+  S, T: string;
+  E: TSize;
+begin
+  S := AText;
+  Result.cx := 0;
+  Result.cy := 0;
+  while Length(S) > 0 do
+  begin
+    if StyleStrReadStr(S, T) then
+    begin
+      E := ACanvas.TextExtent(T);
+      Inc(Result.cx, E.cx);
+      Result.cy := Max(Result.cy, E.cy);
+    end
+    else begin
+      case T of
+        'b':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsBold];
+        'i':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsItalic];
+        's':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsStrikeOut];
+        '_':
+          ACanvas.Font.Style := ACanvas.Font.Style + [fsUnderline];
+        'n':
+          ACanvas.Font.Style := [];
+      end;
+    end;
+  end;
+end;
+
+function StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
+var
+  E: TSize;
+  S: string;
+begin
+  Result.cx := 0;
+  Result.cy := 0;
+  for S in Strs do
+  begin
+    ACanvas.Font.Color := clBlack;
+    ACanvas.Font.Style := [];
+    E := SingleLineStyledTextExtent(ACanvas, S);
+    Inc(Result.cy, E.cy);
+    Result.cx := Max(Result.cx, E.cx);
+  end;
+end;
+
+function IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
+begin
+  Result := InRange(APt.x, ARect.Left, ARect.Right)
+         and InRange(APt.y, ARect.Top, ARect.Bottom);
 end;
 
 { TTripleBuffer }
@@ -513,6 +578,8 @@ end;
 
 destructor TDoubleBuffer.Destroy;
 begin
+  if Assigned(FPaintBox) then
+    FPaintBox.OnPaint := nil;
   FDrawBuffer.Free;
   FPaintBuffer.Free;
 end;

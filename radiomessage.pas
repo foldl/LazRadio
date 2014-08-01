@@ -49,6 +49,8 @@ const
 
   RM_CONFIGURE       = 8;
 
+  RM_SHOW_MAIN_GUI   = 9;
+
   RM_AUDIO_IN_START = 100;   // ParamH = dev id; ParamL = samples per sec
   RM_AUDIO_IN_STOP  = 101;
 

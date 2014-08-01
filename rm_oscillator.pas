@@ -199,7 +199,7 @@ end;
 
 initialization
 
-  RegisterModule('Oscillator', TRadioModuleClass(TRadioOscillator.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioOscillator.ClassType));
 
 end.
 

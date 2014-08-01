@@ -31,12 +31,14 @@ type
     FConfig: TAudioInForm;
     FHandle: HWAVEIN;
     FClosing: Boolean;
+    FRate: Cardinal;
     procedure CloseDev;
     procedure PrepareBufs(Hwi: HWAVEIN; const SampleRate: Integer);
     procedure WaveInData(const Index: Integer);
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -65,6 +67,7 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     function DoStart: Boolean; override;
     function DoStop: Boolean; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -310,6 +313,11 @@ begin
   Result := inherited;
 end;
 
+procedure TRadioAudioOut.Describe(Strs: TStrings);
+begin
+  //
+end;
+
 constructor TRadioAudioOut.Create(RunQueue: TRadioRunQueue);
 var
   R: TRegulatorNode;
@@ -317,6 +325,7 @@ var
 begin
   inherited Create(RunQueue);
   FResample  := TResampleNode.Create;
+  FHasConfig := False;
   FResample.OutputRate := AUDIO_OUT_SAMPLE_RATE;
   FResample.InputRate := AUDIO_OUT_SAMPLE_RATE;
   R := TRegulatorNode.Create;
@@ -461,6 +470,14 @@ begin
   FConfig.Show;
 end;
 
+procedure TRadioAudioIn.Describe(Strs: TStrings);
+begin
+  if FHandle <> 0 then
+    Strs.Add(Format('^bSample rate: ^n%d', [FRate]))
+  else
+    Strs.Add('^bNot running');
+end;
+
 constructor TRadioAudioIn.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -477,8 +494,8 @@ end;
 
 initialization
 
-  RegisterModule('AudioIn', TRadioModuleClass(TRadioAudioIn.ClassType));
-  RegisterModule('AudioOut', TRadioModuleClass(TRadioAudioOut.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioAudioIn.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioAudioOut.ClassType));
 
 end.
 

@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Graphics, GraphType, UComplex, Genfft, radiomessage, gen_graph;
+  Classes, SysUtils, Types, Graphics, GraphType, UComplex, Genfft, radiomessage, gen_graph;
 
 type
 
@@ -186,14 +186,24 @@ type
   const
     ICON_SIZE = 50;
     HEADER_SIZE = 20;
+    HEADER_FONT_HEIGHT = 15;
+    BTN_CONFIG = '::';
+    BTN_GUI    = 'gui';
+    BODER_WIDTH = 2;
   private
     FGraphNode: TGenEntityNode;
     FRefCount: Integer;
     FDefOutput: TRadioDataStream;
     FRunning: Boolean;
     FDescStr: TStringList;
+    FGUIBtnRect: TRect;
+    FConfigBtnRect: TRect;
     function FindDataListener(Listener: TRadioModule): Integer;
   protected
+    FIcon: string;
+    FHasGUI: Boolean;
+    FHasConfig: Boolean;
+    procedure LoadIconRes(ResName: string = '');
 {$IFDEF FPC}
     function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid: tguid; out obj): longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 {$ELSE}
@@ -201,9 +211,9 @@ type
 {$ENDIF}
     function _AddRef: Integer; virtual; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release: Integer; virtual; {$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
-    procedure Measure(out Extent: TPoint);
+    procedure Measure(ACanvas: TCanvas; out Extent: TSize);
     procedure Draw(ACanvas: TCanvas; ARect: TRect);
-    procedure MouseClick(const Pt: TPoint; Shifts: TShiftState);
+    procedure MouseClick(const Pt: TPoint);
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
@@ -224,10 +234,13 @@ type
     function RMPhaseAdjust(const Msg: TRadioMessage; const Rate: Cardinal): Integer; virtual;
 
     procedure DoConfigure; virtual;
+    procedure DoShowGUI; virtual;
 
     procedure DoReset; virtual;
     function DoStart: Boolean; virtual;
     function DoStop: Boolean; virtual;
+
+    procedure Describe(Strs: TStrings); virtual;
   public
     procedure ShowConnections(Graph: TGenGraph);
     property GraphNode: TGenEntityNode read FGraphNode write FGraphNode;
@@ -235,13 +248,12 @@ type
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
+    procedure GraphInvalidate;
+
     procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt);
     procedure PostMessage(const Msg: TRadioMessage); virtual;
     procedure Broadcast(const Msg: TRadioMessage); overload;
     procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
-
-    procedure DoDraw(ACanvas: TCanvas; ARect: TRect); virtual;
-    procedure DoMeasure(out Extent: TPoint); virtual;
 
     procedure AddDataListener(Listener: TRadioModule; const Port: Integer);
     procedure AddFeatureListener(Listener: TRadioModule);
@@ -419,10 +431,12 @@ procedure RadioGlobalUnlock;
 function MakeMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
   const Sender: TRadioModule = nil): TRadioMessage;
 
+function ClassNameToModuleName(const S: string): string;
+
 implementation
 
 uses
-  Math, SignalBasic, utils;
+  Math, SignalBasic, utils, util_config;
 
 var
   RadioGlobalCS: TRTLCriticalSection;
@@ -444,6 +458,16 @@ begin
   Result.ParamH := ParamH;
   Result.ParamL := ParamL;
   if Assigned(Sender) then Result.Sender := Sender.Name;
+end;
+
+function ClassNameToModuleName(const S: string): string;
+begin
+  Result := S;
+  if Length(Result) < 1 then Exit;
+  if Pos('TRadio', S) = 1 then Delete(Result, 1, 6)
+  else
+    if Result[1] in ['t', 'T'] then Delete(Result, 1, 1);
+  if Copy(Result, Length(Result) - 5, 6) = 'Module' then Delete(Result, Length(Result) - 5, 6);
 end;
 
 { TRadioLogger }
@@ -1423,6 +1447,30 @@ begin
   end;
 end;
 
+procedure TRadioModule.LoadIconRes(ResName: string);
+var
+  N: string;
+  L: TStrings;
+begin
+  if ResName = '' then ResName := ClassNameToModuleName(ClassName);
+  ResName := ResName + '.icon.txt';
+  N := GetResFullName(ResName);
+  if FileExists(N) then
+  begin
+    L := TStringList.Create;
+    try
+      L.LoadFromFile(N);
+      L.StrictDelimiter := True;
+      L.Delimiter := ';';
+      FIcon := L.DelimitedText;
+    finally
+      L.Free
+    end;
+  end
+  else
+    FIcon := 'text (0,0),' + ClassNameToModuleName(ClassName);
+end;
+
 function TRadioModule.QueryInterface(constref iid: tguid; out obj): longint;
   stdcall;
 begin
@@ -1444,54 +1492,101 @@ begin
   //  Destroy;
 end;
 
-procedure TRadioModule.Measure(out Extent: TPoint);
+procedure TRadioModule.Measure(ACanvas: TCanvas; out Extent: TSize);
+var
+  E, F: TSize;
 begin
-  DoMeasure(Extent);
-  Extent.y := Max(ICON_SIZE, Extent.y);
-  Extent.x := Max(ICON_SIZE, Extent.x);
-  Inc(Extent.y, HEADER_SIZE);
-  Extent.x := Max(Extent.x, HEADER_SIZE);
+  with ACanvas do
+  begin
+    Font.Height := HEADER_FONT_HEIGHT;
+    Font.Style := [];
+    E := TextExtent(Name);
+    Inc(E.cx, TextExtent(BTN_CONFIG).cx + TextExtent(BTN_GUI).cx + 50);
+  end;
+  FDescStr.Clear;
+  Describe(FDescStr);
+  F := StyledTextExtent(ACanvas, FDescStr);
+  Extent.cy := Max(ICON_SIZE, F.cy);
+  Extent.cx := Max(ICON_SIZE, F.cx);
+  Extent.cx := Max(Extent.cx, E.cx);
+  Inc(Extent.cy, HEADER_SIZE + BODER_WIDTH * 2 + 4);
+  Inc(Extent.cx, BODER_WIDTH * 2 + 4);
 end;
 
 procedure TRadioModule.Draw(ACanvas: TCanvas; ARect: TRect);
 var
   IconRect: TRect;
   C: TPoint;
+  E: TSize;
 begin
   with ACanvas do
   begin
-    Pen.Width := 2;
+    Pen.Width := BODER_WIDTH;
     Pen.Color := TColor($00AAFF);
-    Font.Height := HEADER_SIZE - 5;
-    Font.Color := clBlack;
-    Font.Bold  := True;
     Brush.Color := clCream; // $fafafa;
     RoundRect(ARect, 8, 8);
     FloodFill(ARect.Left + 10, ARect.Top + 10, clWhite, fsSurface);
-    TextRect(ARect, ARect.Left + 2, ARect.Top + 2, Name);
+
+    // shrink, border excluded
+    Inc(ARect.Left, BODER_WIDTH + 1);
+    Inc(ARect.Top, BODER_WIDTH + 1);
+    Dec(ARect.Right, BODER_WIDTH - 1);
+    Dec(ARect.Bottom, BODER_WIDTH - 1);
+
+    Font.Style := [];
+    Font.Height := HEADER_FONT_HEIGHT;
+    Font.Color := clBlack;
+    Font.Bold  := True;
+    TextRect(ARect, ARect.Left + 3, ARect.Top, Name);
+
+    // buttons
+    Font.Color := TColor($FF5050);
+    E := TextExtent(BTN_CONFIG);
+    with FConfigBtnRect do
+    begin
+      Left := ARect.Right - E.cx - 8;
+      Top  := ARect.Top + 2;
+      Right := Left + E.cx;
+      Bottom := Top + E.cy;
+      if FHasConfig then TextRect(ARect, Left, Top, BTN_CONFIG);
+    end;
+    E := TextExtent(BTN_GUI);
+    with FGUIBtnRect do
+    begin
+      Left := FConfigBtnRect.Left - E.cx - 15;
+      Top  := ARect.Top + 2;
+      Right := Left + E.cx;
+      Bottom := Top + E.cy;
+      if FHasGUI then TextRect(ARect, Left, Top, BTN_GUI);
+    end;
 
     Pen.Width := 1;
-    Inc(ARect.Top, HEADER_SIZE);
-    Line(ARect.Left, ARect.Top - 1, ARect.Right, ARect.Top - 1);
+    Inc(ARect.Top, HEADER_SIZE - BODER_WIDTH);
+    Line(ARect.Left, ARect.Top, ARect.Right, ARect.Top);
 
+    // icon
     C.x := (ARect.Left + ARect.Right) div 2;
     C.y := (ARect.Top + ARect.Bottom) div 2;
-
     IconRect.Left   := C.x - ICON_SIZE div 2;
     IconRect.Right  := C.x + ICON_SIZE div 2;
     IconRect.Top    := C.y - ICON_SIZE div 2;
     IconRect.Bottom := C.y + ICON_SIZE div 2;
-    StrIconDraw(ACanvas, IconRect, 'polygon (-1,-1),(1,1),(1,-1),hello');
+    StrIconDraw(ACanvas, IconRect, FIcon);
 
+    // description strings
+    Font.Height := HEADER_FONT_HEIGHT;
     FDescStr.Clear;
-    FDescStr.Add('^bFreq: ^n^1100MHz');
+    Describe(FDescStr);
     StyledTextOut(ACanvas, ARect, FDescStr);
   end;
 end;
 
-procedure TRadioModule.MouseClick(const Pt: TPoint; Shifts: TShiftState);
+procedure TRadioModule.MouseClick(const Pt: TPoint);
 begin
-
+  if IsPtInRect(Pt, FGUIBtnRect) then
+    PostMessage(RM_SHOW_MAIN_GUI, 0, 0)
+  else if IsPtInRect(Pt, FConfigBtnRect) then
+    PostMessage(RM_CONFIGURE, 0, 0);
 end;
 
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
@@ -1514,7 +1609,8 @@ begin
     RM_REPORT   : RMReport(Msg, Ret);
     RM_SET_FEATURE: RMSetFeature(Msg, Ret);
     RM_TIMER      : RMTimer(Msg, Ret);
-    RM_CONFIGURE:   TThread.Synchronize(nil, @DoConfigure)
+    RM_CONFIGURE:   TThread.Synchronize(nil, @DoConfigure);
+    RM_SHOW_MAIN_GUI:   TThread.Synchronize(nil, @DoShowGUI)
   else
   end;
 end;
@@ -1601,6 +1697,10 @@ begin
   Result := True;
 end;
 
+procedure TRadioModule.Describe(Strs: TStrings);
+begin
+end;
+
 procedure TRadioModule.ShowConnections(Graph: TGenGraph);
 const
   PORT_FEATURE = 0;
@@ -1625,11 +1725,13 @@ end;
 constructor TRadioModule.Create(RunQueue: TRadioRunQueue);
 begin
   inherited;
+  FHasConfig := True;
   FDataListeners := TList.Create;
   FFeatureListeners := TList.Create;
   FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
   FLastMsg := @FFirstMsg;
   FDescStr := TStringList.Create;
+  LoadIconRes;
 end;
 
 destructor TRadioModule.Destroy;
@@ -1640,6 +1742,11 @@ begin
   FDataListeners.Free;
   FFeatureListeners.Free;
   inherited Destroy;
+end;
+
+procedure TRadioModule.GraphInvalidate;
+begin
+  if Assigned(FGraphNode) then FGraphNode.Invalidate;
 end;
 
 procedure TRadioModule.PostMessage(const Id: Integer; const ParamH,
@@ -1658,15 +1765,9 @@ begin
 
 end;
 
-procedure TRadioModule.DoDraw(ACanvas: TCanvas; ARect: TRect);
+procedure TRadioModule.DoShowGUI;
 begin
 
-end;
-
-procedure TRadioModule.DoMeasure(out Extent: TPoint);
-begin
-  Extent.x := 100;
-  Extent.y := 80;
 end;
 
 procedure TRadioModule.AddDataListener(Listener: TRadioModule;

@@ -30,6 +30,8 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure CreateTimer(const Id: PtrUInt; const AInterval: Cardinal);
     procedure DeleteTimer(const Id: PtrUInt);
+
+    procedure Describe(Strs: TStrings); override;
   end;
 
 implementation
@@ -125,6 +127,14 @@ begin
     Dispose(P);
   end;
   Unlock;
+end;
+
+procedure TRadioTimer.Describe(Strs: TStrings);
+begin
+  if Assigned(FHead.Next) then
+    Strs.Add('^bTimers running')
+  else
+    Strs.Add('^bNo timer');
 end;
 
 end.

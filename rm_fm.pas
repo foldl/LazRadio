@@ -90,6 +90,7 @@ end;
 constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
+  FHasConfig := False;
   DefOutput.BufferSize := 50 * 1024;
   FRegulator := TStreamRegulator.Create;
   FRegulator.Size := DefOutput.BufferSize;
@@ -109,7 +110,7 @@ end;
 
 initialization
 
-  RegisterModule('FMDemod', TRadioModuleClass(TRadioFMDemod.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioFMDemod.ClassType));
 
 end.
 

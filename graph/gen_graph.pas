@@ -7,7 +7,7 @@ unit gen_graph;
 interface
 
 uses
-  Classes, SysUtils, Graphics, ExtCtrls, Utils, Math;
+  Classes, SysUtils, Types, Graphics, ExtCtrls, Utils, Controls, Math;
 
 type
 
@@ -15,9 +15,9 @@ type
   TRouteAlgorithm = (raDirect, raAStar);
 
   IGenDrawable = interface
-    procedure Measure(out Extent: TPoint);
+    procedure Measure(ACanvas: TCanvas; out Extent: TSize);
     procedure Draw(ACanvas: TCanvas; ARect: TRect);
-    procedure MouseClick(const Pt: TPoint; Shifts: TShiftState);
+    procedure MouseClick(const Pt: TPoint);
   end;
 
   TGenGraph = class;
@@ -36,19 +36,19 @@ type
   private
     FInValidated: Boolean;
   protected
-    FExtent: TPoint;
+    FExtent: TSize;
     function GetBox: TRect; virtual;
   public
     procedure Invalidate;
 
-    procedure Measure; virtual;
+    procedure Measure(ACanvas: TCanvas); virtual;
     procedure Draw(ACanvas: TCanvas); virtual;
     function  IsPtOn(const Pt: TPoint): Boolean; virtual;
-    procedure MouseClick(const Pt: TPoint; Shifts: TShiftState); virtual;
+    procedure MouseClick(const Pt: TPoint); virtual;
 
     procedure Move(const OffsetX, OffsetY: Integer); virtual;
 
-    property Extent: TPoint read FExtent;
+    property Extent: TSize read FExtent;
     property Box: TRect read GetBox;
     property Invalidated: Boolean read FInValidated;
   end;
@@ -62,9 +62,7 @@ type
     FDegIn: Integer;
     FDegOut: Integer;
     FDrawable: IGenDrawable;
-    //FDrawRect: TRect;
     FTag: Integer;
-    //FNodeRect: TRect;
     FInPorts: array of Char;
     FOutPorts: array of Char;
 
@@ -77,10 +75,10 @@ type
   public
     constructor Create;
 
-    procedure Measure; override;
+    procedure Measure(ACanvas: TCanvas); override;
     procedure Draw(ACanvas: TCanvas); override;
     function  IsPtOn(const Pt: TPoint): Boolean; override;
-    procedure MouseClick(const Pt: TPoint; Shifts: TShiftState); override;
+    procedure MouseClick(const Pt: TPoint); override;
 
     procedure SetPortsNum(const T: TGenEntityPortType; const N: Integer);
     procedure SetPortsNumAtLeast(const T: TGenEntityPortType; const N: Integer);
@@ -116,7 +114,7 @@ type
 
     procedure SetCtrlPointsNumber(const N: Integer);
 
-    procedure Measure; override;
+    procedure Measure(ACanvas: TCanvas); override;
     procedure Draw(ACanvas: TCanvas); override;
 
     property CtrlPoints[const Index: Integer]: TPoint read GetCtrlPoints write SetCtrlPoints;
@@ -145,6 +143,7 @@ type
     procedure SetPaintBox(AValue: TPaintBox);
     function  FindConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
       AToPort: Integer): TGenEntityConnection;
+    procedure PaintBoxClick(Sender: TObject);
   protected
     procedure Layout;
     procedure Route(const BoundingBox: TRect);
@@ -170,6 +169,9 @@ type
   { TGenLayout }
 
   TGenLayout = class
+  const
+    V_MARGIN = 60;
+    H_MARGIN = 80;
   public
     procedure Layout(Entities, Conns: TList); virtual; abstract;
   end;
@@ -1037,9 +1039,6 @@ end;
 { TGenLevelLayout }
 
 procedure TGenLevelLayout.Layout(Entities, Conns: TList);
-const
-  V_MARGIN = 80;
-  H_MARGIN = 100;
 var
   P: Pointer;
   C: Pointer;
@@ -1142,8 +1141,8 @@ begin
   begin
     with TGenEntityNode(P) do
     begin
-      S[Tag].Right  := Max(S[Tag].Right, Extent.x);
-      S[Tag].Bottom := S[Tag].Bottom + V_MARGIN + Extent.y;
+      S[Tag].Right  := Max(S[Tag].Right, Extent.cx);
+      S[Tag].Bottom := S[Tag].Bottom + V_MARGIN + Extent.cy;
     end;
   end;
 
@@ -1169,9 +1168,9 @@ begin
   begin
     with TGenEntityNode(P) do
     begin
-      Pos.x := S[Tag].Left + (S[Tag].Right - Extent.x) div 2;
+      Pos.x := S[Tag].Left + (S[Tag].Right - Extent.cx) div 2;
       Pos.y := S[Tag].Top;
-      S[Tag].Top := S[Tag].Top + Extent.y + V_MARGIN;
+      S[Tag].Top := S[Tag].Top + Extent.cy + V_MARGIN;
     end;
   end;
 end;
@@ -1263,9 +1262,9 @@ begin
   with Result do
   begin
     Left := Pos.x;
-    Right := Left + Extent.x;
+    Right := Left + Extent.cx;
     Top   := Pos.y;
-    Bottom := Top + Extent.y;
+    Bottom := Top + Extent.cy;
   end;
 end;
 
@@ -1275,16 +1274,16 @@ begin
   //FInPorts[0] := 'def';
 end;
 
-procedure TGenEntityNode.Measure;
+procedure TGenEntityNode.Measure(ACanvas: TCanvas);
 var
   I: Integer;
 begin
   I := Max(High(FInPorts), High(FOutPorts)) + 1;
   if I >= 1 then I := I * (PORT_MARK_MARGIN + PORT_MARK_SIZE);
 
-  if Assigned(FDrawable) then FDrawable.Measure(FExtent);
-  FExtent.x := FExtent.x + 2 * PORT_MARK_SIZE;
-  FExtent.y := Max(FExtent.y, I);
+  if Assigned(FDrawable) then FDrawable.Measure(ACanvas, FExtent);
+  FExtent.cx := FExtent.cx + 2 * PORT_MARK_SIZE;
+  FExtent.cy := Max(FExtent.cy, I);
 end;
 
 procedure TGenEntityNode.Draw(ACanvas: TCanvas);
@@ -1314,13 +1313,13 @@ end;
 
 function TGenEntityNode.IsPtOn(const Pt: TPoint): Boolean;
 begin
-  Result := InRange(Pt.x, Pos.x, Pos.x + FExtent.x)
-         and InRange(Pt.y, Pos.y, Pos.y + FExtent.y);
+  Result := InRange(Pt.x, Pos.x, Pos.x + FExtent.cx)
+         and InRange(Pt.y, Pos.y, Pos.y + FExtent.cy);
 end;
 
-procedure TGenEntityNode.MouseClick(const Pt: TPoint; Shifts: TShiftState);
+procedure TGenEntityNode.MouseClick(const Pt: TPoint);
 begin
-  if Assigned(FDrawable) then FDrawable.MouseClick(Pt, Shifts);
+  if Assigned(FDrawable) then FDrawable.MouseClick(Pt);
 end;
 
 procedure TGenEntityNode.SetPortsNum(const T: TGenEntityPortType;
@@ -1380,7 +1379,7 @@ begin
       end;
     epOut:
       begin
-        Result.x := Pos.x + FExtent.x;
+        Result.x := Pos.x + FExtent.cx;
         if InRange(Index, 0, High(FOutPorts)) then
           Result.y := CalcFirstPortY(High(FOutPorts) + 1) + (PORT_MARK_MARGIN + PORT_MARK_SIZE) * Index
                    + PORT_MARK_SIZE div 2
@@ -1438,14 +1437,14 @@ begin
   SetLength(FCtrlPts, N + 2);
 end;
 
-procedure TGenEntityConnection.Measure;
+procedure TGenEntityConnection.Measure(ACanvas: TCanvas);
 var
   S, E: TPoint;
 begin
   S := FromPt;
   E := ToPt;
-  FExtent.x := Max(S.x, E.x) - Min(S.x, E.x);
-  FExtent.y := Max(S.y, E.y) - Min(S.y, E.y);
+  FExtent.cx := Max(S.x, E.x) - Min(S.x, E.x);
+  FExtent.cy := Max(S.y, E.y) - Min(S.y, E.y);
 end;
 
 procedure TGenEntityConnection.Draw(ACanvas: TCanvas);
@@ -1493,7 +1492,7 @@ begin
   FInValidated := True;
 end;
 
-procedure TGenEntity.Measure;
+procedure TGenEntity.Measure(ACanvas: TCanvas);
 begin
 
 end;
@@ -1508,7 +1507,7 @@ begin
   Result := False;
 end;
 
-procedure TGenEntity.MouseClick(const Pt: TPoint; Shifts: TShiftState);
+procedure TGenEntity.MouseClick(const Pt: TPoint);
 begin
 
 end;
@@ -1528,6 +1527,7 @@ end;
 procedure TGenGraph.SetPaintBox(AValue: TPaintBox);
 begin
   FDBuffer.PaintBox := AValue;
+  AValue.OnClick := @PaintBoxClick;
 end;
 
 function TGenGraph.FindConnection(AFrom, ATo: TGenEntityNode; const AFromPort,
@@ -1549,6 +1549,34 @@ begin
   end;
 end;
 
+procedure TGenGraph.PaintBoxClick(Sender: TObject);
+var
+  Pt: TPoint;
+  function foreach(L: TList): Boolean;
+  var
+    P: Pointer;
+  begin
+    Result := True;
+    for P in FEntities do
+    begin
+      with TGenEntity(P) do
+      begin
+        if IsPtOn(Pt) then
+        begin
+          MouseClick(Pt);
+          Exit;
+        end;
+      end;
+    end;
+    Result := False;
+  end;
+
+begin
+  Pt := FDBuffer.PaintBox.ScreenToClient(Mouse.CursorPos);
+  if foreach(FEntities) then Exit;
+  foreach(FConns);
+end;
+
 procedure TGenGraph.Layout;
 begin
   FFactory.GetLayout(FLayoutAlgo).Layout(FEntities, FConns);
@@ -1561,15 +1589,15 @@ end;
 
 procedure TGenGraph.FullRender;
 const
-  Margin_H = 100;
-  Margin_V = 80;
+  Margin_H = 10;
+  Margin_V = 40;
 var
   P: Pointer;
   R: TRect = (Left: 0; Top: 0; Right: 0; Bottom: 0);
 begin
   if FUpdateCount > 0 then Exit;
 
-  for P in FEntities do TGenEntityNode(P).Measure;
+  for P in FEntities do TGenEntityNode(P).Measure(FDBuffer.PaintBuffer.Canvas);
 
   Layout;
   for P in FEntities do
@@ -1582,7 +1610,7 @@ begin
   Route(R);
   for P in FConns do
   begin
-    TGenEntityConnection(P).Measure;
+    TGenEntityConnection(P).Measure(FDBuffer.PaintBuffer.Canvas);
     R := MergeRect(R, TGenEntity(P).Box);
   end;
 
@@ -1691,6 +1719,7 @@ end;
 
 destructor TGenGraph.Destroy;
 begin
+  FDBuffer.PaintBox.OnClick := nil;
   Clear;
   FDBuffer.Free;
   inherited Destroy;

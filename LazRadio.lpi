@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="31">
+    <Units Count="32">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -213,6 +213,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="MiniJ"/>
       </Unit30>
+      <Unit31>
+        <Filename Value="util_config.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="util_config"/>
+      </Unit31>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

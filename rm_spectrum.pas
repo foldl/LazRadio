@@ -92,6 +92,9 @@ type
     procedure SetWindowFunc(const FuncIndex: Integer);
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveWindowedData(const P: PComplex; const Len: Integer);
+
+    procedure DoShowGUI; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -864,9 +867,25 @@ begin
   DrawWaterfall;
 end;
 
+procedure TRadioSpectrum.DoShowGUI;
+begin
+  FForm.Show;
+end;
+
+procedure TRadioSpectrum.Describe(Strs: TStrings);
+begin
+  with Strs do
+  begin
+    Add(Format('^bFrequency: ^n%s', [FormatFreq(FFreq)]));
+    Add(Format('^bSample Rate: ^n%d', [FSampleRate]));
+  end;
+end;
+
 constructor TRadioSpectrum.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
+  FHasGUI := True;
+  FHasConfig := False;
   FRt := TTripleBuffer.Create;
   FWf := TDoubleBuffer.Create;
   FWf.DrawBuffer.PixelFormat := pf24bit;
@@ -900,14 +919,17 @@ begin
 end;
 
 destructor TRadioSpectrum.Destroy;
+var
+  P: PFFTPlan;
 begin
-  FinalizePlan(FFFTPlan);
+  P := FFFTPlan;
   FFFTPlan := nil;
+  FinalizePlan(P);
+
   FRt.Free;
   FWf.Free;
   FForm.Free;
   FFlow.Free;
-
   inherited Destroy;
 end;
 
@@ -918,7 +940,7 @@ end;
 
 initialization
 
-  RegisterModule('Spectrum', TRadioModuleClass(TRadioSpectrum.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioSpectrum.ClassType));
 
 end.
 

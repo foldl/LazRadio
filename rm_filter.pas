@@ -290,7 +290,7 @@ end;
 
 initialization
 
-  RegisterModule('Filter', TRadioModuleClass(TFilterModule.ClassType));
+  RegisterModule(TRadioModuleClass(TFilterModule.ClassType));
 
 end.
 

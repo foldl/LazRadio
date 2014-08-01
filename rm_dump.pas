@@ -45,6 +45,7 @@ type
       override;
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
+    procedure Describe(Strs: TStrings); override;
   public
     destructor Destroy; override;
 
@@ -66,6 +67,7 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
     procedure DoConfigure; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -201,6 +203,12 @@ begin
   D.Free;
 end;
 
+procedure TRadioDumpPlayer.Describe(Strs: TStrings);
+begin
+  if Assigned(FFile) then
+    Strs.Add('^bPlaying');
+end;
+
 constructor TRadioDumpPlayer.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -291,6 +299,15 @@ begin
   D.Free;
 end;
 
+procedure TRadioDump.Describe(Strs: TStrings);
+begin
+  if FFile is TFileStream then
+    Strs.Add(Format('^bFile name: ^n%s', [ExtractFileName((FFile as TFileStream).FileName)]))
+  else
+    Strs.Add('^bFile name unknown');
+  Strs.Add(Format('^bQuota: ^n%d', [FQuota]));
+end;
+
 destructor TRadioDump.Destroy;
 begin
   FFile.Free;
@@ -316,8 +333,8 @@ end;
 
 initialization
 
-  RegisterModule('Dump',       TRadioModuleClass(TRadioDump.ClassType));
-  RegisterModule('DumpPlayer', TRadioModuleClass(TRadioDumpPlayer.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioDump.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioDumpPlayer.ClassType));
 
 end.
 

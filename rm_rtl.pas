@@ -264,7 +264,7 @@ end;
 
 initialization
 
-  RegisterModule('Rtl', TRadioModuleClass(TRtlModule.ClassType));
+  RegisterModule(TRadioModuleClass(TRtlModule.ClassType));
 
 end.
 

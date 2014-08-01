@@ -46,7 +46,7 @@ type
     property Graph: TGenGraph read FGraph write FGraph;
   end;
 
-procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
+procedure RegisterModule(AClass: TRadioModuleClass);
 
 procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule); overload;
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: string);
@@ -62,10 +62,13 @@ uses
 var
   ModuleClassDict: TSuperTableString = nil;
 
-procedure RegisterModule(const T: string; AClass: TRadioModuleClass);
+procedure RegisterModule(AClass: TRadioModuleClass);
+var
+  S: string;
 begin
+  S := ClassNameToModuleName(AClass.ClassName);
   if not Assigned(ModuleClassDict) then ModuleClassDict := TSuperTableString.Create;
-  ModuleClassDict.I[LowerCase(T)] := Int64(AClass);
+  ModuleClassDict.I[LowerCase(S)] := Int64(AClass);
 end;
 
 procedure RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule);
