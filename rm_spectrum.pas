@@ -52,8 +52,6 @@ type
     FFrames: Integer;
     FYRange: Double;
     FYMax: Double;
-    FThisMax: Double;
-    FX:boolean;
     FWaterfallTickInterval: Integer;
     FLastWaterfallTick: Integer;
     FMinInterval: TDateTime;
@@ -351,6 +349,7 @@ begin
   FFreq := Freq - FSampleRate div 2;
   DrawRealtimeFrame;
   Result := 0;
+  GraphInvalidate;
 end;
 
 function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
@@ -361,6 +360,7 @@ begin
   FSampleRate := Rate;
   DrawRealtimeFrame;
   Result := 0;
+  GraphInvalidate;
 end;
 
 procedure TRadioSpectrum.DrawFrame;
@@ -504,7 +504,6 @@ var
   I: Integer;
   M: Double = -MaxDouble;
   N: Double = MaxDouble;
-  X: Double;
   CurvehHeight: Integer;
   Pts: array of TPoint;
   function VtoY(const V: Double): Integer;
@@ -605,7 +604,6 @@ end;
 procedure TRadioSpectrum.DrawPickers(const X, Y: Integer);
 var
   I: Integer;
-  C: TColor;
   X1, X2: Integer;
 
   procedure VLine(const V: Integer);
@@ -673,7 +671,6 @@ procedure TRadioSpectrum.ConfigWndNode(const Wt: TWindowFunction;
 var
   W: array of Double;
   I: Integer;
-  D: Double;
 begin
   SetLength(W, L);
   CreateWindowFunction(@W[0], L, Wt);
@@ -683,8 +680,6 @@ begin
 end;
 
 procedure TRadioSpectrum.SetWindowFunc(const FuncIndex: Integer);
-var
-  W: array of Double;
 begin
   if (FuncIndex >= Ord(Low(TWindowFunction))) and (FuncIndex <= Ord(High(TWindowFunction))) then
   begin
@@ -697,7 +692,6 @@ procedure TRadioSpectrum.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 var
   I: Integer;
-  D: Double;
 begin
   case Msg.Id of
     PRIV_RM_SPECTRUM_ENABLE_PICKER:
@@ -711,47 +705,50 @@ begin
     PRIV_RM_SPECTRUM_MOUSE_MOVE:
       MouseMove(Msg.ParamL shr 16, Msg.ParamL and $FFFF);
     RM_SPECTRUM_CFG:
-      case Msg.ParamH of
-        SET_WND_FUNC: SetWindowFunc(Integer(Msg.ParamL));
-        SET_OVERLAP_PER:
-          begin
-            I := Round(FFFTSize * Integer(Msg.ParamL) / 100);
-            if (I >= 0) and (I < FFFTSize) then FWndNode.Overlap := I;
-          end;
-        SET_FFT_SIZE:
-           SetFFTSize(Msg.ParamL);
-        GUI_RESET:
-          SyncRedrawFull;
-        SET_Y_RANGE:
-          begin
-            FYRange := Max(2, Integer(Msg.ParamL));
-            DrawRealtimeFrame;
-          end;
-        SET_Y_MAX:
-          begin
-            FYMax := Integer(Msg.ParamL);
-            DrawRealtimeFrame;
-          end;
-        SET_AUTO_Y:
-          FAutoY := Msg.ParamL <> 0;
-        SET_SPAN:
-          begin
-            FSpan := Integer(Msg.ParamL);
-            DrawRealtimeFrame;
-          end;
-        SET_CENTER_FREQ:
-          begin
-            FCenterFreq := Integer(Msg.ParamL);
-            DrawRealtimeFrame;
-          end;
-        SET_DRAW_MIN_INTERVAL:
-          FMinInterval := Msg.ParamL / MSecsPerDay;
-        SET_DATA_DOMAIN:
-          begin
-            FDomain := Msg.ParamL;
-            DrawRealtimeFrame;
-          end;
-      end;
+      begin
+        case Msg.ParamH of
+          SET_WND_FUNC: SetWindowFunc(Integer(Msg.ParamL));
+          SET_OVERLAP_PER:
+            begin
+              I := Round(FFFTSize * Integer(Msg.ParamL) / 100);
+              if (I >= 0) and (I < FFFTSize) then FWndNode.Overlap := I;
+            end;
+          SET_FFT_SIZE:
+             SetFFTSize(Msg.ParamL);
+          GUI_RESET:
+            SyncRedrawFull;
+          SET_Y_RANGE:
+            begin
+              FYRange := Max(2, Integer(Msg.ParamL));
+              DrawRealtimeFrame;
+            end;
+          SET_Y_MAX:
+            begin
+              FYMax := Integer(Msg.ParamL);
+              DrawRealtimeFrame;
+            end;
+          SET_AUTO_Y:
+            FAutoY := Msg.ParamL <> 0;
+          SET_SPAN:
+            begin
+              FSpan := Integer(Msg.ParamL);
+              DrawRealtimeFrame;
+            end;
+          SET_CENTER_FREQ:
+            begin
+              FCenterFreq := Integer(Msg.ParamL);
+              DrawRealtimeFrame;
+            end;
+          SET_DRAW_MIN_INTERVAL:
+            FMinInterval := Msg.ParamL / MSecsPerDay;
+          SET_DATA_DOMAIN:
+            begin
+              FDomain := Msg.ParamL;
+              DrawRealtimeFrame;
+            end;
+        end;
+        GraphInvalidate;
+      end
     else
       inherited ProccessMessage(Msg, Ret);
   end;
@@ -876,7 +873,7 @@ procedure TRadioSpectrum.Describe(Strs: TStrings);
 begin
   with Strs do
   begin
-    Add(Format('^bFrequency: ^n%s', [FormatFreq(FFreq)]));
+    Add(Format('^bCenter Freq: ^n%s', [FormatFreq(FCenterFreq)]));
     Add(Format('^bSample Rate: ^n%d', [FSampleRate]));
   end;
 end;

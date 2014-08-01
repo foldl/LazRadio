@@ -10,9 +10,9 @@ uses
 
 type
 
-  { TRadioFMDemod }
+  { TRadioFreqDiscriminator }
 
-  TRadioFMDemod = class(TRadioModule)
+  TRadioFreqDiscriminator = class(TRadioModule)
   private
     FRegulator: TStreamRegulator;
     FLastValue: Complex;
@@ -32,13 +32,13 @@ type
 
 implementation
 
-{ TRadioFMDemod }
+{ TRadioFreqDiscriminator }
 
 // Reference: http://www.digitalsignallabs.com/Digradio.pdf
 // y[n] = A/2 exp(-j (2 pi f0 n Ts + f_delta integrate[x(tao), 0, n Ts]))
 // y[n] * conj[y[n - 1]] = A^2 / 4 exp(-j (2 pi f0 Ts + f_delta Ts x(nTs)))
 // arctan2 is in (-pi, pi)
-procedure TRadioFMDemod.ReceiveRegulatedData(const P: PComplex;
+procedure TRadioFreqDiscriminator.ReceiveRegulatedData(const P: PComplex;
   const Len: Integer);
 var
   I: Integer;
@@ -53,7 +53,7 @@ begin
   O := Alloc(DefOutput, I);
   if not Assigned(O) then
   begin
-    TRadioLogger.Report(llWarn, 'TRadioFMDemod.ReceiveRegulatedData: data lost');
+    TRadioLogger.Report(llWarn, 'TRadioFreqDiscriminator.ReceiveRegulatedData: data lost');
     Exit;
   end;
   T := FLastValue;
@@ -72,13 +72,13 @@ begin
   DefOutput.Broadcast(I, FDataListeners);
 end;
 
-function TRadioFMDemod.RMSetFrequency(const Msg: TRadioMessage;
+function TRadioFreqDiscriminator.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
   Result := 0;
 end;
 
-function TRadioFMDemod.RMSetSampleRate(const Msg: TRadioMessage;
+function TRadioFreqDiscriminator.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
  // if FSampleRate = Rate then Exit;
@@ -87,7 +87,7 @@ begin
   Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
 end;
 
-constructor TRadioFMDemod.Create(RunQueue: TRadioRunQueue);
+constructor TRadioFreqDiscriminator.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
   FHasConfig := False;
@@ -97,20 +97,20 @@ begin
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;
 end;
 
-destructor TRadioFMDemod.Destroy;
+destructor TRadioFreqDiscriminator.Destroy;
 begin
   FRegulator.Free;
   inherited Destroy;
 end;
 
-procedure TRadioFMDemod.ReceiveData(const P: PComplex; const Len: Integer);
+procedure TRadioFreqDiscriminator.ReceiveData(const P: PComplex; const Len: Integer);
 begin
   FRegulator.ReceiveData(P, Len);
 end;
 
 initialization
 
-  RegisterModule(TRadioModuleClass(TRadioFMDemod.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioFreqDiscriminator.ClassType));
 
 end.
 

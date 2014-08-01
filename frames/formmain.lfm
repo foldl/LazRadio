@@ -1,14 +1,14 @@
 object MainForm: TMainForm
-  Left = 267
+  Left = 218
   Height = 574
-  Top = 275
+  Top = 227
   Width = 854
   Caption = 'LazRadio'
   ClientHeight = 554
   ClientWidth = 854
   Menu = MainMenu1
   OnClose = FormClose
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.2.2.0'
   object Panel1: TPanel
     Left = 0
     Height = 432
@@ -563,10 +563,10 @@ object MainForm: TMainForm
       Top = 27
       Width = 469
       HorzScrollBar.Increment = 80
-      HorzScrollBar.Page = 431
+      HorzScrollBar.Page = 448
       HorzScrollBar.Tracking = True
       VertScrollBar.Increment = 80
-      VertScrollBar.Page = 366
+      VertScrollBar.Page = 383
       VertScrollBar.Tracking = True
       Align = alClient
       ClientHeight = 383
@@ -630,6 +630,15 @@ object MainForm: TMainForm
     Caption = 'Button2'
     OnClick = Button2Click
     TabOrder = 5
+  end
+  object Button4: TButton
+    Left = 120
+    Height = 25
+    Top = 168
+    Width = 75
+    Caption = 'Button4'
+    OnClick = Button4Click
+    TabOrder = 6
   end
   object MainMenu1: TMainMenu
     left = 256

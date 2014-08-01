@@ -54,6 +54,7 @@ type
     FHandle: HWAVEOUT;
     FAutoGain: Boolean;
     FGain: Double;
+    FGainDb: Integer;
     FFmt: Integer;
     FClosing: Boolean;
     FResample: TResampleNode;
@@ -263,9 +264,22 @@ procedure TRadioAudioOut.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   case Msg.Id of
-    RM_AUDIO_OUT_FMT:       FFmt := Integer(Msg.ParamH);
-    RM_AUDIO_OUT_GAIN:      FGain := power(10, Integer(Msg.ParamH) / 10);
-    RM_AUDIO_OUT_GAIN_AUTO: FAutoGain := True;
+    RM_AUDIO_OUT_FMT:
+      begin
+        FFmt := Integer(Msg.ParamH);
+        GraphInvalidate;
+      end;
+    RM_AUDIO_OUT_GAIN:
+      begin
+        FGain := power(10, Integer(Msg.ParamH) / 10);
+        FGainDb := Integer(Msg.ParamH);
+        GraphInvalidate;
+      end;
+    RM_AUDIO_OUT_GAIN_AUTO:
+      begin
+        FAutoGain := True;
+        GraphInvalidate;
+      end;
     PRIV_RM_AUDIO_IN_CLOSE:
       begin
         // TODO:
@@ -314,8 +328,16 @@ begin
 end;
 
 procedure TRadioAudioOut.Describe(Strs: TStrings);
+const
+  FS: array [0..3] of string = ('Mono I', 'Mono Q', 'Stereo IQ', 'Stereo QI');
+var
+  S: string;
 begin
-  //
+  Strs.Add('^bFormat: ^n' + FS[FFmt mod 4]);
+  if FAutoGain then
+    Strs.Add('^bGain: ^nAutomatic')
+  else
+    Strs.Add(Format('^bGain: ^n%ddB', [FGainDb]));
 end;
 
 constructor TRadioAudioOut.Create(RunQueue: TRadioRunQueue);
@@ -333,6 +355,7 @@ begin
   R.OnSendToNext := @ReceiveRegulatedData;
   FResample.Connect(R);
   FGain := 32760;
+  FGainDb := Round(10 * log10(FGain));
   for I := 0 to High(FEvents) do
     FEvents[I] := CreateEvent(nil, True, True, nil);
 end;
@@ -427,11 +450,12 @@ begin
     RM_AUDIO_IN_START:
       begin
         CloseDev;
+        FRate := DWord(Msg.ParamL);
         with F do
         begin
           wFormatTag := WAVE_FORMAT_PCM;
           nChannels  := 1;
-          nSamplesPerSec := DWord(Msg.ParamL);
+          nSamplesPerSec := FRate;
           wBitsPerSample := 16;
           nBlockAlign    := (nChannels * wBitsPerSample) div 8;
           nAvgBytesPerSec := nSamplesPerSec * nBlockAlign;
@@ -452,8 +476,13 @@ begin
         waveInStart(FHandle);
         Broadcast(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, Msg.ParamL);
         Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
+        GraphInvalidate;
       end;
-    RM_AUDIO_IN_STOP: CloseDev;
+    RM_AUDIO_IN_STOP:
+      begin
+        CloseDev;
+        GraphInvalidate;
+      end;
     PRIV_RM_AUDIO_IN_DATA: waveInData(Integer(Msg.ParamH));
     PRIV_RM_AUDIO_IN_CLOSE:
       begin

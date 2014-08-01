@@ -27,6 +27,7 @@ type
     FWndParam: Double;
     FConfig: TFilterForm;
     FBandIndex: Integer;
+    FDirect: Boolean;
     procedure Redesign;
     procedure RedesignReal;
     procedure RedesignComplex;
@@ -39,6 +40,7 @@ type
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
     procedure DoConfigure; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -218,6 +220,8 @@ begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
   begin
     DesignBPF(Integer(Msg.ParamH), Integer(Msg.ParamL));
+    FDirect := False;
+    GraphInvalidate;
     Exit;
   end;
 
@@ -225,8 +229,15 @@ begin
     RM_FILTER_SET:
       begin
         FFIRNode.SetFIR(PComplex(Msg.ParamH), Msg.ParamL, False);
+        FDirect := True;
+        GraphInvalidate;
       end;
-    RM_FILTER_REDESIGN:  Redesign;
+    RM_FILTER_REDESIGN:
+      begin
+        Redesign;
+        FDirect := False;
+        GraphInvalidate;
+      end;
     RM_FILTER_CONFIG:
       begin
         case Msg.ParamH of
@@ -256,6 +267,35 @@ procedure TFilterModule.DoConfigure;
 begin
   FConfig.EditRate.Text := IntToStr(FSampleRate);
   FConfig.Show;
+end;
+
+procedure TFilterModule.Describe(Strs: TStrings);
+const
+  FT: array [TFilterType] of string = ('Low Pass', 'Band Pass', 'Band Stop', 'High Pass');
+begin
+  if FDirect then
+  begin
+    Strs.Add('^bDirectly Designed');
+    Strs.Add('^bFeatures Unknown');
+    Exit;
+  end;
+  Strs.Add('^bType: ^n' + FT[FType]);
+  if FCoeffDomain = FILTER_COEFF_DOMAIN_REAL then
+    Strs.Add('^bCoeff. Domain: ^nReal')
+  else
+    Strs.Add('^bCoeff. Domain: ^nComplex');
+
+  Strs.Add(Format('^bTaps: ^n%d', [FTaps]));
+  case FType of
+    ftLPF, ftHPF:
+      Strs.Add(Format('^bCutoff Freq: ^n%dHz', [FOmega]));
+    ftBPF, ftBSF:
+      begin
+        Strs.Add(Format('^bBand Center Freq: ^n%dHz', [FOmega]));
+        Strs.Add(Format('^bBandwidth: ^n%dHz', [FBandwidth]));
+      end;
+  end;
+  Strs.Add(Format('^bWindow Func: ^n%s', [gWindowFunctionNames[FWnd]]));
 end;
 
 constructor TFilterModule.Create(RunQueue: TRadioRunQueue);

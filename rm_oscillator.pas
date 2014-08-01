@@ -34,6 +34,7 @@ type
 
     procedure ThreadFun(Thread: TGenericRadioThread); override;
     procedure DoConfigure; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -69,12 +70,10 @@ procedure TRadioOscillator.GenRect(P: PComplex; const Len: Integer);
 var
   J: Integer;
   A: Double;
-  C: Integer;
   V: Double;
   W: Double;
   X: Double;
   T: Double;
-  Z: Double;
 begin
   X := FRatio / 101;
   A := FFreq / FSampleRate;
@@ -95,7 +94,6 @@ procedure TRadioOscillator.GenTriangle(P: PComplex; const Len: Integer);
 var
   J: Integer;
   A: Double;
-  C: Integer;
   V: Double;
   W: Double;
   X: Double;
@@ -129,6 +127,7 @@ begin
           FWaveFunc := @GenSin;
         end;
         FRatio := Max(1, Msg.ParamL mod 101);
+        GraphInvalidate;
       end
   else
     inherited;
@@ -195,6 +194,18 @@ end;
 procedure TRadioOscillator.DoConfigure;
 begin
   FUI.Show;
+end;
+
+procedure TRadioOscillator.Describe(Strs: TStrings);
+begin
+  if FWaveFunc = @GenSin then
+    Strs.Add('^bWave: ^nSin')
+  else if FWaveFunc = @GenRect then
+    Strs.Add('^bWave: ^nRectangle')
+  else
+    Strs.Add('^bWave: ^nTriangle');
+  if FWaveFunc <> @GenSin then
+    Strs.Add(Format('^bDuty: ^n%d%', [FRatio]));
 end;
 
 initialization

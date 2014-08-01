@@ -80,9 +80,15 @@ procedure TRadioTimer.ProccessMessage(const Msg: TRadioMessage; var Ret: Integer
 begin
   case Msg.Id of
     RM_CREATE_TIMER:
-      CreateTimer(Msg.ParamH, Cardinal(Msg.ParamL));
+      begin
+        CreateTimer(Msg.ParamH, Cardinal(Msg.ParamL));
+        GraphInvalidate;
+      end;
     RM_DELETE_TIMER:
-      DeleteTimer(Msg.ParamH);
+      begin
+        DeleteTimer(Msg.ParamH);
+        GraphInvalidate;
+      end
     else
       inherited ProccessMessage(Msg, Ret);
   end;

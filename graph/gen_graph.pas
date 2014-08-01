@@ -18,6 +18,7 @@ type
     procedure Measure(ACanvas: TCanvas; out Extent: TSize);
     procedure Draw(ACanvas: TCanvas; ARect: TRect);
     procedure MouseClick(const Pt: TPoint);
+    function  Invalidated: Boolean;
   end;
 
   TGenGraph = class;
@@ -33,14 +34,11 @@ type
   { TGenEntity }
 
   TGenEntity = class
-  private
-    FInValidated: Boolean;
   protected
     FExtent: TSize;
     function GetBox: TRect; virtual;
+    function GetInvalidated: Boolean; virtual;
   public
-    procedure Invalidate;
-
     procedure Measure(ACanvas: TCanvas); virtual;
     procedure Draw(ACanvas: TCanvas); virtual;
     function  IsPtOn(const Pt: TPoint): Boolean; virtual;
@@ -50,7 +48,7 @@ type
 
     property Extent: TSize read FExtent;
     property Box: TRect read GetBox;
-    property Invalidated: Boolean read FInValidated;
+    property Invalidated: Boolean read GetInvalidated;
   end;
 
   TGenAlgoFactory = class;
@@ -70,6 +68,7 @@ type
     procedure DrawPorts(ACanvas: TCanvas);
   protected
     function GetBox: TRect; override;
+    function GetInvalidated: Boolean; override;
   public
     Pos: TPoint;
   public
@@ -1268,6 +1267,11 @@ begin
   end;
 end;
 
+function TGenEntityNode.GetInvalidated: Boolean;
+begin
+  Result := FDrawable.Invalidated;
+end;
+
 constructor TGenEntityNode.Create;
 begin
   inherited;
@@ -1476,6 +1480,11 @@ end;
 
 { TGenEntity }
 
+function TGenEntity.GetInvalidated: Boolean;
+begin
+  Result := False;
+end;
+
 function TGenEntity.GetBox: TRect;
 begin
   with Result do
@@ -1487,11 +1496,6 @@ begin
   end;
 end;
 
-procedure TGenEntity.Invalidate;
-begin
-  FInValidated := True;
-end;
-
 procedure TGenEntity.Measure(ACanvas: TCanvas);
 begin
 
@@ -1499,7 +1503,6 @@ end;
 
 procedure TGenEntity.Draw(ACanvas: TCanvas);
 begin
-  FInValidated := False;
 end;
 
 function TGenEntity.IsPtOn(const Pt: TPoint): Boolean;
@@ -1636,7 +1639,7 @@ begin
   begin
     with TGenEntityNode(P) do
     begin
-      if Invalidated then Draw(FDBuffer.DrawBuffer.Canvas);
+      if Invalidated then Draw(FDBuffer.PaintBuffer.Canvas);
     end;
   end;
   FDBuffer.Paint;

@@ -162,8 +162,13 @@ begin
         StopPlaying;
         FFile := TStream(Msg.ParamH);
         RTLeventSetEvent(FStartEvent);
+        GraphInvalidate;
       end;
-    RM_DUMP_PLAYER_STOP: StopPlaying;
+    RM_DUMP_PLAYER_STOP:
+      begin
+        StopPlaying;
+        GraphInvalidate;
+      end
     else
       inherited;
   end;
@@ -271,8 +276,13 @@ begin
           FFile.Size := 0;
           FFile.Write(DUMP_HEADER, SizeOf(DUMP_HEADER));
         end;
+        GraphInvalidate;
       end;
-    RM_DUMP_STOP: FreeAndNil(FFile);
+    RM_DUMP_STOP:
+      begin
+        FreeAndNil(FFile);
+        GraphInvalidate;
+      end;
     RM_DATA:
       inherited;
     else

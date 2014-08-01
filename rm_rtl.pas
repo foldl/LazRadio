@@ -35,6 +35,7 @@ type
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
     procedure ThreadFun(Thread: TGenericRadioThread); override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -158,10 +159,12 @@ begin
         RtlSdrResetBuffer(FDev);
         FSampleFormat := RtlSdrGetDirectSampling(FDev);
         RTLeventSetEvent(FEvent);
+        GraphInvalidate;
       end;
     RM_RTL_STOP:
       begin
         CloseDev;
+        GraphInvalidate;
       end;
     RM_RTL_DEV_CTL:
       begin
@@ -194,6 +197,7 @@ begin
           RTL_SET_OFFSET_TUNNING:
             RtlSdrSetOffsetTuning(FDev, Msg.ParamL);
         end;
+        GraphInvalidate;
       end;
     PRIV_RM_RTL_DATA:
       DataIn(PByte(Msg.ParamH), Msg.ParamL);
@@ -260,6 +264,16 @@ begin
       Break;
     RtlSdrReadASync(FDev, TRtlSdrReadAsyncCB(@SDRCallback), Self, 0, DefOutput.BufferSize * 2);
   end;
+end;
+
+procedure TRtlModule.Describe(Strs: TStrings);
+begin
+  if not Assigned(FDev) then
+  begin
+    Strs.Add('^bNot Running');
+    Exit;
+  end;
+  Strs.Add(Format('^bTunner Gain: ^n%.1fdB', [RtlSdrGetTunerGain(FDev) / 10]));
 end;
 
 initialization

@@ -17,6 +17,7 @@ type
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
+    Button4: TButton;
     MainMenu1: TMainMenu;
     Memo1: TMemo;
     MenuItem1: TMenuItem;
@@ -32,6 +33,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
   private
     FSystem: TRadioSystem;
@@ -70,9 +72,9 @@ begin
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'DumpPlayer');
-    FSystem.AddModule('src', 'Rtl');
+    FSystem.AddModule('src', 'AudioIn');
     FSystem.AddModule('dump', 'Dump');
-    FSystem.AddModule('fm', 'FMDemod');
+    FSystem.AddModule('fm', 'FreqDiscriminator');
   end;
 
   FSystem.ConnectBoth('src', 's');
@@ -126,6 +128,11 @@ begin
   exit;
   }
   RadioPostMessage(RM_DUMP_STOP, 0, 0, 'src');
+end;
+
+procedure TMainForm.Button4Click(Sender: TObject);
+begin
+  FSystem.Graph.FullRender;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);

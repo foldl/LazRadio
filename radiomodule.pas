@@ -203,6 +203,7 @@ type
     FIcon: string;
     FHasGUI: Boolean;
     FHasConfig: Boolean;
+    FInvalidated: Boolean;
     procedure LoadIconRes(ResName: string = '');
 {$IFDEF FPC}
     function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid: tguid; out obj): longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
@@ -214,6 +215,7 @@ type
     procedure Measure(ACanvas: TCanvas; out Extent: TSize);
     procedure Draw(ACanvas: TCanvas; ARect: TRect);
     procedure MouseClick(const Pt: TPoint);
+    function  Invalidated: Boolean;
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
@@ -279,7 +281,6 @@ type
   private
     FModule: TBackgroundRadioModule;
     FParam: Pointer;
-    FRemoteRun: TNotifyEvent;
   protected
     procedure Execute; override;
   public
@@ -1501,7 +1502,8 @@ begin
     Font.Height := HEADER_FONT_HEIGHT;
     Font.Style := [];
     E := TextExtent(Name);
-    Inc(E.cx, TextExtent(BTN_CONFIG).cx + TextExtent(BTN_GUI).cx + 50);
+    if FHasConfig then Inc(E.cx, TextExtent(BTN_CONFIG).cx + 20) else Inc(E.cx, 5);
+    if FHasGUI then Inc(E.cx, TextExtent(BTN_GUI).cx + 20) else Inc(E.cx, 5);
   end;
   FDescStr.Clear;
   Describe(FDescStr);
@@ -1519,11 +1521,14 @@ var
   C: TPoint;
   E: TSize;
 begin
+  FInvalidated := False;
   with ACanvas do
   begin
+    Pen.Style := psSolid;
     Pen.Width := BODER_WIDTH;
     Pen.Color := TColor($00AAFF);
     Brush.Color := clCream; // $fafafa;
+    Brush.Style := bsSolid;
     RoundRect(ARect, 8, 8);
     FloodFill(ARect.Left + 10, ARect.Top + 10, clWhite, fsSurface);
 
@@ -1541,24 +1546,33 @@ begin
 
     // buttons
     Font.Color := TColor($FF5050);
-    E := TextExtent(BTN_CONFIG);
-    with FConfigBtnRect do
+    if FHasConfig then
     begin
-      Left := ARect.Right - E.cx - 8;
-      Top  := ARect.Top + 2;
-      Right := Left + E.cx;
-      Bottom := Top + E.cy;
-      if FHasConfig then TextRect(ARect, Left, Top, BTN_CONFIG);
-    end;
-    E := TextExtent(BTN_GUI);
-    with FGUIBtnRect do
+      E := TextExtent(BTN_CONFIG);
+      with FConfigBtnRect do
+      begin
+        Left := ARect.Right - E.cx - 8;
+        Top  := ARect.Top;
+        Right := Left + E.cx;
+        Bottom := Top + E.cy;
+        TextRect(ARect, Left, Top, BTN_CONFIG);
+      end;
+    end
+    else
+      FConfigBtnRect.Left := ARect.Right;
+    if FHasGUI then
     begin
-      Left := FConfigBtnRect.Left - E.cx - 15;
-      Top  := ARect.Top + 2;
-      Right := Left + E.cx;
-      Bottom := Top + E.cy;
-      if FHasGUI then TextRect(ARect, Left, Top, BTN_GUI);
+      E := TextExtent(BTN_GUI);
+      with FGUIBtnRect do
+      begin
+        Left := FConfigBtnRect.Left - E.cx - 15;
+        Top  := ARect.Top;
+        Right := Left + E.cx;
+        Bottom := Top + E.cy;
+        TextRect(ARect, Left, Top, BTN_GUI);
+      end;
     end;
+
 
     Pen.Width := 1;
     Inc(ARect.Top, HEADER_SIZE - BODER_WIDTH);
@@ -1587,6 +1601,11 @@ begin
     PostMessage(RM_SHOW_MAIN_GUI, 0, 0)
   else if IsPtInRect(Pt, FConfigBtnRect) then
     PostMessage(RM_CONFIGURE, 0, 0);
+end;
+
+function TRadioModule.Invalidated: Boolean;
+begin
+  Result := FInvalidated;
 end;
 
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
@@ -1746,7 +1765,7 @@ end;
 
 procedure TRadioModule.GraphInvalidate;
 begin
-  if Assigned(FGraphNode) then FGraphNode.Invalidate;
+  FInvalidated := True;
 end;
 
 procedure TRadioModule.PostMessage(const Id: Integer; const ParamH,
