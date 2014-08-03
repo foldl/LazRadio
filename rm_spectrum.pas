@@ -775,7 +775,7 @@ var
 
 begin
   if not CheckTime then Exit;
-
+  if not FForm.Visible then Exit;
   if FSpan = 0 then
   begin
     J := Min(Len - 1, High(FLine));

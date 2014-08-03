@@ -72,7 +72,7 @@ begin
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'DumpPlayer');
-    FSystem.AddModule('src', 'AudioIn');
+    FSystem.AddModule('src', 'rtl');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FreqDiscriminator');
   end;
@@ -89,7 +89,7 @@ begin
   FSystem.ConnectFeature('s2', 'f2');
   FSystem.ConnectBoth('f2', 'u');
 
-  //FSystem.ConnectBoth('r', 'dump');
+  FSystem.ConnectBoth('src', 'dump');
 
  // FSystem.ConnectBoth('f', 's2');
   //FSystem.ConnectBoth('f', 'u');
@@ -97,8 +97,8 @@ begin
 
   RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
 //  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 30000, 's2');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 15000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
   RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');

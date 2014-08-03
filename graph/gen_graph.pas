@@ -86,7 +86,7 @@ type
 
     procedure Move(const OffsetX, OffsetY: Integer); override;
 
-    function  GetPortConnectPos(T: TGenEntityPortType; Index: Integer): TPoint;
+    function GetPortConnectPos(T: TGenEntityPortType; Index: Integer): TPoint;
     property Drawable: IGenDrawable read FDrawable write FDrawable;
 
     property Tag: Integer read FTag write FTag;
@@ -187,12 +187,12 @@ type
 
   TGenRoute = class
   const
-    NOT_GOOD  = 15;
     EMPTY     = 0;
     VISITED   = 1;
     WIRE_USED = 2;
     FORBID_PT = 120;
   protected
+    FNotGood: Integer;
     FSortedOpenNode: TList;
     FGrid: array of TGenRouteNodeRec;
     FWorking: array of TGenRouteNodeRec;
@@ -286,6 +286,7 @@ type
   private
     procedure RouteOne(Conn: TGenEntityConnection);
   public
+    constructor Create;
     procedure Route(Entities, Conntections: TList; BoundingBox: TRect); override;
   end;
 
@@ -316,10 +317,53 @@ procedure TGenDirectRoute.RouteOne(Conn: TGenEntityConnection);
 const
   HEADER = 15;
 var
-  I: Integer;
-  Pt1, Pt2: TPoint;
-  Y1, Y2: Integer;
+  Pt1, Pt2, T: TPoint;
+
+  procedure ConnectX(var P1, P2: TPoint);
+  var
+    X1, X2: Integer;
+    I: Integer;
+  begin
+    X1 := Min(P1.x, P2.x);
+    X2 := Max(P1.x, P2.x);
+    for I := X1 to X2 do
+    begin
+      P1.x := I;
+      P2.x := I;
+      if IsSegmentClear(P1, P2) then
+        Exit;
+    end;
+    P1.x := (X1 + X2) div 2;
+    P2.x := P1.x;
+  end;
+
+  procedure ConnectY(var P1, P2: TPoint);
+  var
+    Y1, Y2: Integer;
+    I: Integer;
+  begin
+    Y1 := Min(P1.y, P2.y);
+    Y2 := Max(P1.y, P2.y);
+    for I := (Y1 + Y2) div 2 to Y2 do
+    begin
+      P1.y := I;
+      P2.y := I;
+      if IsSegmentClear(P1, P2) then
+        Exit;
+    end;
+    for I := Y1 to (Y1 + Y2) div 2 do
+    begin
+      P1.y := I;
+      P2.y := I;
+      if IsSegmentClear(P1, P2) then
+        Exit;
+    end;
+    P1.y := (Y1 + Y2) div 2;
+    P2.y := P1.y;
+  end;
+
 begin;
+  Restore;
   Pt1 := Conn.FromPt;
   Inc(Pt1.x, HEADER * (Conn.FromPort.Index + 1));
   Pt2 := Conn.ToPt;
@@ -337,43 +381,30 @@ begin;
   if Pt1.x < Pt2.x then
   begin
     Conn.SetCtrlPointsNumber(2);
-    //Pt1.x := (Pt1.x + Pt2.x) div 2;
+    T := Pt2;
     Pt2.x := Pt1.x;
+    if not IsSegmentClear(Pt1, Pt2) then
+    begin
+      Pt2 := T;
+      ConnectX(Pt1, Pt2);
+    end;
     Conn.CtrlPoints[0] := Pt1;
     Conn.CtrlPoints[1] := Pt2;
+    Exit;
   end;
 
   Conn.SetCtrlPointsNumber(4);
   Conn.CtrlPoints[0] := Pt1;
   Conn.CtrlPoints[3] := Pt2;
-  Y1 := Min(Pt1.y, Pt2.y);
-  Y2 := Max(Pt1.y, Pt2.y);
-  for I := (Y1 + Y2) div 2 to Y2 do
-  begin
-    Pt1.y := I;
-    Pt2.y := I;
-    if IsSegmentClear(Pt1, Pt2) then
-    begin
-      Conn.CtrlPoints[1] := Pt1;
-      Conn.CtrlPoints[2] := Pt2;
-      Exit;
-    end;
-  end;
-  for I := Y1 to (Y1 + Y2) div 2 do
-  begin
-    Pt1.y := I;
-    Pt2.y := I;
-    if IsSegmentClear(Pt1, Pt2) then
-    begin
-      Conn.CtrlPoints[1] := Pt1;
-      Conn.CtrlPoints[2] := Pt2;
-      Exit;
-    end;
-  end;
-  Pt1.y := (Y1 + Y2) div 2;
-  Pt2.y := Pt1.y;
+  ConnectY(Pt1, Pt2);
   Conn.CtrlPoints[1] := Pt1;
   Conn.CtrlPoints[2] := Pt2;
+end;
+
+constructor TGenDirectRoute.Create;
+begin
+  inherited;
+  FNotGood := 2;;
 end;
 
 procedure TGenDirectRoute.Route(Entities, Conntections: TList;
@@ -397,7 +428,7 @@ procedure TGenRoute.MarkPortPath(ANode: TGenEntityNode);
     for K := 0 to N do
     begin
       Pt := ANode.GetPortConnectPos(epIn, K);
-      for I := Max(0, Pt.x - NOT_GOOD) to Pt.x do
+      for I := Max(0, Pt.x - FNotGood) to Pt.x do
         FGrid[Pt.y * FSize1.x + I].Status := EMPTY;
     end;
   end;
@@ -409,7 +440,7 @@ procedure TGenRoute.MarkPortPath(ANode: TGenEntityNode);
     for K := 0 to N do
     begin
       Pt := ANode.GetPortConnectPos(epOut, K);
-      for I := Pt.x + 1 to Min(FSize.x, Pt.x + NOT_GOOD) do
+      for I := Pt.x + 1 to Min(FSize.x, Pt.x + FNotGood) do
         FGrid[Pt.y * FSize1.x + I].Status := EMPTY;
     end;
   end;
@@ -422,42 +453,42 @@ procedure TGenRoute.MarkBlockForbid(const R: TRect);
 var
   I, J: Integer;
 begin
-  for I := Max(0, R.Top - NOT_GOOD) to R.Top - 1 do
+  for I := Max(0, R.Top - FNotGood) to R.Top - 1 do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+    for J := Max(0, R.Left - FNotGood) to Min(FSize.x, R.Right + FNotGood) do
       FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
-  for I := R.Bottom to Min(FSize.y, R.Bottom + NOT_GOOD) do
+  for I := R.Bottom to Min(FSize.y, R.Bottom + FNotGood) do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
+    for J := Max(0, R.Left - FNotGood) to Min(FSize.x, R.Right + FNotGood) do
       FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
 
   for I := R.Top to R.Bottom do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to R.Left - 1 do
+    for J := Max(0, R.Left - FNotGood) to R.Left - 1 do
       FGrid[I * FSize1.x + J].Status := FORBID_PT;
-    for J := R.Right + 1 to Min(FSize.x, R.Right + NOT_GOOD) do
+    for J := R.Right + 1 to Min(FSize.x, R.Right + FNotGood) do
       FGrid[I * FSize1.x + J].Status := FORBID_PT;
   end;
 {
-  for I := Max(0, R.Top - NOT_GOOD) to R.Top - 1 do
+  for I := Max(0, R.Top - FNotGood) to R.Top - 1 do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD + 1 + I - R.Top));
+    for J := Max(0, R.Left - FNotGood) to Min(FSize.x, R.Right + FNotGood) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (FNotGood + 1 + I - R.Top));
   end;
-  for I := R.Bottom + 1 to Min(FSize.y, R.Bottom + NOT_GOOD) do
+  for I := R.Bottom + 1 to Min(FSize.y, R.Bottom + FNotGood) do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to Min(FSize.x, R.Right + NOT_GOOD) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD - 1 + I - R.Bottom));
+    for J := Max(0, R.Left - FNotGood) to Min(FSize.x, R.Right + FNotGood) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (FNotGood - 1 + I - R.Bottom));
   end;
 
   for I := R.Top to R.Bottom do
   begin
-    for J := Max(0, R.Left - NOT_GOOD) to R.Left - 1 do
-      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD + 1 + I - R.Left));
-    for J := R.Right + 1 to Min(FSize.x, R.Right + NOT_GOOD) do
-      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (NOT_GOOD - 1 + I - R.Right));
+    for J := Max(0, R.Left - FNotGood) to R.Left - 1 do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (FNotGood + 1 + I - R.Left));
+    for J := R.Right + 1 to Min(FSize.x, R.Right + FNotGood) do
+      Inc(FGrid[I * FSize1.x + J].WOffset, MULTI * (FNotGood - 1 + I - R.Right));
   end;
 }
 end;
@@ -501,7 +532,7 @@ var
 begin
   Conn.FCtrlPts[0] := Conn.FromPt;
   Conn.FCtrlPts[High(Conn.FCtrlPts)] := Conn.ToPt;
-  for I := 1 to High(Conn.FCtrlPts) do
+  for I := 2 to High(Conn.FCtrlPts) - 1 do
     MarkPathForbid(Conn.FCtrlPts[I - 1].x, Conn.FCtrlPts[I - 1].y,
                     Conn.FCtrlPts[I - 0].x, Conn.FCtrlPts[I - 0].y);
 end;
@@ -769,6 +800,7 @@ constructor TGenRoute.Create;
 begin
   inherited;
   FSortedOpenNode := TList.Create;
+  FNotGood := 15;
 end;
 
 destructor TGenRoute.Destroy;
