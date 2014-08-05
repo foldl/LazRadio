@@ -130,6 +130,8 @@ const
                   SET_WAVE_TRIANGLE = 2;  // ParamL = VertexPostition
                                           //          (in percentage: 0 = reverse sawtooth; 50 = triangle; 100 = (almost) sawtooth)
 
+  // reconfig, ParamH: output rate (Hz); ParamL: LPF cutoff frequency (Hz)
+  RM_RESAMPLING_CFG = 180;
 
   RM_USER            = 1000;
 

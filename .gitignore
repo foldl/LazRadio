@@ -2,7 +2,6 @@
 *.dll
 *.obj
 *.mdb
-dump*
 log*.txt
 backup/
 lib/

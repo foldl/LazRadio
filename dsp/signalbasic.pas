@@ -2,6 +2,8 @@ unit SignalBasic;
 
 {$mode objfpc}{$H+}
 
+{$define _DEBUG}
+
 interface
 
 uses
@@ -48,6 +50,135 @@ procedure FIRDesign(Coef: PDouble; const N: Integer;
   const Wf: TWindowFunction; const WfParam: Double);
 
 function ToString(Input: PComplex; const N: Integer): string;
+
+{
+reference: multirate_alg from http://www.dspguru.com
+Description:
+
+    decim - "decimates" a signal by changing reducing its sampling rate by an
+             integral factor via FIR filtering.
+
+Inputs:
+
+    FactorM:
+        the decimation factor (must be >= 1)
+
+    H:
+        array of coefficients for the resampling filter.
+        sampling rate = input rate.
+
+    InLen:
+        the number of input samples
+
+    Input:
+        pointer to the input samples
+
+Input/Outputs:
+
+    Z:
+        the delay line array (which must have  H_size elements)
+
+Outputs:
+
+    Output:
+        pointer to the output sample array.
+
+    OutLen:
+        pointer to the number of output samples
+}
+procedure Decimate(const FactorM: Integer; H: array of Double;
+                   var Z: array of Complex;
+                   Input: PComplex; InLen: Integer;
+                   Output: PComplex; out OutLen: Integer);
+
+{
+Description:
+
+    interp - "interpolates" a signal by increasing its sampling rate by an
+             integral factor via FIR filtering.
+
+Inputs:
+
+    FactorL:
+        the interpolation factor (must be >= 1)
+
+    H:
+        the array of coefficients for the resampling filter.  (The
+        number of total taps in H is FactorL * num_taps_per_phase, so be sure
+        to design your filter using a number of taps which is divisible by
+        FactorL.), sampling rate = FactorL * input rate.
+
+    InLen:
+        the number of input samples
+
+    Input:
+        pointer to the input samples
+
+Input/Outputs:
+
+    Z:
+        the delay line array (which must have num_taps_per_phase
+        elements)
+
+Outputs:
+
+    Output:
+        pointer to the output sample array.
+
+    OutLen:
+        pointer to the number of output samples
+
+}
+procedure Interpolate(const FactorL: Integer; H: array of Double;
+                   var Z: array of Complex;
+                   Input: PComplex; InLen: Integer;
+                   Output: PComplex; out OutLen: Integer);
+
+{
+Description:
+
+    interp - "interpolates" a signal by increasing its sampling rate by an
+             integral factor via FIR filtering.
+
+Inputs:
+
+    IntepL:
+        the interpolation factor (must be >= 1)
+
+    DecimM:
+        the decimation factor (must be >= 1)
+
+    H:
+        the array of coefficients for the resampling filter.  (The
+        number of total taps in H is FactorL * num_taps_per_phase, so be sure
+        to design your filter using a number of taps which is divisible by
+        FactorL.), sampling rate = FactorL * input rate.
+
+    InLen:
+        the number of input samples
+
+    Input:
+        pointer to the input samples
+
+Input/Outputs:
+
+    Z:
+        the delay line array (which must have num_taps_per_phase
+        elements)
+
+Outputs:
+
+    Output:
+        pointer to the output sample array.
+
+    OutLen:
+        pointer to the number of output samples
+
+}
+procedure Resample(const IntepL, DecimM: Integer; H: array of Double;
+                   var Z: array of Complex; var CurPhase: Integer;
+                   Input: PComplex; InLen: Integer;
+                   Output: PComplex; out OutLen: Integer);
 
 var
   gWindowFunctionNames: array [TWindowFunction] of string =
@@ -241,6 +372,155 @@ begin
   end
   else begin
     Result := '[]';
+  end;
+end;
+
+procedure Decimate(const FactorM: Integer; H: array of Double;
+  var Z: array of Complex; Input: PComplex; InLen: Integer;
+  Output: PComplex; out OutLen: Integer);
+var
+  LenH1: Integer;
+  Tap: Integer;
+  Sum: Complex;
+begin
+  OutLen^ := InLen div FactorM;
+{$ifdef _DEBUG}
+  if InLen mod FactorM <> 0 then
+    raise Exception.Create('InLen mod FactorM <> 0');
+{$endif}
+
+  LenH := High(H);
+  while InLen >= FactorM do
+  begin
+    // shift FactorM inputs into Z
+    for Tap := LenH1 downto FactorM do
+      Z[Tap] := Z[Tap - FactorM];
+    for Tap := FactorM - 1 downto 0 do
+    begin
+      Z[Tap] := Input^;
+      Inc(Input);
+    end;
+    Dec(InLen, FactorM);
+
+    Sum.re := 0; Sum.im := 0
+    for Tap := 0 to FactorM - 1 do
+      Sum := Sum + H[Tap] * Z[Tap];
+    Ouput^ := Sum;
+    Inc(OutNum);
+    Inc(Output);
+  end;
+
+end;
+
+procedure Interpolate(const FactorL: Integer; H: array of Double;
+  var Z: array of Complex; Input: PComplex; InLen: Integer; Output: PComplex;
+  out OutLen: Integer);
+var
+  Tap, PhaseNum: Integer;
+  PCoeff: PDouble;
+  Sum: Complex;
+  TapsPerPhaseHigh: Integer;
+  LenH: Integer;
+begin
+  NumOut := 0;
+  LenH := High(H) + 1;
+  TapsPerPhaseHigh := High(Z);
+  OutLen := FactorL * InLen;
+
+{$ifdef _DEBUG}
+  if FactorL * (TapsPerPhaseHigh + 1) <> High(H) + 1 then
+    raise Exception.Create('FactorL * (TapsPerPhaseHigh + 1) <> High(H) + 1');
+{$endif}
+
+  while InLen > 0 do
+  begin
+    Dec(InLen);
+
+    // shift data into Z delay line
+    for Tap := TapsPerPhaseHigh downto 1 do
+      Z[Tap] := Z[Tap - 1];
+    Z[0] := Input^;
+    Inc(Input);
+
+    for PhaseNum := 0 to FactorL - 1 do
+    begin
+      PCoeff := @H[PhaseNum];
+
+      Sum := 0;
+      for Tap := 0 to TapsPerPhaseHigh do
+      begin
+        Sum := Sum + PCoeff^ * Z[Tap];
+        Inc(PCoeff, FactorL);
+      end;
+      Output^ := Sum;
+    end;
+  end;
+end;
+
+procedure Resample(const IntepL, DecimM: Integer; H: array of Double;
+  var Z: array of Complex; var CurPhase: Integer; Input: PComplex;
+  InLen: Integer; Output: PComplex; out OutLen: Integer);
+var
+  Tap, NumOut, NumNewSamples: Integer;
+  PCoeff: PDouble;
+  Sum: Complex;
+  TapsPerPhase: Integer;
+begin
+  TapsPerPhase := Length(Z);
+
+{$ifdef _DEBUG}
+  if IntepL * TapsPerPhase <> Length(H) then
+    raise Exception.Create('FactorL * TapsPerPhase <> Length(H)');
+{$endif}
+
+  NumOut := 0;
+  while InLen > 0 do
+  begin
+    // figure out how many new samples to shift into Z delay line
+    NumNewSamples := 0;
+    while CurPhase >= IntepL do
+    begin
+      Dec(CurPhase, IntepL);
+      Inc(NumNewSamples);
+      Dec(InLen);
+      if InLen = 0 then Break;
+    end;
+
+    if NumNewSamples > TapsPerPhase then
+    begin
+      // the new samples are bigger than the size of Z:
+      // fill the entire Z with the tail of new inputs
+      Inc(Input, NumNewSamples - TapsPerPhase);
+      NumNewSamples := TapsPerPhase;
+    end;
+
+    // copy new samples into Z
+    for Tap := TapsPerPhase - 1 downto NumNewSamples do
+      Z[Tap] := Z[Tap - NumNewSamples];
+    for Tap := NumNewSamples -1 downto 0 do
+    begin
+      Z[Tap] := Input^;
+      Inc(Input);
+    end;
+
+    // caculate output
+    while CurPhase < IntepL do
+    begin
+      PCoeff := @H[CurPhase];
+
+      Sum := 0;
+      for Tap := 0 to TapsPerPhase - 1 do
+      begin
+        Sum := Sum + PCoeff^ * Z[Tap];
+        Inc(PCoeff, IntepL);
+      end;
+      Output^ := Sum;
+      Inc(Output);
+      Inc(NumOut);
+
+      // increase phase number by decimation factor M
+      Inc(CurPhase, DecimM);
+    end;
   end;
 end;
 

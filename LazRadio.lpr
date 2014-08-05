@@ -8,10 +8,10 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms, formmain, radiomodule, rtlsdr, formrtl, rm_rtl, async, rm_oscillator,
-  radiosystem, superobject, rm_spectrum, rm_timer,
-  rm_audio, rm_filter, formspectrum, kissfft, signalbasic, formoscillator,
-  formauin, utils, rm_dump, logger, tachartlazaruspkg, formfilter, rm_fm, 
-  rm_pll, fft2, genfft, fftw, gen_graph, radiomessage, minij, util_config;
+  radiosystem, superobject, rm_spectrum, rm_timer, rm_audio, rm_filter,
+  formspectrum, kissfft, signalbasic, formoscillator, formauin, utils, rm_dump,
+  logger, tachartlazaruspkg, formfilter, rm_fm, rm_pll, fft2, genfft, fftw,
+  gen_graph, radiomessage, minij, util_config, rm_resampling;
 
 {$R *.res}
 

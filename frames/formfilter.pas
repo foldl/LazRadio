@@ -96,9 +96,9 @@ begin
   Result := False;
   FTaps := StrToIntDef(EditTaps.Text, 0);
   FRate := StrToIntDef(EditRate.Text, 0);
-  if (FTaps < 10) or (FTaps >= 256) then
+  if FTaps < 10 then
   begin
-    ShowMessage('Taps out of range. only support [10, 255]');
+    ShowMessage('Taps out of range. only support [10, ...]');
     Exit;
   end;
 

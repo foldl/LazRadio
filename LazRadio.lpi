@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="32">
+    <Units Count="33">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -218,6 +218,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="util_config"/>
       </Unit31>
+      <Unit32>
+        <Filename Value="rm_resampling.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_resampling"/>
+      </Unit32>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
