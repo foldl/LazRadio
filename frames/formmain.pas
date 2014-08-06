@@ -75,7 +75,9 @@ begin
     FSystem.AddModule('src', 'rtl');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FreqDiscriminator');
+    FSystem.AddModule('re', 'Resampling');
   end;
+
 
   FSystem.ConnectBoth('src', 's');
   FSystem.ConnectBoth('src', 'f');

@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="33">
+    <Units Count="35">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -223,6 +223,16 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_resampling"/>
       </Unit32>
+      <Unit33>
+        <Filename Value="dsp\mathlut.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MathLUT"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="rm_audiomixer.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_audiomixer"/>
+      </Unit34>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

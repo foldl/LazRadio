@@ -1661,6 +1661,7 @@ begin
   end;
   for P in FEntities do TGenEntity(P).Draw(FDBuffer.PaintBuffer.Canvas);
   for P in FConns do TGenEntity(P).Draw(FDBuffer.PaintBuffer.Canvas);
+  FDBuffer.Paint;
 end;
 
 procedure TGenGraph.PartialRender;

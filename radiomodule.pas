@@ -30,8 +30,8 @@ type
     FModule: TRadioModule;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;
-    function GetBufferSize: Integer;
-    procedure SetBufferSize(AValue: Integer);
+    function GetDefBufferSize: Integer;
+    procedure SetDefBufferSize(AValue: Integer);
   public
     constructor Create(Module: TRadioModule; const AName: string; const BlockSize: Integer);
     destructor Destroy; override;
@@ -44,9 +44,11 @@ type
     procedure Broadcast(const Index: Integer; Listeners: TList);
     procedure Release(const Index: Integer); // Listeners call this to release buffer
 
+    function GetBufferSize(const Index: Integer): Integer;
+
     property Name: string read FName;
     property Buffer[const Index: Integer]: PComplex read GetBuffer;
-    property BufferSize: Integer read GetBufferSize write SetBufferSize;
+    property BufferSize: Integer read GetDefBufferSize write SetDefBufferSize;
     property BufferCount: Integer read GetBufferCount;
   end;
 
@@ -1268,31 +1270,23 @@ begin
   Result := High(FBuffers) + 1;
 end;
 
-function TRadioDataStream.GetBufferSize: Integer;
+function TRadioDataStream.GetDefBufferSize: Integer;
 begin
   Result := FBlockSize;
 end;
 
-procedure TRadioDataStream.SetBufferSize(AValue: Integer);
+procedure TRadioDataStream.SetDefBufferSize(AValue: Integer);
 var
   F: Boolean = False;
   I: Integer;
 begin
   Lock;
+
+  FBlockSize := AValue;
   for I := Low(FBuffers) to High(FBuffers) do
-  begin
-    if FBuffers[I].Allocated then F:= True;
-  end;
+    if not FBuffers[I].Allocated then SetLength(FBuffers[I].Data, AValue);
 
-  if not F then
-  begin
-    FBlockSize := AValue;
-    for I := Low(FBuffers) to High(FBuffers) do
-      SetLength(FBuffers[I].Data, AValue);
-  end;
   Unlock;
-
-  if F then raise Exception.Create('internal error: TRadioDataStream.SetBufferSize');
 end;
 
 constructor TRadioDataStream.Create(Module: TRadioModule; const AName: string;
@@ -1404,6 +1398,11 @@ begin
   if FBuffers[Index].Counter < 1 then
     FBuffers[Index].Allocated := False;
   Unlock;
+end;
+
+function TRadioDataStream.GetBufferSize(const Index: Integer): Integer;
+begin
+  Result := Length(FBuffers[Index].Data);
 end;
 
 { TRadioModule }
@@ -1651,9 +1650,9 @@ begin
   B := TRadioDataStream(Pointer(Msg.ParamH));
   Port := Msg.ParamL shr 16;
   if Port = 0 then
-    ReceiveData(B.Buffer[Msg.ParamL], B.BufferSize)
+    ReceiveData(B.Buffer[Msg.ParamL], B.GetBufferSize(Msg.ParamL))
   else
-    ReceiveData(Port, B.Buffer[Msg.ParamL and $FFFF], B.BufferSize);
+    ReceiveData(Port, B.Buffer[Msg.ParamL and $FFFF], B.GetBufferSize(Msg.ParamL));
   B.Release(Msg.ParamL and $FFFF);
 end;
 

@@ -84,6 +84,8 @@ function  StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
 
 function  IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
 
+function  GCD(X, Y: Cardinal): Cardinal;
+
 implementation
 
 function AtoF(const S: string): Double;
@@ -508,6 +510,26 @@ function IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
 begin
   Result := InRange(APt.x, ARect.Left, ARect.Right)
          and InRange(APt.y, ARect.Top, ARect.Bottom);
+end;
+
+function GCD(X, Y: Cardinal): Cardinal;
+begin
+  Result := 0;
+  if (X = 0) or (Y = 0) then Exit;
+  Result := X mod Y;
+  while True do
+  begin
+    if Result = 0 then
+    begin
+      Result := Y;
+      Break;
+    end;
+
+    X := Y;
+    Y := Result;
+    Result := X mod Y;
+  end;
+
 end;
 
 { TTripleBuffer }

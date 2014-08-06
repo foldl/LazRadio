@@ -338,6 +338,8 @@ begin
     Strs.Add('^bGain: ^nAutomatic')
   else
     Strs.Add(Format('^bGain: ^n%ddB', [FGainDb]));
+  if FResample.InputRate <> FResample.OutputRate then
+    Strs.Add(Format('^b^1Resampling: ^n %d : %d ', [FResample.InputRate, FResample.OutputRate]));
 end;
 
 constructor TRadioAudioOut.Create(RunQueue: TRadioRunQueue);

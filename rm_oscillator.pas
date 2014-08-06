@@ -40,10 +40,101 @@ type
     destructor Destroy; override;
   end;
 
+  { TRadioFreqMixer }
+
+  TRadioFreqMixer = class(TRadioModule)
+  private
+    FFreq: Cardinal;
+    FPhaseDelta: Double;
+    FSampleRate: Cardinal;
+    FCounter: Cardinal;
+    FPhase: Double;
+    FRegulator: TStreamRegulator;
+  protected
+    function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
+    function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
+    procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
+
+    procedure Describe(Strs: TStrings); override;
+  public
+    constructor Create(RunQueue: TRadioRunQueue); override;
+    destructor Destroy; override;
+    procedure ReceiveData(const P: PComplex; const Len: Integer); override;
+  end;
+
 implementation
 
 uses
   Math, RadioSystem, SignalBasic;
+
+{ TRadioFreqMixer }
+
+function TRadioFreqMixer.RMSetFrequency(const Msg: TRadioMessage;
+  const Freq: Cardinal): Integer;
+begin
+  FFreq := Freq;
+  FPhase := 0;
+  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
+end;
+
+function TRadioFreqMixer.RMSetSampleRate(const Msg: TRadioMessage;
+  const Rate: Cardinal): Integer;
+begin
+  FSampleRate := Rate;
+  Result := inherited;
+  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
+end;
+
+procedure TRadioFreqMixer.ReceiveRegulatedData(const P: PComplex;
+  const Len: Integer);
+var
+  I: Integer;
+  J: Integer;
+  X: PComplex;
+  C: Integer;
+  V: Double;
+  T: Complex;
+begin
+  X := Alloc(DefOutput, I);
+  if not Assigned(X) then Exit;
+
+  V := FPhase;
+  for J := 0 to Len - 1 do
+  begin
+    T.re := Cos(V);
+    T.im := Sin(V);
+    X[J] := P[J] * T;
+    V := V + FPhaseDelta;
+  end;
+  C := Trunc(V / (2 * Pi));
+  FPhase := V - (2 * Pi * C);
+
+  DefOutput.Broadcast(I, FDataListeners);
+end;
+
+procedure TRadioFreqMixer.Describe(Strs: TStrings);
+begin
+  Strs.Add(Format('^bf: ^n%s', [FormatFreq(FFReq)]));
+end;
+
+constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);
+begin
+  inherited Create(RunQueue);
+  FRegulator := TStreamRegulator.Create;
+  FRegulator.Size := DefOutput.BufferSize;
+  FRegulator.OnRegulatedData := @ReceiveRegulatedData;
+end;
+
+destructor TRadioFreqMixer.Destroy;
+begin
+  FRegulator.Free;
+  inherited Destroy;
+end;
+
+procedure TRadioFreqMixer.ReceiveData(const P: PComplex; const Len: Integer);
+begin
+  FRegulator.ReceiveData(P, Len);
+end;
 
 { TRadioOscillator }
 
@@ -211,6 +302,7 @@ end;
 initialization
 
   RegisterModule(TRadioModuleClass(TRadioOscillator.ClassType));
+  RegisterModule(TRadioModuleClass(TRadioFreqMixer.ClassType));
 
 end.
 

@@ -30,6 +30,7 @@ type
 
   TRadioSpectrum = class(TRadioModule)
   private
+    FPassbandFreq: Cardinal;
     FFreq: Integer;
     FSampleRate: Cardinal;
     FCenterFreq: Integer;
@@ -345,8 +346,9 @@ end;
 function TRadioSpectrum.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
-  if FFReq = Freq then Exit;
-  FFreq := Freq - FSampleRate div 2;
+  if FPassbandFreq = Freq then Exit;
+  FPassbandFreq := Freq;
+  FFreq := FPassbandFreq - FSampleRate div 2;
   DrawRealtimeFrame;
   Result := 0;
   GraphInvalidate;
@@ -356,8 +358,8 @@ function TRadioSpectrum.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   if FSampleRate = Rate then Exit;
-  FFreq := FFreq + FSampleRate * 2 - Rate div 2;
   FSampleRate := Rate;
+  FFreq := FPassbandFreq - FSampleRate div 2;
   DrawRealtimeFrame;
   Result := 0;
   GraphInvalidate;
@@ -376,9 +378,10 @@ var
   T: Integer;
   C: Integer;
   I: Integer;
-  XStep: Double;
+  XStep: Integer;
   Style: TTextStyle;
   R: TRect;
+  S: string;
 begin
   with Style do
   begin
@@ -424,7 +427,7 @@ begin
     Font.Size  := 10;
     E := TextExtent('0');
     BeatifulTick(Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP, 50, FYMax - FYRange, FYMax, Start, Step);
-    XStep := Max(1, Step);
+    Step := Max(1, Step);
 
     with R do
     begin
@@ -434,16 +437,16 @@ begin
       Bottom := Top + E.cy;
     end;
 
-    T := Round((Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP) / (FYRange / XStep));
+    T := Round((Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP) / (FYRange / Step));
     Pen.Color := TColor($404040);
     C := (Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP) div T;
-    TextRect(R, 0, 0, FloatToStr(Start + (C + 1) * XStep), Style);
+    TextRect(R, 0, 0, FloatToStr(Start + (C + 1) * Step), Style);
     Dec(R.Top, E.cy div 2); Dec(R.Bottom, E.cy div 2);
     for I := 1 to C do
     begin
       Line(FRAME_MARGIN_LEFT, FRAME_MARGIN_TOP + I * T, Width - FRAME_MARGIN_RIGHT, FRAME_MARGIN_TOP + I * T);
       Inc(R.Top, T); Inc(R.Bottom, T);
-      TextRect(R, 0, 0, FloatToStr(Start + (C - I + 1) * XStep), Style);
+      TextRect(R, 0, 0, FloatToStr(Start + (C - I + 1) * Step), Style);
     end;
 
     // x-axis
@@ -452,7 +455,7 @@ begin
     if FEndFreq <= FStartFreq then Exit;
 
     Font.Size  := 9;
-    E := TextExtent(FormatFreq(FEndFreq + FFreq));
+    E := TextExtent(FormatFreq(FEndFreq));
     E.cx := E.cx * 2;
     BeatifulTick(Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT, Max(100, E.cx), FStartFreq, FEndFreq, Start, Step);
     XStep := Max(1, Round(Step));
@@ -466,18 +469,18 @@ begin
     end;
 
     Style.Alignment := taCenter;
-
-    T := Max(1, Trunc((Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) / ((FEndFreq - FStartFreq) / XStep)));
-    C := (Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) div T;
-    TextRect(R, 0, 0, FormatFreq(Round(Start)), Style);
-    FStartFreq := Round(Start);
-    FEndFreq := Round((Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT) / T * XStep + FStartFreq);
-    FHzPerPixel := XStep / T;
-    for I := 1 to C do
+    T := (FStartFreq div XStep) * XStep;
+    if T < FStartFreq then Inc(T, XStep);
+    while T <= FEndFreq do
     begin
-      Line(FRAME_MARGIN_LEFT + I * T, FRAME_MARGIN_TOP, FRAME_MARGIN_LEFT + I * T, Height - FRAME_MARGIN_BOTTOM);
-      Inc(R.Left, T); Inc(R.Right, T); Start := Start + XStep;
-      TextRect(R, 0, 0, FormatFreq(Round(Start)), Style);
+      I := Round((T - FStartFreq) / (FEndFreq - FStartFreq) * (Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT)) + FRAME_MARGIN_LEFT;
+      Line(I, FRAME_MARGIN_TOP, I, Height - FRAME_MARGIN_BOTTOM);
+      S := FormatFreq(T);
+      E := TextExtent(S);
+      R.Left := I - E.cx div 2 - 1;
+      R.Right := I + E.cx div 2 + 1;
+      TextRect(R, 0, 0, S, Style);
+      Inc(T, XStep);
     end;
   end;
 end;

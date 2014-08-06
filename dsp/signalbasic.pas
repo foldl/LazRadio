@@ -312,6 +312,7 @@ var
   J: Integer;
   W: array of Double;
   BL, BH: Double;
+  G: Double;
   function lpf(const I: Integer): Double;
   var
     Arg: Double;
@@ -355,8 +356,18 @@ begin
 
   SetLength(W, N);
   CreateWindowFunction(@W[0], N, Wf, WfParam);
+  G := 0.0;
   for J := 0 to N - 1 do
+  begin
     Coef[J] := Coef[J] * W[J];
+    G := G + Coef[J];
+  end;
+
+  if G < 1e-6 then Exit;
+
+  // unify filter gain
+  for J := 0 to N - 1 do
+    Coef[J] := Coef[J] / G;
 end;
 
 function ToString(Input: PComplex; const N: Integer): string;
@@ -383,13 +394,13 @@ var
   Tap: Integer;
   Sum: Complex;
 begin
-  OutLen^ := InLen div FactorM;
+  OutLen := InLen div FactorM;
 {$ifdef _DEBUG}
   if InLen mod FactorM <> 0 then
     raise Exception.Create('InLen mod FactorM <> 0');
 {$endif}
 
-  LenH := High(H);
+  LenH1 := High(H);
   while InLen >= FactorM do
   begin
     // shift FactorM inputs into Z
@@ -402,14 +413,12 @@ begin
     end;
     Dec(InLen, FactorM);
 
-    Sum.re := 0; Sum.im := 0
+    Sum.re := 0; Sum.im := 0;
     for Tap := 0 to FactorM - 1 do
       Sum := Sum + H[Tap] * Z[Tap];
-    Ouput^ := Sum;
-    Inc(OutNum);
+    Output^ := Sum;
     Inc(Output);
   end;
-
 end;
 
 procedure Interpolate(const FactorL: Integer; H: array of Double;
@@ -422,7 +431,6 @@ var
   TapsPerPhaseHigh: Integer;
   LenH: Integer;
 begin
-  NumOut := 0;
   LenH := High(H) + 1;
   TapsPerPhaseHigh := High(Z);
   OutLen := FactorL * InLen;
@@ -453,6 +461,7 @@ begin
         Inc(PCoeff, FactorL);
       end;
       Output^ := Sum;
+      Inc(Output);
     end;
   end;
 end;
@@ -467,7 +476,6 @@ var
   TapsPerPhase: Integer;
 begin
   TapsPerPhase := Length(Z);
-
 {$ifdef _DEBUG}
   if IntepL * TapsPerPhase <> Length(H) then
     raise Exception.Create('FactorL * TapsPerPhase <> Length(H)');
@@ -522,6 +530,7 @@ begin
       Inc(CurPhase, DecimM);
     end;
   end;
+  OutLen := NumOut;
 end;
 
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
