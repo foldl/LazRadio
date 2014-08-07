@@ -226,6 +226,7 @@ begin
   end;
 
   case Msg.Id of
+    RM_FILTER_USE_BAND_SELECT: FBandIndex := Msg.ParamH;
     RM_FILTER_SET:
       begin
         FFIRNode.SetFIR(PComplex(Msg.ParamH), Msg.ParamL, False);

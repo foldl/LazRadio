@@ -19,7 +19,7 @@ const
 type
 
   TBandInfo = record
-    Freq: Integer;       // baseband freq (-fs/2, fs/2)
+    Freq: Integer;
     Bandwidth: Cardinal;
     Enable: Boolean;
   end;
@@ -59,10 +59,11 @@ type
     FLastTime: TDateTime;
     FBandPicker: array [0..3] of TBandInfo;
     FSelectedBand: Integer;
+    FLastSelected: Integer;
     FMouseTool: TSpectrumMouse;
     FDomain: Integer;
-    function ScreenToBaseFreq(const X: Integer): Integer;
-    function BaseFreqToScreen(const F: Integer): Integer;
+    function ScreenToPassBandFreq(const X: Integer): Integer;
+    function PassBandFreqToScreen(const F: Integer): Integer;
 
     procedure ImageResize(Sender: TObject);
     procedure SetFFTSize(const ASize: Integer);
@@ -208,18 +209,18 @@ end;
 
 { TRadioSpectrum }
 
-function TRadioSpectrum.ScreenToBaseFreq(const X: Integer): Integer;
+function TRadioSpectrum.ScreenToPassBandFreq(const X: Integer): Integer;
 begin
   Result := 0;
   if FStartFreq >= FEndFreq then Exit;
-  Result := FStartFreq + Round((X - FRAME_MARGIN_LEFT) * FHzPerPixel) - FFreq;
+  Result := FStartFreq + Round((X - FRAME_MARGIN_LEFT) * FHzPerPixel);
 end;
 
-function TRadioSpectrum.BaseFreqToScreen(const F: Integer): Integer;
+function TRadioSpectrum.PassBandFreqToScreen(const F: Integer): Integer;
 begin
   Result := 0;
   if FStartFreq >= FEndFreq then Exit;
-  Result := FRAME_MARGIN_LEFT + Round((F - FStartFreq + FFreq) / FHzPerPixel);
+  Result := FRAME_MARGIN_LEFT + Round((F - FStartFreq) / FHzPerPixel);
 end;
 
 procedure TRadioSpectrum.ImageResize(Sender: TObject);
@@ -263,7 +264,7 @@ begin
   if FBandPicker[Index].Enable = B then Exit;
   FBandPicker[Index].Enable := B;
   S := (FEndFreq - FStartFreq) div 4;
-  FBandPicker[Index].Freq := FStartFreq + Index * S + S div 2 - FFreq;
+  FBandPicker[Index].Freq := FStartFreq + Index * S + S div 2;
   FBandPicker[Index].Bandwidth := S div 2;
   FRt.Draw2Paint;
   DrawPickers(0, 0);
@@ -280,21 +281,22 @@ begin
   FSelectedBand := -1;
   for I := 0 to High(FBandPicker) do
   begin
-    AX := BaseFreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
+    if not FBandPicker[I].Enable then Continue;
+    AX := PassBandFreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
     if Abs(AX - X) <= CAPTURE then
     begin
       FSelectedBand := I;
       FMouseTool := smBandwidth;
       Break;
     end;
-    AX := BaseFreqToScreen(FBandPicker[I].Freq + FBandPicker[I].Bandwidth div 2);
+    AX := PassBandFreqToScreen(FBandPicker[I].Freq + FBandPicker[I].Bandwidth div 2);
     if Abs(AX - X) <= CAPTURE then
     begin
       FSelectedBand := I;
       FMouseTool := smBandwidth;
       Break;
     end;
-    AX := BaseFreqToScreen(FBandPicker[I].Freq);
+    AX := PassBandFreqToScreen(FBandPicker[I].Freq);
     if Abs(AX - X) <= CAPTURE then
     begin
       FSelectedBand := I;
@@ -308,16 +310,32 @@ procedure TRadioSpectrum.MouseUp(Button: TMouseButton; X, Y: Integer);
 var
   M: TRadioMessage;
   Z: Int64;
+  F: Integer;
 begin
-  if FSelectedBand < 0 then Exit;
+  if FSelectedBand < 0 then
+  begin
+    if (FLastSelected >= 0) and FBandPicker[FLastSelected].Enable then
+    begin
+      F := ScreenToPassBandFreq(X);
+      FBandPicker[FLastSelected].Freq := F;
+      FRt.Draw2Paint;
+      DrawPickers(X, Y);
+      FRt.Paint;
+      FSelectedBand := FLastSelected;
+    end
+    else
+      Exit;
+  end;
 
-  Z := FBandPicker[FSelectedBand].Freq - FSampleRate div 2;
+  // convert to baseband freq
+  Z := FBandPicker[FSelectedBand].Freq - FCenterFreq;
 
   // send out notification message
   Broadcast(RM_SPECTRUM_BAND_SELECT_1 + FSelectedBand,
             EnsureRange(Z - FBandPicker[FSelectedBand].Bandwidth div 2, - FSampleRate div 2, FSampleRate div 2),
             EnsureRange(Z + FBandPicker[FSelectedBand].Bandwidth div 2, - FSampleRate div 2, FSampleRate div 2));
 
+  FLastSelected := FSelectedBand;
   FSelectedBand := -1;
 end;
 
@@ -326,7 +344,7 @@ var
   F: Integer;
 begin
   if FSelectedBand < 0 then Exit;
-  F := ScreenToBaseFreq(X);
+  F := ScreenToPassBandFreq(X);
   case FMouseTool of
     smCenter:
       FBandPicker[FSelectedBand].Freq := F;
@@ -400,23 +418,35 @@ begin
 
   if FSpan < 0 then
   begin
-    FStartFreq := FFreq;
-    FEndFreq := FFreq + FSampleRate;
+    if FDomain = SPECTRUM_DATA_DOMAIN_REAL then
+    begin
+      FStartFreq := Max(0, FFreq + FSampleRate div 2);
+      FEndFreq := FFreq + FSampleRate;
+    end
+    else begin
+      FStartFreq := FFreq;
+      FEndFreq := FFreq + FSampleRate;
+    end;
   end
   else if FSpan > 0 then
   begin
     FStartFreq := Max(FFreq, FCenterFreq - (FSpan div 2));
-    FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + FSampleRate);
+    if FDomain = SPECTRUM_DATA_DOMAIN_REAL then
+    begin
+      FStartFreq := Max(0, FStartFreq);
+      FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + FSampleRate div 2);
+    end
+    else begin
+      FEndFreq := Min(FCenterFreq + (FSpan div 2), FFreq + FSampleRate);
+    end;
   end;
-
-  if FDomain = SPECTRUM_DATA_DOMAIN_REAL then
-    FStartFreq := Max(0, FStartFreq);
 
   with FRt.Background.Canvas do
   begin
     Brush.Style := bsSolid;
     Brush.Color := clBlack;
     FillRect(0, 0, Width, Height);
+    Brush.Style := bsClear;
 
     Pen.Style := psSolid;
     Pen.Color := clWhite;
@@ -454,11 +484,12 @@ begin
     if FSpan = 0 then Exit;
     if FEndFreq <= FStartFreq then Exit;
 
-    Font.Size  := 9;
+    Font.Height := FRAME_MARGIN_BOTTOM - 1;
     E := TextExtent(FormatFreq(FEndFreq));
     E.cx := E.cx * 2;
     BeatifulTick(Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT, Max(100, E.cx), FStartFreq, FEndFreq, Start, Step);
     XStep := Max(1, Round(Step));
+    FHzPerPixel := (FEndFreq - FStartFreq) / (Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT);
 
     with R do
     begin
@@ -477,9 +508,7 @@ begin
       Line(I, FRAME_MARGIN_TOP, I, Height - FRAME_MARGIN_BOTTOM);
       S := FormatFreq(T);
       E := TextExtent(S);
-      R.Left := I - E.cx div 2 - 1;
-      R.Right := I + E.cx div 2 + 1;
-      TextRect(R, 0, 0, S, Style);
+      TextOut(I - E.cx div 2, R.Top, S);
       Inc(T, XStep);
     end;
   end;
@@ -626,8 +655,8 @@ begin
       Pen.Color := clWhite;
       Pen.Width := 1;
       Pen.Style := psSolid;
-      X1 := BaseFreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
-      X2 := BaseFreqToScreen(FBandPicker[I].Freq);
+      X1 := PassBandFreqToScreen(FBandPicker[I].Freq - FBandPicker[I].Bandwidth div 2);
+      X2 := PassBandFreqToScreen(FBandPicker[I].Freq);
       VLine(X1);
       VLine(X2 + (X2 - X1));
       Pen.Color := clRed;
@@ -644,7 +673,7 @@ begin
         Font.Color := clCream;
         TextOut(X2 + 2, Height div 2,
                 Format('Freq = %s',
-                       [FormatFreq(FBandPicker[I].Freq + FFreq)]));
+                       [FormatFreq(FBandPicker[I].Freq)]));
         TextOut(X2 + 2, Height div 2 + TextHeight('F'),
                 Format('Bw = %s',
                        [FormatFreq(FBandPicker[I].Bandwidth)]));

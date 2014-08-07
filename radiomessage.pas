@@ -81,8 +81,9 @@ const
 
                                        FILTER_COEFF_DOMAIN_COMPLEX = 0;
                                        FILTER_COEFF_DOMAIN_REAL    = 1;
+  RM_FILTER_USE_BAND_SELECT = 143;  // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
 
-    RM_SPECTRUM_CFG = 150;
+  RM_SPECTRUM_CFG = 150;
                   SET_WND_FUNC      = 0;
                   SET_OVERLAP_PER   = 1;
                   SET_FFT_SIZE      = 2;
@@ -132,6 +133,22 @@ const
 
   // reconfig, ParamH: output rate (Hz); ParamL: LPF cutoff frequency (Hz)
   RM_RESAMPLING_CFG = 180;
+  RM_RESAMPLING_USE_BAND_SELECT = 181; // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
+
+  RM_FREQMIXER_USE_BAND_SELECT = 190;  // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
+
+  RM_AUDIOMIXER_SET_STREAM_OUPUT = 200;      // ParamH: Stream index; ParamL: output type
+                  AUDIOMIXER_STREAM_OUTPUT_OFF   = 0;
+                  AUDIOMIXER_STREAM_OUTPUT_IQ_IQ = 1;
+                  AUDIOMIXER_STREAM_OUTPUT_QI_QI = 2;
+                  AUDIOMIXER_STREAM_OUTPUT_I_I   = 3;
+                  AUDIOMIXER_STREAM_OUTPUT_I_Q   = 4;
+                  AUDIOMIXER_STREAM_OUTPUT_Q_I   = 5;
+                  AUDIOMIXER_STREAM_OUTPUT_Q_Q   = 6;
+
+  RM_AUDIOMIXER_SET_STREAM_GAIN  = 201;      // ParamH: Stream index; ParamL: total gain (integer)
+  RM_AUDIOMIXER_SET_STREAM_EQ    = 202;      // ParamH: Stream index; ParamL: (tremble gain << 16) || (base gain), gains are integers
+
 
   RM_USER            = 1000;
 

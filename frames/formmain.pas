@@ -68,30 +68,29 @@ begin
     FSystem.AddModule('s2', 'Spectrum');
     FSystem.AddModule('a', 'AudioIn');
     FSystem.AddModule('u', 'AudioOut');
-    FSystem.AddModule('o', 'Oscillator');
+    FSystem.AddModule('mixer', 'FreqMixer');
     FSystem.AddModule('f', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'DumpPlayer');
-    FSystem.AddModule('src', 'rtl');
+    FSystem.AddModule('src', 'DumpPlayer');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FreqDiscriminator');
     FSystem.AddModule('re', 'Resampling');
   end;
 
-
   FSystem.ConnectBoth('src', 's');
-  FSystem.ConnectBoth('src', 'f');
-  FSystem.ConnectFeature('s', 'f');
-  // FSystem.ConnectBoth('f', 's2');
+  FSystem.ConnectBoth('src', 'mixer');
+  FSystem.ConnectFeature('s', 'mixer');
+  FSystem.ConnectBoth('mixer', 're');
+  FSystem.ConnectFeature('s', 're');
 
-  FSystem.ConnectBoth('f', 'fm');
-  FSystem.ConnectFeature('s', 'fm');
+  FSystem.ConnectBoth('re', 'fm');
   FSystem.ConnectBoth('fm', 's2');
   FSystem.ConnectBoth('fm', 'f2');
   FSystem.ConnectFeature('s2', 'f2');
   FSystem.ConnectBoth('f2', 'u');
 
-  FSystem.ConnectBoth('src', 'dump');
+  //FSystem.ConnectBoth('src', 'dump');
 
  // FSystem.ConnectBoth('f', 's2');
   //FSystem.ConnectBoth('f', 'u');
@@ -99,15 +98,16 @@ begin
 
   RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
 //  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
   RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
+  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 80000, 're');
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
- // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\dump', fmOpenRead)), 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;
@@ -129,7 +129,7 @@ begin
   FinalizePlan(P);
   exit;
   }
-  RadioPostMessage(RM_DUMP_STOP, 0, 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_STOP, 0, 0, 'src');
 end;
 
 procedure TMainForm.Button4Click(Sender: TObject);

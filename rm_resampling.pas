@@ -17,6 +17,7 @@ type
   const
     MAX_TAPS = 500;
   private
+    FBandIndex: Integer;
     FMode: TResamplingMode;
     FRateIn: Cardinal;
     FRateOut: Cardinal;
@@ -75,8 +76,8 @@ begin
   end;
 
   // LPF taps
-  Bw := Min(FBandwidth, FilterRate div 2);
   FilterRate := FInterpL * FRateIn;
+  Bw := Min(FBandwidth, FilterRate div 2);
   Taps := Min(MAX_TAPS, Round(0.6 + 10 * (FilterRate / Bw)));
 
   if FInterpL = 1 then
@@ -122,7 +123,17 @@ end;
 procedure TRadioResampling.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
+  if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
+  begin
+    FBandwidth := (Integer(Msg.ParamL) - Integer(Msg.ParamH)) div 4;
+    Reconfig;
+    GraphInvalidate;
+    Ret := 0;
+    Exit;
+  end;
+
   case Msg.Id of
+    RM_RESAMPLING_USE_BAND_SELECT: FBandIndex := Msg.ParamH;
     RM_RESAMPLING_CFG:
       begin
         FRateOut := Msg.ParamH;

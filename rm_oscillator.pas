@@ -44,7 +44,9 @@ type
 
   TRadioFreqMixer = class(TRadioModule)
   private
-    FFreq: Cardinal;
+    FExternalOsc: Boolean;
+    FBandIndex: Integer;
+    FFreq: Integer;
     FPhaseDelta: Double;
     FSampleRate: Cardinal;
     FCounter: Cardinal;
@@ -54,7 +56,7 @@ type
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
-
+    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -72,7 +74,7 @@ uses
 function TRadioFreqMixer.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
-  FFreq := Freq;
+  FFreq := -Integer(Freq);
   FPhase := 0;
   if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
 end;
@@ -81,8 +83,8 @@ function TRadioFreqMixer.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FSampleRate := Rate;
-  Result := inherited;
   if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
+  Result := inherited;
 end;
 
 procedure TRadioFreqMixer.ReceiveRegulatedData(const P: PComplex;
@@ -112,9 +114,29 @@ begin
   DefOutput.Broadcast(I, FDataListeners);
 end;
 
+procedure TRadioFreqMixer.ProccessMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
+begin
+  if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
+  begin
+    RMSetFrequency(Msg, Cardinal((Integer(Msg.ParamH) + Integer(Msg.ParamL)) div 2));
+    Ret := 0;
+    Exit;
+  end;
+
+  case Msg.Id of
+    RM_FREQMIXER_USE_BAND_SELECT: FBandIndex := Msg.ParamH
+  else
+    inherited
+  end;
+end;
+
 procedure TRadioFreqMixer.Describe(Strs: TStrings);
 begin
-  Strs.Add(Format('^bf: ^n%s', [FormatFreq(FFReq)]));
+  if FExternalOsc then
+    Strs.Add(Format('^bExternal Oscillator', []))
+  else
+    Strs.Add(Format('^bInternal Osc. f: ^n%s', [FormatFreq(FFReq)]));
 end;
 
 constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);

@@ -12,7 +12,7 @@ uses
   formspectrum, kissfft, signalbasic, formoscillator, formauin, utils, rm_dump,
   logger, tachartlazaruspkg, formfilter, rm_fm, rm_pll, fft2, genfft, fftw,
   gen_graph, radiomessage, minij, util_config, rm_resampling, mathlut, 
-rm_audiomixer;
+rm_audiomixer, formaudiomixer;
 
 {$R *.res}
 
@@ -25,6 +25,7 @@ begin
   Application.CreateForm(TOscillatorForm, OscillatorForm);
   Application.CreateForm(TAudioInForm, AudioInForm);
   Application.CreateForm(TFilterForm, FilterForm);
+  Application.CreateForm(TAudioMixerForm, AudioMixerForm);
   Application.Run;
 end.
 
