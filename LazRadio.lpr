@@ -12,7 +12,7 @@ uses
   formspectrum, kissfft, signalbasic, formoscillator, formauin, utils, rm_dump,
   logger, tachartlazaruspkg, formfilter, rm_fm, rm_pll, fft2, genfft, fftw,
   gen_graph, radiomessage, minij, util_config, rm_resampling, mathlut, 
-rm_audiomixer, formaudiomixer;
+rm_audiomixer, formaudiomixer, util_math;
 
 {$R *.res}
 

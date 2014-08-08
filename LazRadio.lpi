@@ -39,7 +39,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="36">
+    <Units Count="37">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -237,9 +237,15 @@
         <Filename Value="frames\formaudiomixer.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="AudioMixerForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formaudiomixer"/>
       </Unit35>
+      <Unit36>
+        <Filename Value="util_math.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="util_math"/>
+      </Unit36>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

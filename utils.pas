@@ -44,9 +44,6 @@ type
     property Background: TBitmap read FBackground;
   end;
 
-function AtoF(const S: string): Double;
-function FindNearest(L: array of Integer; const V, Def: Integer): Integer;
-
 // draw an icon
 // drawing commands are stored in a string separating by ';'
 // coordinates are scaled to (-1, -1) (bottom-left), (1, 1)(top-right)
@@ -82,47 +79,7 @@ procedure StyledTextOut(ACanvas: TCanvas; ARect: TRect; const Strs: TStrings); o
 function  SingleLineStyledTextExtent(ACanvas: TCanvas; const AText: string): TSize;
 function  StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
 
-function  IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
-
-function  GCD(X, Y: Cardinal): Cardinal;
-
 implementation
-
-function AtoF(const S: string): Double;
-var
-  I, J: Integer;
-begin
-  Result := 0;
-  for I := 1 to Length(S) do
-    if S[I] in ['0'..'9', '.'] then
-    begin
-      for J := I + 1 to Length(S) do
-        if not (S[J] in ['0'..'9', '.']) then
-        begin
-          Result := StrToFloatDef(Copy(S, I, J - I), 0.0);
-          Exit;
-        end;
-      Result := StrToFloatDef(Copy(S, I, Length(S) + 1 - I), 0.0);
-      Break;
-    end;
-end;
-
-function FindNearest(L: array of Integer; const V, Def: Integer): Integer;
-var
-  I: Integer;
-  O: Integer;
-begin
-  Result := Def;
-  if Low(L) > High(L) then Exit;
-  Result := L[Low(L)];
-  O := Abs(Result - V);
-  for I := Low(L) + 1 to High(L) do
-    if Abs(L[I] - V) < O then
-    begin
-      O := Abs(L[I] - V);
-      Result := L[I];
-    end;
-end;
 
 procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
 const
@@ -504,32 +461,6 @@ begin
     Inc(Result.cy, E.cy);
     Result.cx := Max(Result.cx, E.cx);
   end;
-end;
-
-function IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
-begin
-  Result := InRange(APt.x, ARect.Left, ARect.Right)
-         and InRange(APt.y, ARect.Top, ARect.Bottom);
-end;
-
-function GCD(X, Y: Cardinal): Cardinal;
-begin
-  Result := 0;
-  if (X = 0) or (Y = 0) then Exit;
-  Result := X mod Y;
-  while True do
-  begin
-    if Result = 0 then
-    begin
-      Result := Y;
-      Break;
-    end;
-
-    X := Y;
-    Y := Result;
-    Result := X mod Y;
-  end;
-
 end;
 
 { TTripleBuffer }

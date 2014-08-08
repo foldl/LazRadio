@@ -48,7 +48,7 @@ type
 implementation
 
 uses
-  SignalBasic, Utils;
+  SignalBasic, util_math;
 
 { TRadioResampling }
 

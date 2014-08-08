@@ -76,6 +76,7 @@ begin
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FreqDiscriminator');
     FSystem.AddModule('re', 'Resampling');
+    FSystem.AddModule('test', 'AudioMixer');
   end;
 
   FSystem.ConnectBoth('src', 's');
@@ -107,7 +108,7 @@ begin
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+ // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;

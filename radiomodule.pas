@@ -439,7 +439,7 @@ function ClassNameToModuleName(const S: string): string;
 implementation
 
 uses
-  Math, SignalBasic, utils, util_config;
+  Math, SignalBasic, utils, util_math, util_config;
 
 var
   RadioGlobalCS: TRTLCriticalSection;

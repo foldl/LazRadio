@@ -39,7 +39,7 @@ var
 implementation
 
 uses
-  utils;
+  util_math;
 
 {$R *.lfm}
 

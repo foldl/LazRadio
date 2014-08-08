@@ -44,7 +44,7 @@ type
 implementation
 
 uses
-  RadioSystem, Utils;
+  RadioSystem, util_math;
 
 procedure SDRCallback(Buf: PByte; const Len: Cardinal; M: TRtlModule); cdecl;
 begin
