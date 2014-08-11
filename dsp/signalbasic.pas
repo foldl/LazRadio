@@ -16,6 +16,14 @@ type
 
   TFilterType = (ftLPF, ftBPF, ftBSF, ftHPF);
 
+  TIIRFilter = record
+    Z: array of Complex;
+    A: array of Double;
+    B: array of Double;
+  end;
+
+procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
+
 // Output.re = amplitude
 // Output.im = arg
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer); overload;
@@ -48,6 +56,29 @@ procedure FIRDesign(Coef: PDouble; const N: Integer;
   const AType: TFilterType;
   const OmegaC: Double; const Bandwidth: Double;
   const Wf: TWindowFunction; const WfParam: Double);
+
+type
+  TShelvingFilterType = (sfBassShelf, sfTrebleShelf);
+
+{
+% Ported from: http://www.dsprelated.com/showcode/170.php
+%
+% Derive coefficients for a shelving filter with a given amplitude and
+% cutoff frequency.  All coefficients are calculated as described in
+% Zolzer's DAFX book (p. 50 -55).
+%
+% Usage:     [B,A] = shelving(G, Fc, Fs, Q, type);
+%
+%            G is the logrithmic gain (in dB)
+%            FC is the center frequency
+%            Fs is the sampling rate
+%            Q adjusts the slope be replacing the sqrt(2) term
+%            type is a character string defining filter type
+%                 Choices are: 'Base_Shelf' or 'Treble_Shelf'
+}
+procedure ShelvingFilterDesign(G: Double; Fc: Integer; Fs: Cardinal; Q: Double;
+                         T: TShelvingFilterType;
+                         out A, B: array of Double);
 
 function ToString(Input: PComplex; const N: Integer): string;
 
@@ -370,6 +401,72 @@ begin
     Coef[J] := Coef[J] / G;
 end;
 
+procedure ShelvingFilterDesign(G: Double; Fc: Integer; Fs: Cardinal; Q: Double;
+  T: TShelvingFilterType; out A, B: array of Double);
+var
+  K, V0, Root2: Double;
+begin
+  K := Tan(Pi * Fc / Fs);
+  V0 := Power(10, G / 20);
+  Root2 := 1 / Q;
+
+  A[0] := 1.0;
+
+  // invert gain if a cut
+  if V0 < 1 then V0 := 1 / V0;
+
+  if G > 0 then
+  begin
+    case T of
+      sfBassShelf:
+        begin
+          B[0] := (1 + sqrt(V0)*root2*K + V0*K**2) / (1 + root2*K + K**2);
+          B[1] :=             (2 * (V0*K**2 - 1) ) / (1 + root2*K + K**2);
+          B[2] := (1 - sqrt(V0)*root2*K + V0*K**2) / (1 + root2*K + K**2);
+          A[1] :=                (2 * (K**2 - 1) ) / (1 + root2*K + K**2);
+          A[2] :=             (1 - root2*K + K**2) / (1 + root2*K + K**2);
+        end;
+      sfTrebleShelf:
+        begin
+          B[0] := (V0 + root2*sqrt(V0)*K + K**2) / (1 + root2*K + K**2);
+          B[1] :=             (2 * (K**2 - V0) ) / (1 + root2*K + K**2);
+          B[2] := (V0 - root2*sqrt(V0)*K + K**2) / (1 + root2*K + K**2);
+          A[1] :=              (2 * (K**2 - 1) ) / (1 + root2*K + K**2);
+          A[2] :=           (1 - root2*K + K**2) / (1 + root2*K + K**2);
+        end;
+    end;
+  end
+  else if G < 0 then
+  begin
+    case T of
+      sfBassShelf:
+        begin
+          B[0] :=             (1 + root2*K + K**2) / (1 + root2*sqrt(V0)*K + V0*K**2);
+          B[1] :=                (2 * (K**2 - 1) ) / (1 + root2*sqrt(V0)*K + V0*K**2);
+          B[2] :=             (1 - root2*K + K**2) / (1 + root2*sqrt(V0)*K + V0*K**2);
+          A[1] :=             (2 * (V0*K**2 - 1) ) / (1 + root2*sqrt(V0)*K + V0*K**2);
+          A[2] := (1 - root2*sqrt(V0)*K + V0*K**2) / (1 + root2*sqrt(V0)*K + V0*K**2);
+        end;
+      sfTrebleShelf:
+        begin
+          B[0] :=               (1 + root2*K + K**2) / (V0 + root2*sqrt(V0)*K + K**2);
+          B[1] :=                  (2 * (K**2 - 1) ) / (V0 + root2*sqrt(V0)*K + K**2);
+          B[2] :=               (1 - root2*K + K**2) / (V0 + root2*sqrt(V0)*K + K**2);
+          A[1] :=             (2 * ((K**2)/V0 - 1) ) / (1 + root2/sqrt(V0)*K + (K**2)/V0);
+          A[2] := (1 - root2/sqrt(V0)*K + (K**2)/V0) / (1 + root2/sqrt(V0)*K + (K**2)/V0);
+        end;
+    end;
+  end
+  else begin
+    // full pass
+    B[0] := V0;
+    B[1] := 0;
+    B[2] := 0;
+    A[1] := 0;
+    A[2] := 0;
+  end;
+end;
+
 function ToString(Input: PComplex; const N: Integer): string;
 var
   I: Integer;
@@ -531,6 +628,11 @@ begin
     end;
   end;
   OutLen := NumOut;
+end;
+
+procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
+begin
+
 end;
 
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);

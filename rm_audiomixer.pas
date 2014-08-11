@@ -1,13 +1,14 @@
 unit rm_audiomixer;
 
-// NOTE: it's assumed that all input data streams' sample rates are all equal
+// NOTE: it's assumed that all input streams' sample rates are all equal
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, SysUtils, RadioSystem, UComplex, RadioMessage, RadioModule, formaudiomixer;
+  Classes, SysUtils, RadioSystem, UComplex, RadioMessage, RadioModule, formaudiomixer,
+  SignalBasic;
 
 type
 
@@ -16,13 +17,16 @@ type
     BaseGain: Cardinal;
     TrebleGain: Cardinal;
     MixMethod: Integer;
+    IIR: TIIRFilter;
   end;
 
   { TRadioAudioMixer }
 
   TRadioAudioMixer = class(TRadioModule)
   private
+    FStreams: array of TAudioStreamSetting;
     FConfig: TAudioMixerForm;
+    procedure Set;
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
 
@@ -43,7 +47,21 @@ implementation
 procedure TRadioAudioMixer.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
-  inherited ProccessMessage(Msg, Ret);
+  case Msg.Id of
+    RM_AUDIOMIXER_CFG:
+      case Msg.ParamH of
+        AUDIOMIXER_STREAM_NUM: SetLength(FStreams, Msg.ParamL);
+      end;
+    RM_AUDIOMIXER_SET_STREAM_OUPUT,
+    RM_AUDIOMIXER_SET_STREAM_TOTAL_GAIN,
+    RM_AUDIOMIXER_SET_STREAM_BASE_GAIN,
+    RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN:
+      begin
+
+      end;
+  else
+    inherited;
+  end;
 end;
 
 procedure TRadioAudioMixer.DoConfigure;

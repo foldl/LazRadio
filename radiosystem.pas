@@ -229,7 +229,7 @@ begin
   Result := I = 0;
   if not Result then goto Quit;
   M := C.Create(FRunQueue);
-  M.Name := Format('%s:%s', [Name, T]);
+  M.Name := Name; //Format('%s:%s', [Name, T]);
   FModuleDict.I[Name] := SuperInt(Pointer(M));
   Result := True;
   if not Suspended then;
