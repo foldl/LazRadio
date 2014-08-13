@@ -41,6 +41,7 @@ type
     procedure VolTrackChange(Sender: TObject);
     procedure VolTrackClick(Sender: TObject);
   private
+    FChannelNumber: Integer;
     FLastStreamNo: Integer;
     FModule: TRadioModule;
     FStreamCtrls: array of TStreamCtrl;
@@ -50,6 +51,7 @@ type
     function  TryGetTag(Sender: TObject): Integer;
   public
     property Module: TRadioModule read FModule write SetModule;
+    property ChannelNumber: Integer read FChannelNumber write FChannelNumber;
   end;
 
 var
@@ -66,7 +68,7 @@ uses
 
 procedure TAudioMixerForm.FormShow(Sender: TObject);
 begin
-  if Length(FStreamCtrls) < 1 then CreateCtrls;
+  if Length(FStreamCtrls) <> ChannelNumber then CreateCtrls;
 end;
 
 procedure TAudioMixerForm.OutputSelChange(Sender: TObject);
@@ -88,7 +90,7 @@ begin
   if I >= 0 then
   begin
     FStreamCtrls[I].TrebleLabel.Caption := Format('Treble'#13'%ddB', [(Sender as TTrackBar).Position]);
-    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN, I, DBtoMultiplier((Sender as TTrackBar).Position), FModule);
+    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN, I, (Sender as TTrackBar).Position * 10, FModule);
   end;
 end;
 
@@ -104,7 +106,7 @@ begin
   begin
     FStreamCtrls[I].VolLabel.Caption := Format('Vol'#13'%ddB', [FStreamCtrls[I].VolGain]);
     Inc(FStreamCtrls[I].VolGain, V);
-    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN, I, DBtoMultiplier(FStreamCtrls[I].VolGain), FModule);
+    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN, I, FStreamCtrls[I].VolGain * 10, FModule);
   end;
 end;
 
@@ -138,13 +140,12 @@ begin
   if I >= 0 then
   begin
     FStreamCtrls[I].BassLabel.Caption := Format('Bass'#13'%ddB', [(Sender as TTrackBar).Position]);
-    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_BASE_GAIN, I, DBtoMultiplier((Sender as TTrackBar).Position), FModule);
+    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_BASS_GAIN, I, (Sender as TTrackBar).Position * 10, FModule);
   end;
 end;
 
 procedure TAudioMixerForm.CreateCtrls;
 const
-  STREAM_NUM = 8;
   WAYS: array [0..8] of string = (
   'OFF',
   'IQ -> IQ',
@@ -173,11 +174,11 @@ var
   end;
 
 begin
-  Width := 130 * STREAM_NUM + 20;
+  Width := 130 * ChannelNumber + 20;
   while ScrollBox1.ControlCount > 0 do
     ScrollBox1.Controls[0].Free;
-  SetLength(FStreamCtrls, STREAM_NUM);
-  for I := 0 to STREAM_NUM - 1 do
+  SetLength(FStreamCtrls, ChannelNumber);
+  for I := 0 to ChannelNumber - 1 do
   begin
     with FStreamCtrls[I] do
     begin
@@ -245,7 +246,7 @@ begin
       BassLabel := AddLable(200, 48, 'Bass');
       TrebleLabel := AddLable(200, 80, 'Treble');
 
-      if I = STREAM_NUM - 1 then Break;
+      if I = ChannelNumber - 1 then Break;
 
       Bevel := TBevel.Create(ScrollBox1);
       Bevel.Parent := ScrollBox1;

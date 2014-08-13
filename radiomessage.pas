@@ -148,10 +148,10 @@ const
                   AUDIOMIXER_STREAM_OUTPUT_Q_I   = 7;
                   AUDIOMIXER_STREAM_OUTPUT_Q_Q   = 8;
 
-  RM_AUDIOMIXER_SET_STREAM_TOTAL_GAIN       = 201;      // ParamH: Stream index; ParamL: total gain (integer)
-  RM_AUDIOMIXER_SET_STREAM_BASE_GAIN        = 202;      // ParamH: Stream index; ParamL: tremble gain (integer)
-  RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN      = 202;      // ParamH: Stream index; ParamL: base gain (integer)
-  RM_AUDIOMIXER_CFG                         = 203;      // configure
+  RM_AUDIOMIXER_SET_STREAM_TOTAL_GAIN       = 201;      // ParamH: Stream index; ParamL: total gain (integer in tenth dB)
+  RM_AUDIOMIXER_SET_STREAM_BASS_GAIN        = 202;      // ParamH: Stream index; ParamL: bass gain (integer in tenth dB)
+  RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN      = 203;      // ParamH: Stream index; ParamL: tremble gain (integer in tenth dB)
+  RM_AUDIOMIXER_CFG                         = 204;      // configure
                   AUDIOMIXER_STREAM_NUM  = 0;           // ParamL: number of input streams
 
   RM_USER            = 1000;

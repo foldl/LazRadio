@@ -26,7 +26,7 @@ type
     FName: string;
     FBlockSize: Integer;
     FFreeFlag: Boolean;
-    FBuffers: array [0..10] of TDataStreamRec;
+    FBuffers: array [0..5] of TDataStreamRec;
     FModule: TRadioModule;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;

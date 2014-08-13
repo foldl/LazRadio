@@ -17,11 +17,13 @@ type
   TFilterType = (ftLPF, ftBPF, ftBSF, ftHPF);
 
   TIIRFilter = record
-    Z: array of Complex;
-    A: array of Double;
-    B: array of Double;
+    Zx, Zy: array of Complex;
+    A: array of Double;   // feedback
+    B: array of Double;   // feedforward
   end;
 
+procedure SetIIROrders(var AFilter: TIIRFilter; XDelay, YDelay: Integer);
+procedure IIRFilter(var AFilter: TIIRFilter; X, Y: PComplex; const N: Integer); overload;
 procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
 
 // Output.re = amplitude
@@ -70,7 +72,7 @@ type
 % Usage:     [B,A] = shelving(G, Fc, Fs, Q, type);
 %
 %            G is the logrithmic gain (in dB)
-%            FC is the center frequency
+%            Fc is the center frequency
 %            Fs is the sampling rate
 %            Q adjusts the slope be replacing the sqrt(2) term
 %            type is a character string defining filter type
@@ -630,9 +632,69 @@ begin
   OutLen := NumOut;
 end;
 
-procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
+procedure SetIIROrders(var AFilter: TIIRFilter; XDelay, YDelay: Integer);
 begin
+  SetLength(AFilter.Zx, XDelay);
+  SetLength(AFilter.Zy, YDelay);
+  FillByte(AFilter.Zx[0], Length(AFilter.Zx) * SizeOf(Complex), 0);
+  FillByte(AFilter.Zy[0], Length(AFilter.Zx) * SizeOf(Complex), 0);
+  SetLength(AFilter.A, YDelay + 1);
+  SetLength(AFilter.B, XDelay + 1);
+  FillByte(AFilter.A[0], Length(AFilter.A) * SizeOf(AFilter.A[0]), 0);
+  FillByte(AFilter.B[0], Length(AFilter.B) * SizeOf(AFilter.B[0]), 0);
+  AFilter.A[0] := 1.0;
+end;
 
+procedure IIRFilter(var AFilter: TIIRFilter; X, Y: PComplex; const N: Integer);
+var
+  I: Integer;
+  J: Integer;
+  T: Complex;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := X^ * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J] * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T + AFilter.Zy[J] * AFilter.A[J + 1];
+    T := T * AFilter.A[0];
+    Y^ := T;
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J] := AFilter.Zx[J - 1];
+    AFilter.Zx[0] := X^;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J] := AFilter.Zy[J - 1];
+    AFilter.Zy[0] := T;
+    Inc(X);
+    Inc(Y);
+  end;
+end;
+
+procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
+var
+  I: Integer;
+  J: Integer;
+  T: Complex;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := IO^ * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J] * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T + AFilter.Zy[J] * AFilter.A[J + 1];
+    T := T * AFilter.A[0];
+
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J] := AFilter.Zx[J - 1];
+    AFilter.Zx[0] := IO^;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J] := AFilter.Zy[J - 1];
+    AFilter.Zy[0] := T;
+    IO^ := T;
+    Inc(IO);
+  end;
 end;
 
 procedure ModArg(Input: PComplex; Output: PComplex; const N: Integer);
