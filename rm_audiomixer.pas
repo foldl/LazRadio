@@ -1,6 +1,21 @@
 unit rm_audiomixer;
 
 // NOTE: it's assumed that all input streams' sample rates are all equal
+{
+bass, midrange, & treble frequencies in octaves
+bass	range in Hz
+sub bass	31 to 62 (and lower)
+mid bass	62 to 125
+upper bass	125 to 250
+midrange
+lower midrange	250 to 500
+mid midrange	500 to 1K
+upper midrange	1K to 2K
+treble
+lower treble	2K to 4K
+mid treble	4K to 8K
+upper treble	8K to 16K (and higher)
+}
 
 {$mode objfpc}{$H+}
 
@@ -64,13 +79,19 @@ const
 procedure TRadioAudioMixer.ReceiveMixedData(const P: PComplex;
   const Len: Integer);
 var
-  O: Pointer;
+  O: PComplex;
   I: Integer;
 begin
+  if Len <> DefOutput.BufferSize then
+  begin
+    TRadioLogger.Report(llWarn, 'TRadioAudioMixer.ReceiveMixedData: Len <> DefOutput.BufferSize, data lost');
+    Exit;
+  end;
+
   O := Alloc(DefOutput, I);
   if Assigned(O) then
   begin
-    Move(P^, O^, DefOutput.BufferSize * SizeOf(O^));
+    Move(P^, O^, Len * SizeOf(O^));
     DefOutput.Broadcast(I, FDataListeners);
   end;
 end;
@@ -166,22 +187,32 @@ begin
       Dec(Cursor, MixLen);
     end;
   end;
+  FRegulator.ReceiveData(@T[0], L);
 end;
 
 procedure TRadioAudioMixer.SetupBassFilter(const Index: Integer);
 begin
   if FRate < 2 then Exit;
+  if Abs(FStreams[Index].BassGain) < 1 then
+  begin
+    FStreams[Index].BassGain := 0;
+    Exit;
+  end;
   SetIIROrders(FStreams[Index].Bass, 2, 2);
-  ShelvingFilterDesign(FStreams[Index].BassGain, 200, FRate, Sqrt(2), sfBassShelf,
+  ShelvingFilterDesign(FStreams[Index].BassGain, 250, FRate, Sqrt(2), sfBassShelf,
                        FStreams[Index].Bass.A, FStreams[Index].Bass.B);
-  FStreams[Index].Bass.B[0] := FStreams[Index].Bass.B[0] * FStreams[Index].TotalGain;
 end;
 
 procedure TRadioAudioMixer.SetupTrebleFilter(const Index: Integer);
 begin
   if FRate < 2 then Exit;
+  if Abs(FStreams[Index].TrebleGain) < 1 then
+  begin
+    FStreams[Index].TrebleGain := 0;
+    Exit;
+  end;
   SetIIROrders(FStreams[Index].Treble, 2, 2);
-  ShelvingFilterDesign(FStreams[Index].TrebleGain, 8000, FRate, Sqrt(2), sfTrebleShelf,
+  ShelvingFilterDesign(FStreams[Index].TrebleGain, 2000, FRate, Sqrt(2), sfTrebleShelf,
                        FStreams[Index].Treble.A, FStreams[Index].Treble.B);
 end;
 
@@ -235,7 +266,6 @@ begin
       begin
         if Msg.ParamH > High(FStreams) then Exit;
         FStreams[Msg.ParamH].TotalGain := Power(10, Integer(Msg.ParamL) / 10 / 20);
-        SetupBassFilter(Msg.ParamH);
       end;
     RM_AUDIOMIXER_SET_STREAM_BASS_GAIN:
       begin
@@ -255,9 +285,13 @@ begin
 end;
 
 procedure TRadioAudioMixer.DoConfigure;
+var
+  I: Integer;
 begin
-  FConfig.ChannelNumber := Length(FStreams);
-  FConfig.Show;
+  FConfig.ShowUI(Length(FStreams));
+  for I := 0 to High(FStreams) do
+    with FStreams[I] do
+      FConfig.ConfigChannel(I, MixMethod, Round(TotalGain), Round(BassGain), Round(TrebleGain));
 end;
 
 procedure TRadioAudioMixer.Describe(Strs: TStrings);
@@ -292,6 +326,8 @@ procedure TRadioAudioMixer.ReceiveData(const Port: Integer; const P: PComplex;
 var
   N, M: Integer;
   I: Integer = 0;
+  J: Integer;
+  G: Double;
 begin
   if (Port < 0) or (Port > High(FStreams)) then Exit;
   if FStreams[Port].MixMethod = AUDIOMIXER_STREAM_OUTPUT_OFF then Exit;
@@ -307,9 +343,12 @@ begin
 
     with FStreams[Port] do
     begin
-      IIRFilter(Bass, @P[I], @Cache[Cursor], M);
-      if High(Treble.B) >= 1 then
+      for J := 0 to M - 1 do
+        Cache[Cursor + J] := P[I + J] * TotalGain;
+      if not IsZero(BassGain) then
         IIRFilter(Bass, @Cache[Cursor], M);
+      if not IsZero(TrebleGain) then
+        IIRFilter(Treble, @Cache[Cursor], M);
     end;
 
     Inc(FStreams[Port].Cursor, M);

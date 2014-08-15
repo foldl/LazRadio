@@ -9,9 +9,11 @@ uses
 
 type
 
+  PDataStreamRec = ^TDataStreamRec;
   TDataStreamRec = record
+    Next: PDataStreamRec;
     Counter: Integer;
-    Allocated: Boolean;
+    Index: Integer;
     Data: array of Complex;
   end;
 
@@ -22,27 +24,35 @@ type
   { TRadioDataStream }
 
   TRadioDataStream = class
+  const
+    BLOCK_NUM = 8;
   private
     FName: string;
     FBlockSize: Integer;
     FFreeFlag: Boolean;
-    FBuffers: array [0..5] of TDataStreamRec;
+    FAllocted: PDataStreamRec;
+    FBuffers: array of PDataStreamRec;
+    FFree: PDataStreamRec;
     FModule: TRadioModule;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;
     function GetDefBufferSize: Integer;
     procedure SetDefBufferSize(AValue: Integer);
+    procedure FreeBlock(X: PDataStreamRec); // Lock is required
+    procedure DumpList;
   public
     constructor Create(Module: TRadioModule; const AName: string; const BlockSize: Integer);
     destructor Destroy; override;
     procedure SafeFree;
+
+    procedure EnsureBlockNumber(const AtLeast: Integer);
 
     procedure Lock;
     procedure Unlock;
 
     function TryAlloc(out Index: Integer): PComplex;
     procedure Broadcast(const Index: Integer; Listeners: TList);
-    procedure Release(const Index: Integer); // Listeners call this to release buffer
+    procedure Release(const Index: Integer); // Listeners call this to release buffer  // Alert: multi-thread
 
     function GetBufferSize(const Index: Integer): Integer;
 
@@ -377,6 +387,7 @@ type
     FIPlan: PFFTPlan;
     FRegulator: TStreamRegulator;
     FTaps: Integer;
+    function GetProcessingSize: Integer;
     procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer);
     procedure RegulatedData(const P: PComplex; const Len: Integer);
   protected
@@ -387,6 +398,8 @@ type
 
     procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False); overload;
     procedure SetFIR(const P: PDouble; const Len: Integer);
+
+    property ProcessingSize: Integer read GetProcessingSize;
   end;
 
   { TResampleNode }
@@ -425,6 +438,7 @@ type
     class property Level: TRadioLogLevel read FLevel write FLevel;
 
     class function MsgToStr(const M: TRadioMessage): string;
+    class function GetInstance: TRadioLogger;
   end;
 
 // I don't like to creae too many CriticalSections
@@ -506,6 +520,11 @@ begin
   else
     Result := 'from unknown';
   Result := Result + Format(' Id = %d, ParamH = %d, ParamL = %d', [M.Id, M.ParamH, M.ParamL]);
+end;
+
+class function TRadioLogger.GetInstance: TRadioLogger;
+begin
+  Result := FInstance;
 end;
 
 { TResampleNode }
@@ -663,6 +682,11 @@ begin
   FTaps := Len;
 end;
 
+function TFIRNode.GetProcessingSize: Integer;
+begin
+  Result := Length(FBuf);
+end;
+
 procedure TFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
 var
   I: Integer;
@@ -683,7 +707,7 @@ begin
     SendToNext(@FRes[I], Len - I);
   end
   else
-    TRadioLogger.Report(llError, 'TFIRNode.RegulatedData: FPlan = nil');
+    TRadioLogger.Report(llWarn, 'TFIRNode.RegulatedData: FPlan = nil');
 end;
 
 constructor TFIRNode.Create;
@@ -1074,6 +1098,8 @@ begin
     P^.Next := FIdleNode.Next;
     FIdleNode.Next := P;
     FWorkers[I - 1] := P^.Thread;
+
+    TRadioLogger.Report(llVerbose, 'TRadioRunQueue: thread #%d added', [P^.Thread.ThreadID]);
   end;
 end;
 
@@ -1262,12 +1288,12 @@ end;
 
 function TRadioDataStream.GetBuffer(const Index: Integer): PComplex;
 begin
-  Result := @FBuffers[Index].Data[0];
+  Result := @(FBuffers[Index]^.Data[0]);
 end;
 
 function TRadioDataStream.GetBufferCount: Integer;
 begin
-  Result := High(FBuffers) + 1;
+  Result := Length(FBuffers);
 end;
 
 function TRadioDataStream.GetDefBufferSize: Integer;
@@ -1276,54 +1302,110 @@ begin
 end;
 
 procedure TRadioDataStream.SetDefBufferSize(AValue: Integer);
-var
-  F: Boolean = False;
-  I: Integer;
 begin
   Lock;
-
   FBlockSize := AValue;
-  for I := Low(FBuffers) to High(FBuffers) do
-    if not FBuffers[I].Allocated then SetLength(FBuffers[I].Data, AValue);
-
   Unlock;
+end;
+
+procedure TRadioDataStream.FreeBlock(X: PDataStreamRec);
+var
+  P: PDataStreamRec;
+begin
+  if FAllocted <> X then
+  begin
+    P := FAllocted;
+    while Assigned(P) and (P^.Next <> X) do P := P^.Next;
+    if Assigned(P) then
+    begin
+      P^.Next := X^.Next;
+      X^.Next := FFree;
+      FFree := X;
+    end
+    else begin
+      TRadioLogger.Report(llError, 'TRadioDataStream.FreeBlock: %d not in Allocated list', [PtrUInt(X)]);
+      DumpList;
+      raise Exception.Create('TRadioDataStream.FreeBlock: not in Allocated list');
+    end;
+  end
+  else begin
+    FAllocted := X^.Next;
+    X^.Next := FFree;
+    FFree := X;
+  end;
+
+  if FFreeFlag and (not Assigned(FAllocted)) then
+  begin
+    Unlock;
+    Free;
+  end;
+end;
+
+procedure TRadioDataStream.DumpList;
+var
+  I: Integer;
+begin
+  for I := 0 to High(FBuffers) do
+    TRadioLogger.Report(llVerbose, 'buff[%d] = %d, next = %d, count = %d',
+                        [I, PtrUInt(FBuffers[I]), PtrUInt(FBuffers[I]^.Next), FBuffers[I]^.Counter]);
+  TRadioLogger.Report(llVerbose, 'Allocated head = %d', [PtrUInt(FAllocted)]);
+  TRadioLogger.Report(llVerbose, 'Free      head = %d', [PtrUInt(FFree)]);
 end;
 
 constructor TRadioDataStream.Create(Module: TRadioModule; const AName: string;
   const BlockSize: Integer);
-var
-  I: Integer;
 begin
+  inherited Create;
   FName := AName;
   FBlockSize := BlockSize;
   FModule := Module;
+  EnsureBlockNumber(BLOCK_NUM);
 end;
 
 destructor TRadioDataStream.Destroy;
 var
-  I: Integer;
+  P: PDataStreamRec;
 begin
-  for I := Low(FBuffers) to High(FBuffers) do
-    SetLength(FBuffers[I].Data, 0);
-  inherited Destroy;
+  for P in FBuffers do
+  begin
+    SetLength(P^.Data, 0);
+    Dispose(P);
+  end;
+  inherited;
 end;
 
 procedure TRadioDataStream.SafeFree;
-var
-  I: Integer;
 begin
   Lock;
-  FFreeFlag := False;
-  for I := Low(FBuffers) to High(FBuffers) do
-  begin
-    if FBuffers[I].Allocated then
-    begin
-      FFreeFlag := True;
-      Break;
-    end;
-  end;
+  FFreeFlag := Assigned(FAllocted);
   if not FFreeFlag then Free;
   Unlock;
+end;
+
+procedure TRadioDataStream.EnsureBlockNumber(const AtLeast: Integer);
+var
+  I: Integer;
+  P: PDataStreamRec;
+begin
+  TRadioLogger.Report(llVerbose, '%d EnsureBlockNumber %d', [PtrUInt(Self), AtLeast]);
+  I := High(FBuffers) + 1;
+  if I < AtLeast then
+  begin
+    Lock;
+    SetLength(FBuffers, AtLeast);
+    while I < AtLeast do
+    begin
+      New(P);
+      FillByte(P^, SizeOf(P^), 0);
+      //SetLength(P^.Data, FBlockSize);
+      P^.Index := I;
+      P^.Next := FFree;
+      FFree := P;
+      FBuffers[I] := P;
+      Inc(I);
+    end;
+    Unlock;
+  end;
 end;
 
 procedure TRadioDataStream.Lock;
@@ -1338,24 +1420,27 @@ end;
 
 function TRadioDataStream.TryAlloc(out Index: Integer): PComplex;
 var
-  I: Integer;
+  X: PDataStreamRec = nil;
 begin
   Result := nil;
+  if FFreeFlag then Exit;
 
   Lock;
-  for I := Low(FBuffers) to High(FBuffers) do
+  if Assigned(FFree) then
   begin
-    if not FBuffers[I].Allocated then
-    begin
-      if High(FBuffers[I].Data) <> FBlockSize - 1 then
-        SetLength(FBuffers[I].Data, FBlockSize);
-      Result := @FBuffers[I].Data[0];
-      FBuffers[I].Allocated := True;
-      Index := I;
-      Break;
-    end;
+    X := FFree;
+    FFree := X^.Next;
+    X^.Next := FAllocted;
+    FAllocted := X;
   end;
   Unlock;
+
+  if not Assigned(X) then Exit;
+
+  if Length(X^.Data) <> FBlockSize then
+    SetLength(X^.Data, FBlockSize);
+  Result := @X^.Data[0];
+  Index := X^.Index;
 end;
 
 procedure TRadioDataStream.Broadcast(const Index: Integer; Listeners: TList);
@@ -1363,12 +1448,19 @@ var
   M: TRadioMessage;
   P: Pointer;
   L: PDataListener;
+  X: PDataStreamRec;
 begin
-  Lock;
-  FBuffers[Index].Counter := Listeners.Count;
-  if FBuffers[Index].Counter < 1 then
-    FBuffers[Index].Allocated := False;
-  Unlock;
+  // assumption: buffer must be allocated!
+  X := FBuffers[Index];
+
+  if Listeners.Count > 0 then
+    X^.Counter := Listeners.Count
+  else begin
+    Lock;
+    FreeBlock(X); // free it
+    Unlock;
+    Exit;
+  end;
 
   with M do
   begin
@@ -1377,32 +1469,26 @@ begin
     ParamH := PtrInt(Self);
   end;
 
-  if FBuffers[Index].Allocated then
+  for P in Listeners do
   begin
-    for P in Listeners do
-    begin
-      L := PDataListener(P);
-      M.ParamL := (L^.Port shl 16) or Index;
-      L^.M.PostMessage(M);
-    end;
-  end
-  else;
+    L := PDataListener(P);
+    M.ParamL := (L^.Port shl 16) or Index;
+    L^.M.PostMessage(M);
+  end;
 end;
 
 procedure TRadioDataStream.Release(const Index: Integer);
-var
-  M: TRadioMessage;
 begin
   Lock;
-  Dec(FBuffers[Index].Counter);
-  if FBuffers[Index].Counter < 1 then
-    FBuffers[Index].Allocated := False;
+  Dec(FBuffers[Index]^.Counter);
+  if FBuffers[Index]^.Counter < 1 then
+    FreeBlock(FBuffers[Index]);
   Unlock;
 end;
 
 function TRadioDataStream.GetBufferSize(const Index: Integer): Integer;
 begin
-  Result := Length(FBuffers[Index].Data);
+  Result := Length(FBuffers[Index]^.Data);
 end;
 
 { TRadioModule }
@@ -1609,10 +1695,18 @@ end;
 
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
   ): PComplex;
+var
+  C: Integer = 0;
 begin
   Result := Stream.TryAlloc(Index);
   while (not RunThread.Terminated) and (Result = nil) do
   begin
+    Inc(C);
+    if C > 200 then
+    begin
+      TRadioLogger.Report(llError, 'TRadioModule.Alloc(%s): possible dead-lock in , exit', [Name]);
+      Exit;  // avoid possible dead-lock
+    end;
     Sleep(10);
     Result := Stream.TryAlloc(Index);
   end;
@@ -1646,13 +1740,20 @@ procedure TRadioModule.RMData(const Msg: TRadioMessage; var Ret: Integer);
 var
   B: TRadioDataStream;
   Port: Integer;
+  S: Integer;
+  procedure AllocBuff;
+  begin
+    DefOutput.EnsureBlockNumber(Round(S * 1.2 / DefOutput.BufferSize));
+  end;
 begin
-  B := TRadioDataStream(Pointer(Msg.ParamH));
+  B := TRadioDataStream(Msg.ParamH);
   Port := Msg.ParamL shr 16;
+  S := B.GetBufferSize(Msg.ParamL);
+  AllocBuff;
   if Port = 0 then
-    ReceiveData(B.Buffer[Msg.ParamL], B.GetBufferSize(Msg.ParamL))
+    ReceiveData(B.Buffer[Msg.ParamL], S)
   else
-    ReceiveData(Port, B.Buffer[Msg.ParamL and $FFFF], B.GetBufferSize(Msg.ParamL));
+    ReceiveData(Port, B.Buffer[Msg.ParamL and $FFFF], S);
   B.Release(Msg.ParamL and $FFFF);
 end;
 
@@ -1724,7 +1825,6 @@ const
   PORT_FEATURE = 0;
   PORT_DATA    = 1;
 var
-  I: Integer;
   P: Pointer;
 begin
   for P in FDataListeners do

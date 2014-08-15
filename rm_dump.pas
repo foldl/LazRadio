@@ -227,8 +227,9 @@ end;
 
 destructor TRadioDumpPlayer.Destroy;
 begin
-  FThread.Terminate;
   FFile := nil;
+  FThread.Terminate;
+
   RTLeventSetEvent(FStartEvent);
   RTLeventWaitFor(FStoppedEvent);
 

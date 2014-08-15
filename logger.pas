@@ -24,7 +24,7 @@ type
 
 implementation
 
-var
+const
   LogLevel2Str: array[TRadioLogLevel] of string = ('verbose', 'info', 'warn', 'error');
 
 { TTextLogger }
@@ -33,6 +33,7 @@ constructor TTextLogger.Create;
 var
   P: string;
 begin
+  inherited;
   while True do
   begin
     try

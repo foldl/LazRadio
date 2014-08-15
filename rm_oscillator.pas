@@ -136,7 +136,7 @@ begin
   if FExternalOsc then
     Strs.Add(Format('^bExternal Oscillator', []))
   else
-    Strs.Add(Format('^bInternal Osc. f: ^n%s', [FormatFreq(FFReq)]));
+    Strs.Add(Format('^bLocal Osc. Freq: ^n%s', [FormatFreq(FFReq)]));
 end;
 
 constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);

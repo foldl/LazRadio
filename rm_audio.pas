@@ -176,7 +176,7 @@ begin
 
   TRadioLogger.Report(llVerbose, 'audio out: wait');
 
-  H := WaitForMultipleObjects(High(FEvents) + 1, @FEvents[0], False, INFINITE) - WAIT_OBJECT_0;
+  H := WaitForMultipleObjects(Length(FEvents), @FEvents[0], False, INFINITE) - WAIT_OBJECT_0;
 
   if H < 0 then
   begin

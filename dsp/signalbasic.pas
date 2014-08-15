@@ -657,8 +657,8 @@ begin
     for J := 0 to High(AFilter.Zx) do
       T := T + AFilter.Zx[J] * AFilter.B[J + 1];
     for J := 0 to High(AFilter.Zy) do
-      T := T + AFilter.Zy[J] * AFilter.A[J + 1];
-    T := T * AFilter.A[0];
+      T := T - AFilter.Zy[J] * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
     Y^ := T;
     for J := High(AFilter.Zx) downto 1 do
       AFilter.Zx[J] := AFilter.Zx[J - 1];
@@ -683,8 +683,8 @@ begin
     for J := 0 to High(AFilter.Zx) do
       T := T + AFilter.Zx[J] * AFilter.B[J + 1];
     for J := 0 to High(AFilter.Zy) do
-      T := T + AFilter.Zy[J] * AFilter.A[J + 1];
-    T := T * AFilter.A[0];
+      T := T - AFilter.Zy[J] * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
 
     for J := High(AFilter.Zx) downto 1 do
       AFilter.Zx[J] := AFilter.Zx[J - 1];

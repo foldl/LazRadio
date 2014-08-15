@@ -28,18 +28,21 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="TAChartLazarusPkg"/>
+        <PackageName Value="LazControls"/>
       </Item1>
       <Item2>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="TAChartLazarusPkg"/>
       </Item2>
       <Item3>
-        <PackageName Value="LCL"/>
+        <PackageName Value="SynEdit"/>
       </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
     </RequiredPackages>
-    <Units Count="37">
+    <Units Count="38">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -246,6 +249,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="util_math"/>
       </Unit36>
+      <Unit37>
+        <Filename Value="logger_treeview.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="logger_treeview"/>
+      </Unit37>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

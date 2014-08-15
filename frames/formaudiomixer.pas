@@ -50,8 +50,12 @@ type
     procedure SetModule(AValue: TRadioModule);
     function  TryGetTag(Sender: TObject): Integer;
   public
+
+    procedure ShowUI(ChannelNumber: Integer);
+    procedure ConfigChannel(const Index: Integer; const MixMethod: Integer;
+              TotalGain, BassGain, TrebleGain: Integer);   // gain in tenth dB
+
     property Module: TRadioModule read FModule write SetModule;
-    property ChannelNumber: Integer read FChannelNumber write FChannelNumber;
   end;
 
 var
@@ -68,7 +72,7 @@ uses
 
 procedure TAudioMixerForm.FormShow(Sender: TObject);
 begin
-  if Length(FStreamCtrls) <> ChannelNumber then CreateCtrls;
+  if Length(FStreamCtrls) <> FChannelNumber then CreateCtrls;
 end;
 
 procedure TAudioMixerForm.OutputSelChange(Sender: TObject);
@@ -106,7 +110,7 @@ begin
   begin
     FStreamCtrls[I].VolLabel.Caption := Format('Vol'#13'%ddB', [FStreamCtrls[I].VolGain]);
     Inc(FStreamCtrls[I].VolGain, V);
-    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN, I, FStreamCtrls[I].VolGain * 10, FModule);
+    RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_TOTAL_GAIN, I, FStreamCtrls[I].VolGain * 10, FModule);
   end;
 end;
 
@@ -174,11 +178,11 @@ var
   end;
 
 begin
-  Width := 130 * ChannelNumber + 20;
+  Width := 130 * FChannelNumber + 20;
   while ScrollBox1.ControlCount > 0 do
     ScrollBox1.Controls[0].Free;
-  SetLength(FStreamCtrls, ChannelNumber);
-  for I := 0 to ChannelNumber - 1 do
+  SetLength(FStreamCtrls, FChannelNumber);
+  for I := 0 to FChannelNumber - 1 do
   begin
     with FStreamCtrls[I] do
     begin
@@ -246,7 +250,7 @@ begin
       BassLabel := AddLable(200, 48, 'Bass');
       TrebleLabel := AddLable(200, 80, 'Treble');
 
-      if I = ChannelNumber - 1 then Break;
+      if I = FChannelNumber - 1 then Break;
 
       Bevel := TBevel.Create(ScrollBox1);
       Bevel.Parent := ScrollBox1;
@@ -272,6 +276,28 @@ begin
   if not Assigned(FModule) then Exit;
   if not (Sender is TComponent) then Exit;
   Result := (Sender as TComponent).Tag;
+end;
+
+procedure TAudioMixerForm.ShowUI(ChannelNumber: Integer);
+begin
+  FChannelNumber := ChannelNumber;
+  Show;
+end;
+
+procedure TAudioMixerForm.ConfigChannel(const Index: Integer;
+  const MixMethod: Integer; TotalGain, BassGain, TrebleGain: Integer);
+begin
+  if (Index < 0) or (Index > High(FStreamCtrls)) then Exit;
+  with FStreamCtrls[Index] do
+  begin
+    Output.ItemIndex := MixMethod;
+    VolGain := (TotalGain + 5) div 10;
+    Bass.Position := (BassGain + 5) div 10;
+    Treble.Position := (TrebleGain + 5) div 10;
+    TrebleLabel.Caption := Format('Treble'#13'%ddB', [Bass.Position]);
+    BassLabel.Caption := Format('Bass'#13'%ddB', [Treble.Position]);
+    VolLabel.Caption := Format('Vol'#13'%ddB', [VolGain]);
+  end;
 end;
 
 end.

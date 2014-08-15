@@ -5,8 +5,9 @@ unit formmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, SynEdit, Forms, Controls, Graphics, Dialogs,
-  Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls, RadioSystem, RadioModule;
+  Classes, SysUtils, FileUtil, SynEdit, TreeFilterEdit, ListFilterEdit, Forms,
+  Controls, Graphics, Dialogs, Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls,
+  Buttons, RadioSystem, RadioModule;
 
 type
 
@@ -14,22 +15,32 @@ type
 
   TMainForm = class(TForm)
     ActionList1: TActionList;
+    BitBtn1: TBitBtn;
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    Edit1: TEdit;
+    ListView1: TListView;
     MainMenu1: TMainMenu;
-    Memo1: TMemo;
     MenuItem1: TMenuItem;
+    PageControl1: TPageControl;
     PaintBox1: TPaintBox;
     Panel1: TPanel;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
     ScrollBox1: TScrollBox;
     Splitter1: TSplitter;
     Splitter2: TSplitter;
     StatusBar1: TStatusBar;
     SynEdit1: TSynEdit;
+    SheetCode: TTabSheet;
+    SheetGraph: TTabSheet;
+    TabControl1: TTabControl;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
+    TreeView1: TTreeView;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -47,7 +58,7 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, logger, gen_graph,
+  Genfft, UComplex, SignalBasic, logger_treeview, gen_graph,
   formfilter, radiomessage;
 
 {$R *.lfm}
@@ -56,8 +67,13 @@ uses
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
-  TTextLogger.Level := llWarn;
-  TTextLogger.Start;
+  TRadioLogger.Level := llError;
+  TTreeViewLogger.Start;
+  with TRadioLogger.GetInstance as TTreeViewLogger do
+  begin
+    LevelTab := TabControl1;
+    MessageTree := TreeView1;
+  end;
   //FilterForm.Show;
   //exit;                        Mouse;
   if not Assigned(FSystem) then
@@ -76,20 +92,23 @@ begin
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm', 'FreqDiscriminator');
     FSystem.AddModule('re', 'Resampling');
-    FSystem.AddModule('test', 'AudioMixer');
+    FSystem.AddModule('aumixer', 'AudioMixer');
   end;
 
-  FSystem.ConnectBoth('src', 's');
+ // FSystem.ConnectBoth('src', 's');
   FSystem.ConnectBoth('src', 'mixer');
-  FSystem.ConnectFeature('s', 'mixer');
+ // FSystem.ConnectFeature('s', 'mixer');
   FSystem.ConnectBoth('mixer', 're');
-  FSystem.ConnectFeature('s', 're');
+ // FSystem.ConnectFeature('s', 're');
 
   FSystem.ConnectBoth('re', 'fm');
   FSystem.ConnectBoth('fm', 's2');
   FSystem.ConnectBoth('fm', 'f2');
   FSystem.ConnectFeature('s2', 'f2');
-  FSystem.ConnectBoth('f2', 'u');
+  FSystem.ConnectFeature('f2', 'aumixer');
+  FSystem.ConnectData('f2', 'aumixer', 0);
+  FSystem.ConnectBoth('aumixer', 'u');
+  FSystem.ConnectBoth('aumixer', 's');
 
   //FSystem.ConnectBoth('src', 'dump');
 
@@ -105,10 +124,12 @@ begin
 //  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
   RadioPostMessage(RM_RESAMPLING_CFG, 200000, 80000, 're');
+  RadioPostMessage(RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4, 'aumixer');
+  RadioPostMessage(RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0, 'u');
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
- // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;
@@ -120,16 +141,25 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 var
-  X: array [0..3] of Complex;
+  F: TIIRFilter;
   P: PFFTPlan;
+  X: array [0..10] of Complex;
+  I: Integer;
 begin
- { FillChar(X[0], (High(X) + 1) * SizeOf(X[0]), 0);
-  X[1].re := 100;
-  P := BuildFFTPlan(High(X) + 1, False);
-  FFT(P, @X[0], @X[0]);
-  FinalizePlan(P);
+{
+  SetIIROrders(F, 2, 2);
+  F.A[0] := 1;  F.A[1] := 2; F.A[2] := 3;
+  F.B[0] := 4;  F.B[1] := 5; F.B[2] := 6;
+  for I := 0 to High(X) do
+  begin
+    X[I].re := I;
+    X[I].im := 0;
+  end;
+  IIRFilter(F, @X[0], Length(X));
+  for I := 0 to High(X) do
+    Memo1.Lines.Add(Format('[%d] = %f', [I, X[I].re]));
   exit;
-  }
+}
   RadioPostMessage(RM_DUMP_PLAYER_STOP, 0, 0, 'src');
 end;
 

@@ -216,6 +216,7 @@ end;
 
 procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
+
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
   begin
