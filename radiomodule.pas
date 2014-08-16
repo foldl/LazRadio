@@ -1748,7 +1748,7 @@ var
 begin
   B := TRadioDataStream(Msg.ParamH);
   Port := Msg.ParamL shr 16;
-  S := B.GetBufferSize(Msg.ParamL);
+  S := B.GetBufferSize(Msg.ParamL and $FFFF);
   AllocBuff;
   if Port = 0 then
     ReceiveData(B.Buffer[Msg.ParamL], S)

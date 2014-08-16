@@ -898,6 +898,7 @@ end;
 
 procedure TRadioSpectrum.DoShowGUI;
 begin
+  FForm.Caption := Format('Spectrum (%s)', [Name]);
   FForm.Show;
 end;
 
@@ -938,7 +939,7 @@ begin
   FForm := TSpectrumForm.Create(Application);
   FRt.PaintBox := FForm.PaintBox1;
   FWf.PaintBox := FForm.PaintBox2;
-  FForm.Show;
+  //FForm.Show;
   RedrawFull;
   FForm.PaintBox1.OnResize := @ImageResize;
   FForm.PaintBox2.OnResize := @ImageResize;

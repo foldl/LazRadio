@@ -127,7 +127,7 @@ begin
   if L = 0 then
   begin
     if F < 0 then raise Exception.Create('TRadioAudioMixer.Mixing: impossible');
-    FStreams[I].MixLen := CACHE_SIZE;
+    FStreams[F].MixLen := CACHE_SIZE;
     L := CACHE_SIZE;
   end;
 
@@ -137,7 +137,7 @@ begin
     with FStreams[I] do
     begin
       if MixMethod = AUDIOMIXER_STREAM_OUTPUT_OFF then Continue;
-      if MixLen < 1 then Exit;
+      if MixLen < 1 then Continue;
 
       case MixMethod of
         AUDIOMIXER_STREAM_OUTPUT_IQ_IQ:

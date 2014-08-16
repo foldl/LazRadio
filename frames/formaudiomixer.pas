@@ -81,7 +81,7 @@ var
 begin
   V := Max(0, (Sender as TComboBox).ItemIndex);
   I := TryGetTag(Sender);
-  SendStreamNumMessage;
+  // SendStreamNumMessage;
   if I >= 0 then
     RadioPostMessage(RM_AUDIOMIXER_SET_STREAM_OUPUT, I, V, FModule);
 end;

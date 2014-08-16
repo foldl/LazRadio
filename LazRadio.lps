@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="75">
+    <Units Count="78">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -21,10 +21,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formmain"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="31" Y="74"/>
+        <TopLine Value="82"/>
+        <CursorPos X="7" Y="84"/>
         <UsageCount Value="228"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -33,12 +34,10 @@
         <Filename Value="radiomodule.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioModule"/>
-        <EditorIndex Value="14"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="525"/>
-        <CursorPos X="22" Y="527"/>
+        <TopLine Value="1739"/>
+        <CursorPos X="14" Y="1754"/>
         <UsageCount Value="228"/>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="rtlsdr.pas"/>
@@ -93,8 +92,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioSystem"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="210"/>
-        <CursorPos X="36" Y="233"/>
+        <TopLine Value="261"/>
+        <CursorPos X="37" Y="272"/>
         <UsageCount Value="282"/>
       </Unit8>
       <Unit9>
@@ -111,8 +110,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_spectrum"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="938"/>
-        <CursorPos X="1" Y="970"/>
+        <TopLine Value="897"/>
+        <CursorPos X="38" Y="901"/>
         <UsageCount Value="268"/>
       </Unit10>
       <Unit11>
@@ -138,8 +137,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_filter"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="228"/>
-        <CursorPos X="12" Y="233"/>
+        <TopLine Value="99"/>
+        <CursorPos X="12" Y="94"/>
         <UsageCount Value="206"/>
       </Unit13>
       <Unit14>
@@ -150,8 +149,8 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formspectrum"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="152"/>
-        <CursorPos X="3" Y="184"/>
+        <TopLine Value="119"/>
+        <CursorPos X="17" Y="160"/>
         <UsageCount Value="228"/>
       </Unit14>
       <Unit15>
@@ -200,12 +199,10 @@
         <Filename Value="utils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="utils"/>
-        <EditorIndex Value="12"/>
         <WindowIndex Value="0"/>
         <TopLine Value="52"/>
         <CursorPos X="62" Y="58"/>
         <UsageCount Value="200"/>
-        <Loaded Value="True"/>
       </Unit19>
       <Unit20>
         <Filename Value="rm_dump.pas"/>
@@ -220,13 +217,10 @@
         <Filename Value="logger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="logger"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="13"/>
-        <CursorPos X="32" Y="28"/>
+        <TopLine Value="43"/>
+        <CursorPos X="28" Y="48"/>
         <UsageCount Value="203"/>
-        <Loaded Value="True"/>
       </Unit21>
       <Unit22>
         <Filename Value="frames\formfilter.pas"/>
@@ -245,8 +239,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_fm"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="90" Y="26"/>
+        <TopLine Value="75"/>
+        <CursorPos X="38" Y="87"/>
         <UsageCount Value="201"/>
       </Unit23>
       <Unit24>
@@ -299,8 +293,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioMessage"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="45"/>
-        <CursorPos X="3" Y="57"/>
+        <TopLine Value="92"/>
+        <CursorPos X="3" Y="104"/>
         <UsageCount Value="201"/>
       </Unit29>
       <Unit30>
@@ -316,21 +310,19 @@
         <Filename Value="util_config.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="util_config"/>
-        <EditorIndex Value="13"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="10" Y="10"/>
-        <UsageCount Value="188"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="204"/>
       </Unit31>
       <Unit32>
         <Filename Value="rm_resampling.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_resampling"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="31"/>
-        <CursorPos X="25" Y="51"/>
-        <UsageCount Value="160"/>
+        <TopLine Value="122"/>
+        <CursorPos X="64" Y="142"/>
+        <UsageCount Value="178"/>
       </Unit32>
       <Unit33>
         <Filename Value="dsp\mathlut.pas"/>
@@ -339,16 +331,16 @@
         <WindowIndex Value="0"/>
         <TopLine Value="31"/>
         <CursorPos X="56" Y="61"/>
-        <UsageCount Value="100"/>
+        <UsageCount Value="118"/>
       </Unit33>
       <Unit34>
         <Filename Value="rm_audiomixer.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_audiomixer"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="329"/>
-        <CursorPos X="39" Y="337"/>
-        <UsageCount Value="98"/>
+        <TopLine Value="178"/>
+        <CursorPos X="14" Y="186"/>
+        <UsageCount Value="116"/>
       </Unit34>
       <Unit35>
         <Filename Value="frames\formaudiomixer.pas"/>
@@ -358,9 +350,9 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formaudiomixer"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="92"/>
-        <CursorPos X="95" Y="113"/>
-        <UsageCount Value="85"/>
+        <TopLine Value="71"/>
+        <CursorPos X="6" Y="84"/>
+        <UsageCount Value="103"/>
       </Unit35>
       <Unit36>
         <Filename Value="util_math.pas"/>
@@ -369,9 +361,18 @@
         <WindowIndex Value="0"/>
         <TopLine Value="52"/>
         <CursorPos X="38" Y="62"/>
-        <UsageCount Value="76"/>
+        <UsageCount Value="94"/>
       </Unit36>
       <Unit37>
+        <Filename Value="logger_treeview.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="logger_treeview"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="102"/>
+        <CursorPos X="63" Y="105"/>
+        <UsageCount Value="40"/>
+      </Unit37>
+      <Unit38>
         <Filename Value="frames\formgui.pas"/>
         <ComponentName Value="GUIForm"/>
         <HasResources Value="True"/>
@@ -380,66 +381,64 @@
         <WindowIndex Value="0"/>
         <TopLine Value="7"/>
         <CursorPos X="33" Y="20"/>
-        <UsageCount Value="169"/>
-      </Unit37>
-      <Unit38>
+        <UsageCount Value="168"/>
+      </Unit38>
+      <Unit39>
         <Filename Value="rm_audio_out.pas"/>
         <UnitName Value="rm_audio_out"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="20" Y="15"/>
-        <UsageCount Value="114"/>
-      </Unit38>
-      <Unit39>
+        <UsageCount Value="113"/>
+      </Unit39>
+      <Unit40>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\inc\ucomplex.pp"/>
         <UnitName Value="UComplex"/>
         <WindowIndex Value="0"/>
         <TopLine Value="366"/>
         <CursorPos X="43" Y="370"/>
-        <UsageCount Value="30"/>
-      </Unit39>
-      <Unit40>
+        <UsageCount Value="29"/>
+      </Unit40>
+      <Unit41>
         <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\objpas\math.pp"/>
         <UnitName Value="math"/>
         <WindowIndex Value="0"/>
         <TopLine Value="2507"/>
         <CursorPos X="41" Y="79"/>
-        <UsageCount Value="47"/>
-      </Unit40>
-      <Unit41>
-        <Filename Value="D:\lazarus1.2\lcl\graphics.pp"/>
+        <UsageCount Value="46"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="d:\lazarus1.2\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
         <TopLine Value="2183"/>
         <CursorPos X="10" Y="2202"/>
         <UsageCount Value="20"/>
-        <Loaded Value="True"/>
-      </Unit41>
-      <Unit42>
+      </Unit42>
+      <Unit43>
         <Filename Value="d:\lazarus1.2\lcl\interfaces\win32\win32wsbuttons.pp"/>
         <UnitName Value="Win32WSButtons"/>
         <WindowIndex Value="0"/>
         <TopLine Value="482"/>
         <CursorPos X="16" Y="490"/>
-        <UsageCount Value="4"/>
-      </Unit42>
-      <Unit43>
+        <UsageCount Value="3"/>
+      </Unit43>
+      <Unit44>
         <Filename Value="D:\lazarus1.2\lcl\include\control.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="4055"/>
         <CursorPos X="45" Y="4064"/>
-        <UsageCount Value="5"/>
-      </Unit43>
-      <Unit44>
+        <UsageCount Value="4"/>
+      </Unit44>
+      <Unit45>
         <Filename Value="D:\lazarus1.2\lcl\themes.pas"/>
         <UnitName Value="Themes"/>
         <WindowIndex Value="0"/>
         <TopLine Value="526"/>
         <CursorPos X="13" Y="531"/>
-        <UsageCount Value="0"/>
-      </Unit44>
-      <Unit45>
+        <UsageCount Value="9"/>
+      </Unit45>
+      <Unit46>
         <Filename Value="frames\formfilterparam.pas"/>
         <ComponentName Value="TFilterParamForm"/>
         <ResourceBaseClass Value="Form"/>
@@ -447,72 +446,65 @@
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="28" Y="23"/>
-        <UsageCount Value="22"/>
-      </Unit45>
-      <Unit46>
+        <UsageCount Value="21"/>
+      </Unit46>
+      <Unit47>
         <Filename Value="D:\lazarus1.2\lcl\include\canvas.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="652"/>
         <CursorPos X="35" Y="659"/>
-        <UsageCount Value="5"/>
-      </Unit46>
-      <Unit47>
-        <Filename Value="D:\lazarus1.2\lcl\graphtype.pp"/>
-        <UnitName Value="GraphType"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="25"/>
-        <CursorPos X="17" Y="40"/>
-        <UsageCount Value="0"/>
+        <UsageCount Value="4"/>
       </Unit47>
       <Unit48>
+        <Filename Value="d:\lazarus1.2\lcl\graphtype.pp"/>
+        <UnitName Value="GraphType"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="91"/>
+        <CursorPos X="3" Y="103"/>
+        <UsageCount Value="10"/>
+      </Unit48>
+      <Unit49>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\classesh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1636"/>
         <CursorPos X="14" Y="1764"/>
-        <UsageCount Value="38"/>
-      </Unit48>
-      <Unit49>
+        <UsageCount Value="37"/>
+      </Unit49>
+      <Unit50>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\ucomplex.pp"/>
         <UnitName Value="UComplex"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="41" Y="36"/>
-        <UsageCount Value="4"/>
-      </Unit49>
-      <Unit50>
+        <UsageCount Value="3"/>
+      </Unit50>
+      <Unit51>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\systemh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="525"/>
         <CursorPos X="11" Y="538"/>
-        <UsageCount Value="9"/>
-      </Unit50>
-      <Unit51>
+        <UsageCount Value="8"/>
+      </Unit51>
+      <Unit52>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\types.pp"/>
         <UnitName Value="types"/>
         <WindowIndex Value="0"/>
         <TopLine Value="86"/>
         <CursorPos X="3" Y="98"/>
-        <UsageCount Value="10"/>
-      </Unit51>
-      <Unit52>
+        <UsageCount Value="9"/>
+      </Unit52>
+      <Unit53>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpash.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="233"/>
         <CursorPos X="37" Y="239"/>
-        <UsageCount Value="15"/>
-      </Unit52>
-      <Unit53>
+        <UsageCount Value="14"/>
+      </Unit53>
+      <Unit54>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpas.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="2"/>
-      </Unit53>
-      <Unit54>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\lists.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="791"/>
-        <CursorPos X="3" Y="793"/>
         <UsageCount Value="1"/>
       </Unit54>
       <Unit55>
@@ -521,7 +513,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="306"/>
         <CursorPos X="41" Y="322"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit55>
       <Unit56>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\math.pp"/>
@@ -529,35 +521,35 @@
         <WindowIndex Value="0"/>
         <TopLine Value="120"/>
         <CursorPos X="10" Y="138"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit56>
       <Unit57>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\fina.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="28"/>
         <CursorPos X="25" Y="42"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit57>
       <Unit58>
         <Filename Value="D:\lazarus1.2\lcl\include\graphiccontrol.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="33"/>
         <CursorPos X="1" Y="40"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit58>
       <Unit59>
         <Filename Value="D:\lazarus1.2\lcl\include\paintbox.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="18"/>
         <CursorPos X="1" Y="45"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit59>
       <Unit60>
         <Filename Value="D:\lazarus1.2\lcl\include\wincontrol.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="6618"/>
         <CursorPos X="1" Y="6636"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit60>
       <Unit61>
         <Filename Value="d:\lazarus1.2\lcl\forms.pp"/>
@@ -565,7 +557,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="681"/>
         <CursorPos X="14" Y="692"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit61>
       <Unit62>
         <Filename Value="D:\lazarus1.2\lcl\stdctrls.pp"/>
@@ -573,7 +565,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="370"/>
         <CursorPos X="14" Y="387"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit62>
       <Unit63>
         <Filename Value="D:\lazarus1.2\lcl\controls.pp"/>
@@ -581,230 +573,126 @@
         <WindowIndex Value="0"/>
         <TopLine Value="1334"/>
         <CursorPos X="15" Y="1352"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit63>
       <Unit64>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\sysstr.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit64>
       <Unit65>
-        <Filename Value="logger_treeview.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="logger_treeview"/>
-        <EditorIndex Value="3"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="37"/>
-        <CursorPos X="22" Y="55"/>
-        <UsageCount Value="22"/>
-        <Loaded Value="True"/>
-      </Unit65>
-      <Unit66>
-        <Filename Value="D:\lazarus1.2\lcl\imglist.pp"/>
+        <Filename Value="d:\lazarus1.2\lcl\imglist.pp"/>
         <UnitName Value="ImgList"/>
-        <EditorIndex Value="10"/>
         <WindowIndex Value="0"/>
         <TopLine Value="147"/>
         <CursorPos X="14" Y="166"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
-      </Unit66>
-      <Unit67>
-        <Filename Value="D:\lazarus1.2\lcl\include\imglist.inc"/>
-        <EditorIndex Value="11"/>
+      </Unit65>
+      <Unit66>
+        <Filename Value="d:\lazarus1.2\lcl\include\imglist.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="145"/>
         <CursorPos X="3" Y="155"/>
-        <UsageCount Value="11"/>
-        <Loaded Value="True"/>
-      </Unit67>
-      <Unit68>
-        <Filename Value="D:\lazarus1.2\lcl\include\icon.inc"/>
-        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit66>
+      <Unit67>
+        <Filename Value="d:\lazarus1.2\lcl\include\icon.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="801"/>
         <CursorPos X="10" Y="807"/>
-        <UsageCount Value="11"/>
-        <Loaded Value="True"/>
-      </Unit68>
-      <Unit69>
-        <Filename Value="D:\lazarus1.2\lcl\include\fpimagebitmap.inc"/>
-        <EditorIndex Value="8"/>
+        <UsageCount Value="10"/>
+      </Unit67>
+      <Unit68>
+        <Filename Value="d:\lazarus1.2\lcl\include\fpimagebitmap.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="115"/>
         <CursorPos X="22" Y="133"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
-      </Unit69>
-      <Unit70>
-        <Filename Value="D:\lazarus1.2\lcl\include\bitmap.inc"/>
-        <EditorIndex Value="7"/>
+      </Unit68>
+      <Unit69>
+        <Filename Value="d:\lazarus1.2\lcl\include\bitmap.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="3" Y="24"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
-      </Unit70>
-      <Unit71>
-        <Filename Value="D:\lazarus1.2\lcl\lresources.pp"/>
+      </Unit69>
+      <Unit70>
+        <Filename Value="d:\lazarus1.2\lcl\lresources.pp"/>
         <UnitName Value="LResources"/>
-        <EditorIndex Value="6"/>
         <WindowIndex Value="0"/>
         <TopLine Value="5260"/>
         <CursorPos X="63" Y="5284"/>
-        <UsageCount Value="10"/>
-        <Loaded Value="True"/>
-      </Unit71>
-      <Unit72>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\intfh.inc"/>
-        <EditorIndex Value="9"/>
+        <UsageCount Value="9"/>
+      </Unit70>
+      <Unit71>
+        <Filename Value="d:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\intfh.inc"/>
         <WindowIndex Value="0"/>
         <TopLine Value="8"/>
         <CursorPos X="10" Y="37"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
-      </Unit72>
-      <Unit73>
+      </Unit71>
+      <Unit72>
         <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\packages\libpng\src\png.pp"/>
         <UnitName Value="png"/>
         <WindowIndex Value="0"/>
         <TopLine Value="64"/>
         <CursorPos X="6" Y="57"/>
+        <UsageCount Value="9"/>
+      </Unit72>
+      <Unit73>
+        <Filename Value="d:\lazarus1.2\lcl\intfgraphics.pas"/>
+        <UnitName Value="IntfGraphics"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="219"/>
+        <CursorPos X="17" Y="230"/>
         <UsageCount Value="10"/>
       </Unit73>
       <Unit74>
-        <Filename Value="D:\lazarus1.2\lcl\intfgraphics.pas"/>
-        <UnitName Value="IntfGraphics"/>
-        <EditorIndex Value="4"/>
+        <Filename Value="d:\lazarus1.2\fpc\2.6.4\source\packages\fcl-image\src\fpreadpng.pp"/>
+        <UnitName Value="FPReadPNG"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="85"/>
-        <CursorPos X="28" Y="116"/>
+        <TopLine Value="80"/>
+        <CursorPos X="3" Y="29"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit74>
+      <Unit75>
+        <Filename Value="d:\lazarus1.2\fpc\2.6.4\source\packages\fcl-image\src\fpimage.pp"/>
+        <UnitName Value="FPimage"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="475"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
+      </Unit75>
+      <Unit76>
+        <Filename Value="d:\lazarus1.2\lcl\include\rasterimage.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="542"/>
+        <CursorPos X="1" Y="554"/>
+        <UsageCount Value="10"/>
+      </Unit76>
+      <Unit77>
+        <Filename Value="d:\lazarus1.2\lcl\lclproc.pas"/>
+        <UnitName Value="LCLProc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="849"/>
+        <CursorPos X="49" Y="861"/>
+        <UsageCount Value="9"/>
+      </Unit77>
     </Units>
     <General>
       <ActiveWindowIndexAtStart Value="0"/>
     </General>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="2" HistoryIndex="1">
       <Position1>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="26" Column="69" TopLine="2"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="124" Column="20" TopLine="109"/>
       </Position1>
       <Position2>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="29" Column="77" TopLine="4"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="123" Column="20" TopLine="108"/>
       </Position2>
-      <Position3>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="22" Column="47" TopLine="7"/>
-      </Position3>
-      <Position4>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="64" Column="3" TopLine="8"/>
-      </Position4>
-      <Position5>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="48" Column="16" TopLine="31"/>
-      </Position5>
-      <Position6>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="56" Column="36" TopLine="31"/>
-      </Position6>
-      <Position7>
-        <Filename Value="frames\formmain.pas"/>
-        <Caret Line="72" Column="21" TopLine="52"/>
-      </Position7>
-      <Position8>
-        <Filename Value="radiomodule.pas"/>
-        <Caret Line="441" Column="46" TopLine="410"/>
-      </Position8>
-      <Position9>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="74" Column="11" TopLine="66"/>
-      </Position9>
-      <Position10>
-        <Filename Value="frames\formmain.pas"/>
-        <Caret Line="75" Column="29" TopLine="52"/>
-      </Position10>
-      <Position11>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="31" Column="14" TopLine="12"/>
-      </Position11>
-      <Position12>
-        <Filename Value="frames\formmain.pas"/>
-        <Caret Line="75" Column="29" TopLine="52"/>
-      </Position12>
-      <Position13>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="57" Column="23" TopLine="36"/>
-      </Position13>
-      <Position14>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="48" Column="20" TopLine="34"/>
-      </Position14>
-      <Position15>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="53" Column="21" TopLine="40"/>
-      </Position15>
-      <Position16>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="55" Column="47" TopLine="40"/>
-      </Position16>
-      <Position17>
-        <Filename Value="D:\lazarus1.2\lcl\include\imglist.inc"/>
-        <Caret Line="155" Column="3" TopLine="145"/>
-      </Position17>
-      <Position18>
-        <Filename Value="D:\lazarus1.2\lcl\graphics.pp"/>
-        <Caret Line="2208" Column="41" TopLine="2197"/>
-      </Position18>
-      <Position19>
-        <Filename Value="D:\lazarus1.2\lcl\graphics.pp"/>
-        <Caret Line="2202" Column="10" TopLine="2183"/>
-      </Position19>
-      <Position20>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="51" Column="39" TopLine="37"/>
-      </Position20>
-      <Position21>
-        <Filename Value="D:\lazarus1.2\lcl\lresources.pp"/>
-        <Caret Line="5263" Column="22" TopLine="5249"/>
-      </Position21>
-      <Position22>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="57" Column="32" TopLine="37"/>
-      </Position22>
-      <Position23>
-        <Filename Value="D:\lazarus1.2\lcl\include\fpimagebitmap.inc"/>
-        <Caret Line="146" Column="18" TopLine="115"/>
-      </Position23>
-      <Position24>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="51" Column="4" TopLine="37"/>
-      </Position24>
-      <Position25>
-        <Filename Value="D:\lazarus1.2\lcl\lresources.pp"/>
-        <Caret Line="5274" Column="3" TopLine="5272"/>
-      </Position25>
-      <Position26>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="9" Column="41" TopLine="1"/>
-      </Position26>
-      <Position27>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="56" Column="8" TopLine="1"/>
-      </Position27>
-      <Position28>
-        <Filename Value="logger_treeview.pas"/>
-        <Caret Line="50" Column="20" TopLine="37"/>
-      </Position28>
-      <Position29>
-        <Filename Value="D:\lazarus1.2\lcl\intfgraphics.pas"/>
-        <Caret Line="53" Column="35" TopLine="382"/>
-      </Position29>
     </JumpHistory>
   </ProjectSession>
   <EditorMacros Count="0"/>

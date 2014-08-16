@@ -1,23 +1,26 @@
 object MainForm: TMainForm
-  Left = 358
-  Height = 798
-  Top = 136
-  Width = 1189
+  Left = 299
+  Height = 700
+  Top = 78
+  Width = 1065
   Caption = 'LazRadio'
-  ClientHeight = 778
-  ClientWidth = 1189
+  ClientHeight = 680
+  ClientWidth = 1065
+  Font.Name = 'Tahoma'
   Menu = MainMenu1
   OnClose = FormClose
-  LCLVersion = '1.2.4.0'
+  Position = poScreenCenter
+  LCLVersion = '1.2.2.0'
+  WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
-    Height = 494
+    Height = 396
     Top = 26
-    Width = 1189
+    Width = 1065
     Align = alClient
     Caption = 'Panel1'
-    ClientHeight = 494
-    ClientWidth = 1189
+    ClientHeight = 396
+    ClientWidth = 1065
     TabOrder = 0
     object Button1: TButton
       Left = 440
@@ -30,22 +33,22 @@ object MainForm: TMainForm
     end
     object PageControl1: TPageControl
       Left = 1
-      Height = 492
+      Height = 394
       Top = 1
-      Width = 967
-      ActivePage = SheetGraph
+      Width = 843
+      ActivePage = SheetCode
       Align = alClient
-      TabIndex = 1
+      TabIndex = 0
       TabOrder = 1
       object SheetCode: TTabSheet
         Caption = 'Code'
-        ClientHeight = 464
-        ClientWidth = 959
+        ClientHeight = 362
+        ClientWidth = 835
         inline SynEdit1: TSynEdit
           Left = 0
-          Height = 464
+          Height = 362
           Top = 0
-          Width = 959
+          Width = 835
           Align = alClient
           Font.Height = -13
           Font.Name = 'Courier New'
@@ -553,22 +556,22 @@ object MainForm: TMainForm
       end
       object SheetGraph: TTabSheet
         Caption = 'Graph'
-        ClientHeight = 464
+        ClientHeight = 412
         ClientWidth = 959
         object ScrollBox1: TScrollBox
           Left = 0
-          Height = 464
+          Height = 412
           Top = 0
           Width = 959
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 600
+          HorzScrollBar.Page = 938
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 432
+          VertScrollBar.Page = 408
           VertScrollBar.Tracking = True
           Align = alClient
-          ClientHeight = 460
-          ClientWidth = 955
+          ClientHeight = 408
+          ClientWidth = 938
           TabOrder = 0
           TabStop = True
           object PaintBox1: TPaintBox
@@ -583,18 +586,18 @@ object MainForm: TMainForm
       end
     end
     object Panel2: TPanel
-      Left = 973
-      Height = 492
+      Left = 849
+      Height = 394
       Top = 1
       Width = 215
       Align = alRight
       Caption = 'Panel2'
-      ClientHeight = 492
+      ClientHeight = 394
       ClientWidth = 215
       TabOrder = 2
       object ListView1: TListView
         Left = 1
-        Height = 451
+        Height = 353
         Top = 40
         Width = 213
         Align = alClient
@@ -614,7 +617,7 @@ object MainForm: TMainForm
         TabOrder = 1
         object Edit1: TEdit
           Left = 8
-          Height = 23
+          Height = 27
           Top = 8
           Width = 160
           Anchors = [akTop, akLeft, akRight]
@@ -634,8 +637,8 @@ object MainForm: TMainForm
       end
     end
     object Splitter2: TSplitter
-      Left = 968
-      Height = 492
+      Left = 844
+      Height = 394
       Top = 1
       Width = 5
       Align = alRight
@@ -646,16 +649,16 @@ object MainForm: TMainForm
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 520
-    Width = 1189
+    Top = 422
+    Width = 1065
     Align = alBottom
     ResizeAnchor = akBottom
   end
   object StatusBar1: TStatusBar
     Left = 0
     Height = 22
-    Top = 756
-    Width = 1189
+    Top = 658
+    Width = 1065
     Panels = <>
   end
   object Button3: TButton
@@ -689,7 +692,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 26
     Top = 0
-    Width = 1189
+    Width = 1065
     Caption = 'ToolBar1'
     TabOrder = 6
     object ToolButton1: TToolButton
@@ -702,12 +705,12 @@ object MainForm: TMainForm
   object Panel4: TPanel
     Left = 0
     Height = 231
-    Top = 525
-    Width = 1189
+    Top = 427
+    Width = 1065
     Align = alBottom
     Caption = 'Panel4'
     ClientHeight = 231
-    ClientWidth = 1189
+    ClientWidth = 1065
     TabOrder = 7
     object TabControl1: TTabControl
       Left = 1
@@ -717,22 +720,27 @@ object MainForm: TMainForm
       HotTrack = True
       Style = tsFlatButtons
       TabPosition = tpLeft
-      TabIndex = 2
+      TabIndex = 0
       Tabs.Strings = (
         'New Tab'
         'New Tab1'
         'New Tab2'
       )
       Align = alLeft
+      Font.Height = -11
+      ParentFont = False
       TabOrder = 0
     end
     object TreeView1: TTreeView
       Left = 33
       Height = 229
       Top = 1
-      Width = 1155
+      Width = 1031
       Align = alClient
-      DefaultItemHeight = 18
+      DefaultItemHeight = 16
+      Font.Height = -12
+      Font.Name = 'Consolas'
+      ParentFont = False
       TabOrder = 1
     end
   end

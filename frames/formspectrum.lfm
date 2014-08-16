@@ -1,12 +1,13 @@
 object SpectrumForm: TSpectrumForm
-  Left = 804
+  Left = 221
   Height = 601
-  Top = 634
+  Top = 76
   Width = 772
   Caption = 'SpectrumForm'
   ClientHeight = 601
   ClientWidth = 772
-  LCLVersion = '1.2.4.0'
+  Position = poMainFormCenter
+  LCLVersion = '1.2.2.0'
   object Panel1: TPanel
     Left = 660
     Height = 601
@@ -28,7 +29,7 @@ object SpectrumForm: TSpectrumForm
       TabOrder = 0
       object LabeledEdit2: TLabeledEdit
         Left = 10
-        Height = 23
+        Height = 25
         Top = 66
         Width = 80
         Alignment = taRightJustify
@@ -37,8 +38,8 @@ object SpectrumForm: TSpectrumForm
         EditLabel.AnchorSideRight.Side = asrBottom
         EditLabel.AnchorSideBottom.Control = LabeledEdit2
         EditLabel.Left = 10
-        EditLabel.Height = 15
-        EditLabel.Top = 48
+        EditLabel.Height = 12
+        EditLabel.Top = 51
         EditLabel.Width = 80
         EditLabel.Caption = 'Range (dB)'
         EditLabel.ParentColor = False
@@ -48,7 +49,7 @@ object SpectrumForm: TSpectrumForm
       end
       object LabeledEdit1: TLabeledEdit
         Left = 10
-        Height = 23
+        Height = 25
         Top = 20
         Width = 80
         Alignment = taRightJustify
@@ -57,8 +58,8 @@ object SpectrumForm: TSpectrumForm
         EditLabel.AnchorSideRight.Side = asrBottom
         EditLabel.AnchorSideBottom.Control = LabeledEdit1
         EditLabel.Left = 10
-        EditLabel.Height = 15
-        EditLabel.Top = 2
+        EditLabel.Height = 12
+        EditLabel.Top = 5
         EditLabel.Width = 80
         EditLabel.Caption = 'Max. (dBm)'
         EditLabel.ParentColor = False
@@ -88,7 +89,7 @@ object SpectrumForm: TSpectrumForm
       TabOrder = 1
       object LabeledEdit3: TLabeledEdit
         Left = 10
-        Height = 23
+        Height = 25
         Top = 66
         Width = 80
         Alignment = taRightJustify
@@ -97,8 +98,8 @@ object SpectrumForm: TSpectrumForm
         EditLabel.AnchorSideRight.Side = asrBottom
         EditLabel.AnchorSideBottom.Control = LabeledEdit3
         EditLabel.Left = 10
-        EditLabel.Height = 15
-        EditLabel.Top = 48
+        EditLabel.Height = 12
+        EditLabel.Top = 51
         EditLabel.Width = 80
         EditLabel.Caption = 'Span (Hz)'
         EditLabel.ParentColor = False
@@ -107,7 +108,7 @@ object SpectrumForm: TSpectrumForm
       end
       object LabeledEdit4: TLabeledEdit
         Left = 10
-        Height = 23
+        Height = 25
         Top = 20
         Width = 80
         Alignment = taRightJustify
@@ -116,8 +117,8 @@ object SpectrumForm: TSpectrumForm
         EditLabel.AnchorSideRight.Side = asrBottom
         EditLabel.AnchorSideBottom.Control = LabeledEdit4
         EditLabel.Left = 10
-        EditLabel.Height = 15
-        EditLabel.Top = 2
+        EditLabel.Height = 12
+        EditLabel.Top = 5
         EditLabel.Width = 80
         EditLabel.Caption = 'Center (Hz)'
         EditLabel.ParentColor = False
@@ -154,18 +155,18 @@ object SpectrumForm: TSpectrumForm
       TabOrder = 2
       object Label1: TLabel
         Left = 5
-        Height = 15
+        Height = 12
         Top = 8
-        Width = 52
+        Width = 60
         Caption = 'FPS Limit.'
         ParentColor = False
       end
       object ComboBox1: TComboBox
         Left = 5
-        Height = 23
+        Height = 25
         Top = 24
         Width = 94
-        ItemHeight = 15
+        ItemHeight = 17
         ItemIndex = 5
         Items.Strings = (
           '200'
@@ -185,18 +186,18 @@ object SpectrumForm: TSpectrumForm
       end
       object Label2: TLabel
         Left = 6
-        Height = 15
+        Height = 12
         Top = 56
-        Width = 42
+        Width = 48
         Caption = 'FFT Size'
         ParentColor = False
       end
       object FFTCombo: TComboBox
         Left = 5
-        Height = 23
+        Height = 25
         Top = 72
         Width = 94
-        ItemHeight = 15
+        ItemHeight = 17
         Items.Strings = (
           '4194304'
           '1048576'

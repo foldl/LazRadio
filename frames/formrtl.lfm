@@ -8,7 +8,8 @@ object RTLForm: TRTLForm
   ClientWidth = 468
   Font.Height = -12
   Font.Name = 'Arial'
-  LCLVersion = '1.2.4.0'
+  Position = poMainFormCenter
+  LCLVersion = '1.2.2.0'
   object Label1: TLabel
     Left = 15
     Height = 15
@@ -236,18 +237,18 @@ object RTLForm: TRTLForm
   end
   object CheckDigitalGain: TCheckBox
     Left = 16
-    Height = 19
+    Height = 21
     Top = 322
-    Width = 128
+    Width = 130
     Caption = 'Internal Digital Gain'
     OnChange = CheckDigitalGainChange
     TabOrder = 10
   end
   object CheckOffsetTunning: TCheckBox
     Left = 208
-    Height = 19
+    Height = 21
     Top = 322
-    Width = 100
+    Width = 102
     Caption = 'Offset Tunning'
     OnChange = CheckOffsetTunningChange
     TabOrder = 11

@@ -6,7 +6,8 @@ object OscillatorForm: TOscillatorForm
   Caption = 'Oscillator Setup'
   ClientHeight = 187
   ClientWidth = 229
-  LCLVersion = '1.2.0.3'
+  Position = poMainFormCenter
+  LCLVersion = '1.2.2.0'
   object RadioGroup1: TRadioGroup
     Left = 8
     Height = 105
@@ -34,7 +35,7 @@ object OscillatorForm: TOscillatorForm
   end
   object LabeledEdit1: TLabeledEdit
     Left = 136
-    Height = 23
+    Height = 25
     Top = 144
     Width = 80
     Alignment = taRightJustify
@@ -43,8 +44,8 @@ object OscillatorForm: TOscillatorForm
     EditLabel.AnchorSideRight.Side = asrBottom
     EditLabel.AnchorSideBottom.Control = LabeledEdit1
     EditLabel.Left = 136
-    EditLabel.Height = 15
-    EditLabel.Top = 126
+    EditLabel.Height = 12
+    EditLabel.Top = 129
     EditLabel.Width = 80
     EditLabel.Caption = 'Duty Ratio (%)'
     EditLabel.ParentColor = False
@@ -54,7 +55,7 @@ object OscillatorForm: TOscillatorForm
   end
   object LabeledEdit2: TLabeledEdit
     Left = 136
-    Height = 23
+    Height = 25
     Top = 32
     Width = 80
     Alignment = taRightJustify
@@ -63,8 +64,8 @@ object OscillatorForm: TOscillatorForm
     EditLabel.AnchorSideRight.Side = asrBottom
     EditLabel.AnchorSideBottom.Control = LabeledEdit2
     EditLabel.Left = 136
-    EditLabel.Height = 15
-    EditLabel.Top = 14
+    EditLabel.Height = 12
+    EditLabel.Top = 17
     EditLabel.Width = 80
     EditLabel.Caption = 'Frequency (Hz)'
     EditLabel.ParentColor = False
@@ -74,8 +75,8 @@ object OscillatorForm: TOscillatorForm
   end
   object Label1: TLabel
     Left = 0
-    Height = 15
-    Top = 172
+    Height = 12
+    Top = 175
     Width = 229
     Align = alBottom
     Caption = 'Press ''Enter'' to apply.'
@@ -83,7 +84,7 @@ object OscillatorForm: TOscillatorForm
   end
   object LabeledEdit3: TLabeledEdit
     Left = 136
-    Height = 23
+    Height = 25
     Top = 88
     Width = 80
     Alignment = taRightJustify
@@ -92,8 +93,8 @@ object OscillatorForm: TOscillatorForm
     EditLabel.AnchorSideRight.Side = asrBottom
     EditLabel.AnchorSideBottom.Control = LabeledEdit3
     EditLabel.Left = 136
-    EditLabel.Height = 15
-    EditLabel.Top = 70
+    EditLabel.Height = 12
+    EditLabel.Top = 73
     EditLabel.Width = 80
     EditLabel.Caption = 'Sample Rate'
     EditLabel.ParentColor = False

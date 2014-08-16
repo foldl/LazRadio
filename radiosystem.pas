@@ -81,7 +81,10 @@ var
   R: TRadioModule;
 begin
   R := TRadioSystem.Instance.Module[Receiver];
-  if Assigned(R) then RadioPostMessage(M, R);
+  if Assigned(R) then
+    RadioPostMessage(M, R)
+  else
+    TRadioLogger.Report(llError, 'module "%s" not found', [Receiver]);
 end;
 
 procedure RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId);
@@ -249,7 +252,9 @@ begin
   begin
     MF.AddFeatureListener(MT);
     MF.AddDataListener(MT, ToPort);
-  end;
+  end
+  else
+    TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
 end;
 
 function TRadioSystem.ConnectData(const ModuleFrom, ModuleTo: string;
@@ -259,7 +264,10 @@ var
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
-  if Assigned(MF) and Assigned(MT) then MF.AddDataListener(MT, ToPort);
+  if Assigned(MF) and Assigned(MT) then
+    MF.AddDataListener(MT, ToPort)
+  else
+    TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
 end;
 
 function TRadioSystem.ConnectFeature(const ModuleFrom, ModuleTo: string
@@ -269,7 +277,10 @@ var
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
-  if Assigned(MF) and Assigned(MT) then MF.AddFeatureListener(MT);
+  if Assigned(MF) and Assigned(MT) then
+    MF.AddFeatureListener(MT)
+  else
+    TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
 end;
 
 function TRadioSystem.ConfigModule(const Name: string): Boolean;
