@@ -89,7 +89,7 @@ begin
     FSystem.AddModule('f1', 'Filter');
     FSystem.AddModule('f2', 'Filter');
     FSystem.AddModule('r', 'DumpPlayer');
-    FSystem.AddModule('src', 'DumpPlayer');
+    FSystem.AddModule('src', 'Rtl');
     FSystem.AddModule('dump', 'Dump');
     FSystem.AddModule('fm1', 'FreqDiscriminator');
     FSystem.AddModule('fm2', 'FreqDiscriminator');
@@ -154,7 +154,7 @@ begin
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;

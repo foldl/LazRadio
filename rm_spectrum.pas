@@ -328,7 +328,7 @@ begin
   end;
 
   // convert to baseband freq
-  Z := FBandPicker[FSelectedBand].Freq - FCenterFreq;
+  Z := FBandPicker[FSelectedBand].Freq - FPassbandFreq;
 
   // send out notification message
   Broadcast(RM_SPECTRUM_BAND_SELECT_1 + FSelectedBand,
