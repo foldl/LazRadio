@@ -250,7 +250,7 @@ begin
       end;
     end;
 
-  FGain := Round(65535 / Math.Max(M, 1e-100));
+  FGain := Round(65000 / Math.Max(M, 1e-100));
 end;
 
 function TRadioAudioOut.RMSetSampleRate(const Msg: TRadioMessage;
@@ -271,7 +271,7 @@ begin
       end;
     RM_AUDIO_OUT_GAIN:
       begin
-        FGain := power(10, Integer(Msg.ParamH) / 10);
+        FGain := power(10, Integer(Msg.ParamH) / 20);
         FGainDb := Integer(Msg.ParamH);
         GraphInvalidate;
       end;
@@ -356,8 +356,8 @@ begin
   R.Regulator.Size := (High(FBufs[0]) + 1) div 2;
   R.OnSendToNext := @ReceiveRegulatedData;
   FResample.Connect(R);
-  FGain := 32760;
-  FGainDb := Round(10 * log10(FGain));
+  FGain := 3276;
+  FGainDb := Round(20 * log10(FGain));
   for I := 0 to High(FEvents) do
     FEvents[I] := CreateEvent(nil, True, True, nil);
 end;

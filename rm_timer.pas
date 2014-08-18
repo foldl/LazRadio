@@ -143,5 +143,9 @@ begin
     Strs.Add('^bNo timer');
 end;
 
+initialization
+
+  RegisterModule(TRadioModuleClass(TRadioTimer.ClassType));
+
 end.
 

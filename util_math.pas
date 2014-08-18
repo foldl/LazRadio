@@ -82,7 +82,7 @@ end;
 
 function DBtoMultiplier(const Db: Double): Integer;
 begin
-  Result := Round(Power(10, Db / 10));
+  Result := Round(Power(10, Db / 20));
 end;
 
 end.

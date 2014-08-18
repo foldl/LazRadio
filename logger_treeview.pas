@@ -20,9 +20,7 @@ type
     FReportLevel: TRadioLogLevel;
     FReportS: string;
     constructor Create;
-    procedure SetLevelTab(AValue: TTabControl);
     procedure SetMessageTree(AValue: TTreeView);
-    procedure LevelTabChange(Sender: TObject);
     procedure DoReportLCL;
   protected
     procedure DoReport(const ALevel: TRadioLogLevel; const S: string); override;
@@ -30,7 +28,6 @@ type
     destructor Destroy; override;
     class procedure Start;
 
-    property LevelTab: TTabControl read FLevelTab write SetLevelTab;
     property MessageTree: TTreeView read FMessageTree write SetMessageTree ;
   end;
 
@@ -63,26 +60,11 @@ begin
   begin
     M.LoadFromFile(GetResFullName(S), R);
     I.LoadFromIntfImage(M);
-    FImages.AddMasked(I, clWhite);
+    FImages.AddMasked(I, clNone);
   end;
   I.Free;
   R.Free;
   M.Free;
-end;
-
-procedure TTreeViewLogger.SetLevelTab(AValue: TTabControl);
-var
-  I: string;
-begin
-  if FLevelTab = AValue then Exit;
-  if Assigned(FLevelTab) then FLevelTab.OnChange := nil;
-  FLevelTab := AValue;
-  FLevelTab.OnChange := @LevelTabChange;
-  FLevelTab.Tabs.Clear;
-  FLevelTab.Images := FImages;
-  for I in LogLevel2Str do
-    FLevelTab.Tabs.Add(I);
-  FLevelTab.TabIndex := Integer(FLevel);
 end;
 
 procedure TTreeViewLogger.SetMessageTree(AValue: TTreeView);
@@ -94,11 +76,6 @@ begin
   FMessageTree.ReadOnly := True;
   FMessageTree.Indent := 2;
   FMessageTree.Images := FImages;
-end;
-
-procedure TTreeViewLogger.LevelTabChange(Sender: TObject);
-begin
-  FLevel := TRadioLogLevel(FLevelTab.TabIndex);
 end;
 
 procedure TTreeViewLogger.DoReportLCL;

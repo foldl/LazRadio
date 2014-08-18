@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 299
+  Left = 331
   Height = 700
-  Top = 78
+  Top = 138
   Width = 1065
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -9,17 +9,18 @@ object MainForm: TMainForm
   Font.Name = 'Tahoma'
   Menu = MainMenu1
   OnClose = FormClose
+  OnCreate = FormCreate
   Position = poScreenCenter
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
-    Height = 396
+    Height = 518
     Top = 26
     Width = 1065
     Align = alClient
     Caption = 'Panel1'
-    ClientHeight = 396
+    ClientHeight = 518
     ClientWidth = 1065
     TabOrder = 0
     object Button1: TButton
@@ -33,7 +34,7 @@ object MainForm: TMainForm
     end
     object PageControl1: TPageControl
       Left = 1
-      Height = 394
+      Height = 516
       Top = 1
       Width = 843
       ActivePage = SheetCode
@@ -42,11 +43,11 @@ object MainForm: TMainForm
       TabOrder = 1
       object SheetCode: TTabSheet
         Caption = 'Code'
-        ClientHeight = 362
+        ClientHeight = 484
         ClientWidth = 835
         inline SynEdit1: TSynEdit
           Left = 0
-          Height = 362
+          Height = 484
           Top = 0
           Width = 835
           Align = alClient
@@ -556,22 +557,22 @@ object MainForm: TMainForm
       end
       object SheetGraph: TTabSheet
         Caption = 'Graph'
-        ClientHeight = 412
-        ClientWidth = 959
+        ClientHeight = 362
+        ClientWidth = 835
         object ScrollBox1: TScrollBox
           Left = 0
-          Height = 412
+          Height = 362
           Top = 0
-          Width = 959
+          Width = 835
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 938
+          HorzScrollBar.Page = 600
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 408
+          VertScrollBar.Page = 341
           VertScrollBar.Tracking = True
           Align = alClient
-          ClientHeight = 408
-          ClientWidth = 938
+          ClientHeight = 358
+          ClientWidth = 814
           TabOrder = 0
           TabStop = True
           object PaintBox1: TPaintBox
@@ -587,23 +588,14 @@ object MainForm: TMainForm
     end
     object Panel2: TPanel
       Left = 849
-      Height = 394
+      Height = 516
       Top = 1
       Width = 215
       Align = alRight
       Caption = 'Panel2'
-      ClientHeight = 394
+      ClientHeight = 516
       ClientWidth = 215
       TabOrder = 2
-      object ListView1: TListView
-        Left = 1
-        Height = 353
-        Top = 40
-        Width = 213
-        Align = alClient
-        Columns = <>
-        TabOrder = 0
-      end
       object Panel3: TPanel
         Left = 1
         Height = 39
@@ -611,34 +603,44 @@ object MainForm: TMainForm
         Width = 213
         Align = alTop
         BevelOuter = bvNone
-        Caption = 'Panel3'
         ClientHeight = 39
         ClientWidth = 213
-        TabOrder = 1
-        object Edit1: TEdit
-          Left = 8
+        TabOrder = 0
+        object TreeFilterEdit1: TTreeFilterEdit
+          Left = 0
           Height = 27
-          Top = 8
-          Width = 160
+          Top = 5
+          Width = 184
+          ButtonWidth = 23
+          NumGlyphs = 1
+          Align = alCustom
           Anchors = [akTop, akLeft, akRight]
+          AutoSize = False
+          MaxLength = 0
           TabOrder = 0
-          Text = 'Edit1'
+          FilteredTreeview = ModuleTree
         end
-        object BitBtn1: TBitBtn
-          Left = 176
-          Height = 23
-          Top = 8
-          Width = 32
-          Cancel = True
-          Kind = bkNo
-          Spacing = 0
-          TabOrder = 1
-        end
+      end
+      object ModuleTree: TTreeView
+        Left = 1
+        Height = 475
+        Top = 40
+        Width = 213
+        Align = alClient
+        DefaultItemHeight = 22
+        ExpandSignType = tvestArrow
+        Images = ModuleImgs
+        ReadOnly = True
+        RowSelect = True
+        ShowLines = False
+        StateImages = ModuleImgs
+        TabOrder = 1
+        Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowRoot, tvoToolTips, tvoThemedDraw]
       end
     end
     object Splitter2: TSplitter
       Left = 844
-      Height = 394
+      Height = 516
       Top = 1
       Width = 5
       Align = alRight
@@ -649,7 +651,7 @@ object MainForm: TMainForm
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 422
+    Top = 544
     Width = 1065
     Align = alBottom
     ResizeAnchor = akBottom
@@ -704,55 +706,157 @@ object MainForm: TMainForm
   end
   object Panel4: TPanel
     Left = 0
-    Height = 231
-    Top = 427
+    Height = 109
+    Top = 549
     Width = 1065
     Align = alBottom
     Caption = 'Panel4'
-    ClientHeight = 231
+    ClientHeight = 109
     ClientWidth = 1065
     TabOrder = 7
-    object TabControl1: TTabControl
-      Left = 1
-      Height = 229
-      Top = 1
-      Width = 32
-      HotTrack = True
-      Style = tsFlatButtons
-      TabPosition = tpLeft
-      TabIndex = 0
-      Tabs.Strings = (
-        'New Tab'
-        'New Tab1'
-        'New Tab2'
-      )
-      Align = alLeft
-      Font.Height = -11
-      ParentFont = False
-      TabOrder = 0
-    end
     object TreeView1: TTreeView
-      Left = 33
-      Height = 229
+      Left = 1
+      Height = 78
       Top = 1
-      Width = 1031
+      Width = 1063
       Align = alClient
       DefaultItemHeight = 16
       Font.Height = -12
       Font.Name = 'Consolas'
       ParentFont = False
+      TabOrder = 0
+    end
+    object Panel5: TPanel
+      Left = 1
+      Height = 29
+      Top = 79
+      Width = 1063
+      Align = alBottom
+      Caption = 'Panel5'
+      ClientHeight = 29
+      ClientWidth = 1063
       TabOrder = 1
+      object Label1: TLabel
+        Left = 1
+        Height = 25
+        Top = 3
+        Width = 134
+        Align = alLeft
+        BorderSpacing.Top = 2
+        Caption = 'Quick Command : '
+        ParentColor = False
+      end
+      object Edit2: TEdit
+        Left = 135
+        Height = 27
+        Top = 1
+        Width = 927
+        Align = alClient
+        Font.Name = 'Consolas'
+        ParentFont = False
+        TabOrder = 0
+        Text = 'Edit2'
+      end
     end
   end
   object MainMenu1: TMainMenu
     left = 256
     top = 40
     object MenuItem1: TMenuItem
-      Caption = 'New Item1'
+      Caption = '&File'
+    end
+    object MenuItem3: TMenuItem
+      Caption = '&View'
+      object MenuItem2: TMenuItem
+        Caption = 'Log Level'
+        object MenuItem5: TMenuItem
+          Action = ViewLogVerbose
+        end
+        object MenuItem6: TMenuItem
+          Action = ViewLogInfo
+        end
+        object MenuItem7: TMenuItem
+          Action = ViewLogWarn
+        end
+        object MenuItem8: TMenuItem
+          Action = ViewLogError
+        end
+      end
+    end
+    object MenuItem4: TMenuItem
+      Caption = '&Help'
     end
   end
   object ActionList1: TActionList
     left = 336
     top = 40
+    object HelpOnHelp1: THelpOnHelp
+      Category = 'Help'
+      Caption = '&Help on Help'
+      Hint = 'Help on help'
+    end
+    object FileOpen1: TFileOpen
+      Category = 'File'
+      Caption = '&Open ...'
+      Hint = 'Open'
+      ShortCut = 16463
+    end
+    object FileSaveAs1: TFileSaveAs
+      Category = 'File'
+      Caption = 'Save &As ...'
+      Hint = 'Save As'
+    end
+    object FileExit1: TFileExit
+      Category = 'File'
+      Caption = 'E&xit'
+      Hint = 'Exit'
+    end
+    object SystemStart: TAction
+      Category = 'System'
+      Caption = 'SystemStart'
+    end
+    object SystemStop: TAction
+      Category = 'System'
+      Caption = 'SystemStop'
+    end
+    object SystemReset: TAction
+      Category = 'System'
+      Caption = 'SystemReset'
+    end
+    object SystemPause: TAction
+      Category = 'System'
+      Caption = 'SystemPause'
+    end
+    object ViewLogVerbose: TAction
+      Category = 'View'
+      Caption = 'Verbose+'
+      OnExecute = ViewLogLevelExecute
+      OnUpdate = ViewLogLevelUpdate
+    end
+    object ViewLogInfo: TAction
+      Tag = 1
+      Category = 'View'
+      Caption = 'Info+'
+      OnExecute = ViewLogLevelExecute
+      OnUpdate = ViewLogLevelUpdate
+    end
+    object ViewLogWarn: TAction
+      Tag = 2
+      Category = 'View'
+      Caption = 'Warn+'
+      OnExecute = ViewLogLevelExecute
+      OnUpdate = ViewLogLevelUpdate
+    end
+    object ViewLogError: TAction
+      Tag = 3
+      Category = 'View'
+      Caption = 'Error'
+      OnExecute = ViewLogLevelExecute
+      OnUpdate = ViewLogLevelUpdate
+    end
+  end
+  object ModuleImgs: TImageList
+    left = 864
+    top = 96
   end
 end

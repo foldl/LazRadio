@@ -79,6 +79,8 @@ procedure StyledTextOut(ACanvas: TCanvas; ARect: TRect; const Strs: TStrings); o
 function  SingleLineStyledTextExtent(ACanvas: TCanvas; const AText: string): TSize;
 function  StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
 
+function  VarNameToWords(const N: string): string;
+
 implementation
 
 procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
@@ -461,6 +463,20 @@ begin
     Inc(Result.cy, E.cy);
     Result.cx := Max(Result.cx, E.cx);
   end;
+end;
+
+function VarNameToWords(const N: string): string;
+var
+  I: Integer;
+begin
+  for I := 1 to Length(N) do
+  begin
+    if N[I] in ['A'..'Z'] then
+      Result := Result + ' ';
+    Result := Result + N[I];
+  end;
+  if Length(Result) > 0 then
+   Delete(Result, 1, 1);
 end;
 
 { TTripleBuffer }

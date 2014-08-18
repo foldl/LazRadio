@@ -7,29 +7,49 @@ interface
 uses
   Classes, SysUtils, FileUtil, SynEdit, TreeFilterEdit, ListFilterEdit, Forms,
   Controls, Graphics, Dialogs, Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls,
-  Buttons, RadioSystem, RadioModule;
+  Buttons, StdActns, RadioSystem, RadioModule;
 
 type
 
   { TMainForm }
 
   TMainForm = class(TForm)
+    ModuleImgs: TImageList;
+    MenuItem2: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
+    ViewLogError: TAction;
+    ViewLogWarn: TAction;
+    ViewLogInfo: TAction;
+    ViewLogVerbose: TAction;
+    SystemPause: TAction;
+    SystemReset: TAction;
+    SystemStop: TAction;
+    SystemStart: TAction;
     ActionList1: TActionList;
-    BitBtn1: TBitBtn;
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
-    Edit1: TEdit;
-    ListView1: TListView;
+    Edit2: TEdit;
+    FileExit1: TFileExit;
+    FileOpen1: TFileOpen;
+    FileSaveAs1: TFileSaveAs;
+    HelpOnHelp1: THelpOnHelp;
+    Label1: TLabel;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
+    MenuItem3: TMenuItem;
+    MenuItem4: TMenuItem;
     PageControl1: TPageControl;
     PaintBox1: TPaintBox;
     Panel1: TPanel;
     Panel2: TPanel;
     Panel3: TPanel;
     Panel4: TPanel;
+    Panel5: TPanel;
     ScrollBox1: TScrollBox;
     Splitter1: TSplitter;
     Splitter2: TSplitter;
@@ -37,15 +57,19 @@ type
     SynEdit1: TSynEdit;
     SheetCode: TTabSheet;
     SheetGraph: TTabSheet;
-    TabControl1: TTabControl;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
+    TreeFilterEdit1: TTreeFilterEdit;
     TreeView1: TTreeView;
+    ModuleTree: TTreeView;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormCreate(Sender: TObject);
+    procedure ViewLogLevelExecute(Sender: TObject);
+    procedure ViewLogLevelUpdate(Sender: TObject);
   private
     FSystem: TRadioSystem;
   public
@@ -58,8 +82,7 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, logger_treeview, gen_graph,
-  formfilter, radiomessage;
+  Genfft, UComplex, SignalBasic, logger_treeview, radiomessage;
 
 {$R *.lfm}
 
@@ -71,32 +94,26 @@ begin
   TTreeViewLogger.Start;
   with TRadioLogger.GetInstance as TTreeViewLogger do
   begin
-    LevelTab := TabControl1;
     MessageTree := TreeView1;
   end;
-  //FilterForm.Show;
-  //exit;                        Mouse;
-  if not Assigned(FSystem) then
-  begin
-    FSystem := TRadioSystem.Create;
-    FSystem.Graph.PaintBox := PaintBox1;
-    FSystem.AddModule('s', 'Spectrum');
-    //FSystem.AddModule('s2', 'Spectrum');
-    FSystem.AddModule('a', 'AudioIn');
-    FSystem.AddModule('u', 'AudioOut');
-    FSystem.AddModule('mixer1', 'FreqMixer');
-    FSystem.AddModule('mixer2', 'FreqMixer');
-    FSystem.AddModule('f1', 'Filter');
-    FSystem.AddModule('f2', 'Filter');
-    FSystem.AddModule('r', 'DumpPlayer');
-    FSystem.AddModule('src', 'Rtl');
-    FSystem.AddModule('dump', 'Dump');
-    FSystem.AddModule('fm1', 'FreqDiscriminator');
-    FSystem.AddModule('fm2', 'FreqDiscriminator');
-    FSystem.AddModule('re1', 'Resampling');
-    FSystem.AddModule('re2', 'Resampling');
-    FSystem.AddModule('aumixer', 'AudioMixer');
-  end;
+
+  FSystem.Graph.PaintBox := PaintBox1;
+  FSystem.AddModule('s', 'Spectrum');
+  //FSystem.AddModule('s2', 'Spectrum');
+  FSystem.AddModule('a', 'AudioIn');
+  FSystem.AddModule('u', 'AudioOut');
+  FSystem.AddModule('mixer1', 'FreqMixer');
+  FSystem.AddModule('mixer2', 'FreqMixer');
+  FSystem.AddModule('f1', 'Filter');
+  FSystem.AddModule('f2', 'Filter');
+  FSystem.AddModule('r', 'DumpPlayer');
+  FSystem.AddModule('src', 'DumpPlayer');
+  FSystem.AddModule('dump', 'Dump');
+  FSystem.AddModule('fm1', 'FreqDiscriminator');
+  FSystem.AddModule('fm2', 'FreqDiscriminator');
+  FSystem.AddModule('re1', 'Resampling');
+  FSystem.AddModule('re2', 'Resampling');
+  FSystem.AddModule('aumixer', 'AudioMixer');
 
   FSystem.ConnectBoth('src', 's');
   FSystem.ConnectFeature('s', 'mixer1');
@@ -154,7 +171,8 @@ begin
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+   RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+ //   RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;
@@ -196,6 +214,25 @@ end;
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   FSystem.Free;
+end;
+
+procedure TMainForm.FormCreate(Sender: TObject);
+begin
+  FSystem := TRadioSystem.Create;
+  FSystem.ShowModules(ModuleTree);
+end;
+
+procedure TMainForm.ViewLogLevelExecute(Sender: TObject);
+begin
+  if Sender is TComponent then
+    TRadioLogger.Level := TRadioLogLevel((Sender as TComponent).Tag);
+end;
+
+procedure TMainForm.ViewLogLevelUpdate(Sender: TObject);
+begin
+  if Sender is TAction then
+    with Sender as TAction do
+      Checked := TRadioLogger.Level = TRadioLogLevel(Tag);
 end;
 
 end.

@@ -1755,7 +1755,8 @@ end;
 
 destructor TGenGraph.Destroy;
 begin
-  FDBuffer.PaintBox.OnClick := nil;
+  if Assigned(FDBuffer.PaintBox) then
+    FDBuffer.PaintBox.OnClick := nil;
   Clear;
   FDBuffer.Free;
   inherited Destroy;

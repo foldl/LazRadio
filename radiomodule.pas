@@ -216,7 +216,6 @@ type
     FHasGUI: Boolean;
     FHasConfig: Boolean;
     FInvalidated: Boolean;
-    procedure LoadIconRes(ResName: string = '');
 {$IFDEF FPC}
     function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid: tguid; out obj): longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 {$ELSE}
@@ -262,6 +261,7 @@ type
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
+    class function LoadDefIconRes(ResName: string = ''): string;
     procedure GraphInvalidate;
 
     procedure PostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt);
@@ -1533,7 +1533,7 @@ begin
   end;
 end;
 
-procedure TRadioModule.LoadIconRes(ResName: string);
+class function TRadioModule.LoadDefIconRes(ResName: string): string;
 var
   N: string;
   L: TStrings;
@@ -1548,13 +1548,13 @@ begin
       L.LoadFromFile(N);
       L.StrictDelimiter := True;
       L.Delimiter := ';';
-      FIcon := L.DelimitedText;
+      Result := L.DelimitedText;
     finally
       L.Free
     end;
   end
   else
-    FIcon := 'text (0,0),' + ClassNameToModuleName(ClassName);
+    Result := 'text (0,0),' + ClassNameToModuleName(ClassName);
 end;
 
 function TRadioModule.QueryInterface(constref iid: tguid; out obj): longint;
@@ -1596,7 +1596,7 @@ begin
   Extent.cy := Max(ICON_SIZE, F.cy);
   Extent.cx := Max(ICON_SIZE, F.cx);
   Extent.cx := Max(Extent.cx, E.cx);
-  Inc(Extent.cy, HEADER_SIZE + BODER_WIDTH * 2 + 4);
+  Inc(Extent.cy, HEADER_SIZE + BODER_WIDTH * 2 + 6);
   Inc(Extent.cx, BODER_WIDTH * 2 + 4);
 end;
 
@@ -1849,7 +1849,7 @@ begin
   FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
   FLastMsg := @FFirstMsg;
   FDescStr := TStringList.Create;
-  LoadIconRes;
+  FIcon := LoadDefIconRes;
 end;
 
 destructor TRadioModule.Destroy;

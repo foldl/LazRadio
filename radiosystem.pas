@@ -5,7 +5,7 @@ unit RadioSystem;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, SuperObject, radiomessage, gen_graph;
+  Classes, SysUtils, Controls, ComCtrls, Graphics, RadioModule, SuperObject, radiomessage, gen_graph;
 
 type
 
@@ -43,6 +43,8 @@ type
     property Suspended: Boolean read FSuspended write SetSuspended;
     class property Instance: TRadioSystem read FInstance;
 
+    procedure ShowModules(Tree: TTreeView);
+
     property Graph: TGenGraph read FGraph write FGraph;
   end;
 
@@ -57,7 +59,7 @@ procedure RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; Rec
 implementation
 
 uses
-  Math;
+  Math, utils;
 
 var
   ModuleClassDict: TSuperTableString = nil;
@@ -120,14 +122,14 @@ begin
     ParamL := 0;
   end;
   for E in FModuleDict do
-    RadioPostMessage(M, TRadioModule(Pointer(E.Value.AsInteger)));
+    RadioPostMessage(M, TRadioModule(PtrUInt(E.Value.AsInteger)));
   Sleep(500);
 end;
 
 function TRadioSystem.GetModule(const Name: string): TRadioModule;
 begin
   Lock;
-  Result := TRadioModule(Pointer(FModuleDict.I[Name]));
+  Result := TRadioModule(PtrUInt(FModuleDict.I[Name]));
   Unlock;
 end;
 
@@ -167,7 +169,7 @@ var
 begin
   for A in FModuleDict do
   begin
-    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M := TRadioModule(PtrUInt(A.Value.AsInteger));
     TRadioLogger.Report(llWarn, 'free %s, cpu time %.f', [A.Name, M.CPUTime * MSecsPerDay]);
     M.Free;
   end;                                     ;
@@ -186,7 +188,7 @@ begin
   FGraph.Clear;
   for A in FModuleDict do
   begin
-    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M := TRadioModule(PtrUInt(A.Value.AsInteger));
     N := TGenEntityNode.Create;
     N.Drawable := M;
     M.GraphNode := N;
@@ -196,13 +198,13 @@ begin
   // add connections
   for A in FModuleDict do
   begin
-    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M := TRadioModule(PtrUInt(A.Value.AsInteger));
     M.ShowConnections(FGraph);
   end;
 
   for A in FModuleDict do
   begin
-    M := TRadioModule(Pointer(A.Value.AsInteger));
+    M := TRadioModule(PtrUInt(A.Value.AsInteger));
     if M.GraphNode.GetPortsNum(epIn) >= 1 then
       M.GraphNode.SetPortName(epIn, 0, 'f');
     for I := 1 to M.GraphNode.GetPortsNum(epIn) do
@@ -225,15 +227,23 @@ var
 begin
   I := ModuleClassDict.I[LowerCase(T)];
   Result := I <> 0;
-  if not Result then Exit;
+  if not Result then
+  begin
+    TRadioLogger.Report(llError, 'module type "%s" not found', [T]);
+    Exit;
+  end;
   Lock;
-  C := TRadioModuleClass(Pointer(I));
+  C := TRadioModuleClass(PtrUInt(I));
   I := FModuleDict.I[Name];
   Result := I = 0;
-  if not Result then goto Quit;
+  if not Result then
+  begin
+    TRadioLogger.Report(llError, 'module "%s" already defined', [T]);
+    goto Quit;
+  end;
   M := C.Create(FRunQueue);
   M.Name := Name; //Format('%s:%s', [Name, T]);
-  FModuleDict.I[Name] := SuperInt(Pointer(M));
+  FModuleDict.I[Name] := SuperInt(PtrUInt(M));
   Result := True;
   if not Suspended then;
     RadioPostMessage(RM_CONTROL, RM_CONTROL_RUN, 0, M);
@@ -290,6 +300,51 @@ begin
   M := Module[Name];
   Result := Assigned(M);
   if Result then M.PostMessage(RM_CONFIGURE, 0, 0);
+end;
+
+procedure TRadioSystem.ShowModules(Tree: TTreeView);
+const
+  ICON_SIZE = 44;
+  ICON_MARGIN = 4;
+var
+  N: TTreeNode;
+  C: TTreeNode;
+  A: TSuperAvlEntry;
+  B: TBitmap;
+  K: TRadioModuleClass;
+  R: TRect = (Left: ICON_MARGIN; Top: ICON_MARGIN; Right: ICON_SIZE - ICON_MARGIN; Bottom: ICON_SIZE - ICON_MARGIN);
+begin
+  Tree.BeginUpdate;
+  Tree.Items.Clear;
+  B := TBitmap.Create;
+  B.Width := ICON_SIZE;
+  B.Height := ICON_SIZE;
+  B.Canvas.Brush.Color := clWhite;
+
+  // TODO: module category
+  C := Tree.Items.Add(nil, 'Built-in');
+  Tree.Images.Clear;
+  Tree.Images.Height := ICON_SIZE;
+  Tree.Images.Width  := ICON_SIZE;
+  for A in ModuleClassDict do
+  begin
+    B.Canvas.Brush.Style := bsSolid;
+    B.Canvas.Brush.Color := clWhite;
+    B.Canvas.FillRect(0, 0, ICON_SIZE, ICON_SIZE);
+    B.Canvas.Brush.Color := TColor($505050);
+    B.Canvas.Pen.Style := psSolid;
+    B.Canvas.Pen.Color := B.Canvas.Brush.Color;
+    B.Canvas.RoundRect(0, 0, ICON_SIZE, ICON_SIZE, 8, 8);
+    K := TRadioModuleClass(PtrUInt(A.Value.AsInteger));
+    StrIconDraw(B.Canvas, R, K.LoadDefIconRes);
+    Tree.Images.AddMasked(B, clWhite);
+    N := Tree.Items.AddChild(C, VarNameToWords(ClassNameToModuleName(K.ClassName)));
+    N.Height := ICON_SIZE + 2;
+    N.ImageIndex := Tree.Images.Count - 1;
+    N.SelectedIndex := N.ImageIndex;
+    N.Data := K;
+  end;
+  Tree.EndUpdate;
 end;
 
 end.
