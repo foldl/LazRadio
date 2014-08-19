@@ -334,7 +334,7 @@ type
     procedure Hold;
     procedure ReleaseHold;
 
-    procedure Connect(ANext: TDataFlowNode);
+    function  Connect(ANext: TDataFlowNode): TDataFlowNode;
     function  LastNode: TDataFlowNode;
 
     property Next: TDataFlowNode read FNext;
@@ -831,9 +831,10 @@ begin
   end;
 end;
 
-procedure TDataFlowNode.Connect(ANext: TDataFlowNode);
+function TDataFlowNode.Connect(ANext: TDataFlowNode): TDataFlowNode;
 begin
   FNext := ANext;
+  Result := ANext;
 end;
 
 function TDataFlowNode.LastNode: TDataFlowNode;

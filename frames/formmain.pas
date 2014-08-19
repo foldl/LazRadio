@@ -90,13 +90,6 @@ uses
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
-  TRadioLogger.Level := llError;
-  TTreeViewLogger.Start;
-  with TRadioLogger.GetInstance as TTreeViewLogger do
-  begin
-    MessageTree := TreeView1;
-  end;
-
   FSystem.Graph.PaintBox := PaintBox1;
   FSystem.AddModule('s', 'Spectrum');
   //FSystem.AddModule('s2', 'Spectrum');
@@ -109,8 +102,8 @@ begin
   FSystem.AddModule('r', 'DumpPlayer');
   FSystem.AddModule('src', 'DumpPlayer');
   FSystem.AddModule('dump', 'Dump');
-  FSystem.AddModule('fm1', 'FreqDiscriminator');
-  FSystem.AddModule('fm2', 'FreqDiscriminator');
+  FSystem.AddModule('fd1', 'FreqDiscriminator');
+  FSystem.AddModule('fm1', 'FMReceiver');
   FSystem.AddModule('re1', 'Resampling');
   FSystem.AddModule('re2', 'Resampling');
   FSystem.AddModule('aumixer', 'AudioMixer');
@@ -123,34 +116,25 @@ begin
 
   FSystem.ConnectBoth('src', 'mixer1');
   FSystem.ConnectBoth('mixer1', 're1');
-  FSystem.ConnectBoth('re1', 'fm1');
-  FSystem.ConnectBoth('fm1', 'f1');
-  FSystem.ConnectData('f1', 'aumixer', 0);
+  FSystem.ConnectBoth('re1', 'fd1');
+  FSystem.ConnectBoth('fd1', 'fm1');
+  FSystem.ConnectBoth('fm1', 'aumixer', 0);
 
+{
   FSystem.ConnectBoth('src', 'mixer2');
   FSystem.ConnectBoth('mixer2', 're2');
   FSystem.ConnectBoth('re2', 'fm2');
   FSystem.ConnectBoth('fm2', 'f2');
   FSystem.ConnectData('f2', 'aumixer', 1);
+}
 
-  FSystem.ConnectFeature('f1', 'aumixer');
   FSystem.ConnectBoth('aumixer', 'u');
-
- // FSystem.ConnectBoth('f1', 's2');
 
   // set-up channel 1
   RadioPostMessage(RM_RESAMPLING_CFG, 200000, 80000, 're1');
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 0, 'f1');
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 8000, 'f1');
   RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 0, 15000, 'f1');
-
-  // set-up channel 2
-  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 80000, 're2');
-  RadioPostMessage(RM_RESAMPLING_USE_BAND_SELECT,1, 0, 're2');
-  RadioPostMessage(RM_FREQMIXER_USE_BAND_SELECT, 1, 0, 'mixer2');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_FREQ, 0, 'f2');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 8000, 'f2');
-  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 0, 15000, 'f2');
 
   //FSystem.ConnectBoth('src', 'dump');
 
@@ -220,6 +204,12 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   FSystem := TRadioSystem.Create;
   FSystem.ShowModules(ModuleTree);
+  TRadioLogger.Level := llError;
+  TTreeViewLogger.Start;
+  with TRadioLogger.GetInstance as TTreeViewLogger do
+  begin
+    MessageTree := TreeView1;
+  end;
 end;
 
 procedure TMainForm.ViewLogLevelExecute(Sender: TObject);

@@ -46,7 +46,7 @@ type
     constructor Create;
 
     // Phase.re = Phase; Phase.im = phase error
-    procedure ProcessData(const Data: PComplex; Phase: PComplex; const Len: Integer);
+    procedure ProcessData(Data: PComplex; Phase: PComplex; const Len: Integer);
 
     property Locked: Boolean read GetLocked;
 
@@ -115,7 +115,7 @@ begin
   FError := 0.0;
   if FSampleRate < 1 then Exit;
   if FZeta <= 0.0 then Exit;
-  PhasePerSample := 2 * Pi * / FSampleRate;
+  PhasePerSample := 2 * Pi / FSampleRate;
   FPhaseDelta := FDefaultFrequency * PhasePerSample;
   FPhaseDeltaMin := (FDefaultFrequency - FFreqRange) * PhasePerSample;
   FPhaseDeltaMax := (FDefaultFrequency + FFreqRange) * PhasePerSample;
@@ -148,6 +148,7 @@ begin
   FTolerance := 0.5;
   FBandwidth := 10;
   FFreqRange := 20;
+  FErrorFilterTimeConst := 0.5
 end;
 
 procedure TPLLNode.ProcessData(Data: PComplex; Phase: PComplex;

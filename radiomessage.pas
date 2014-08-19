@@ -154,6 +154,12 @@ const
   RM_AUDIOMIXER_CFG                         = 204;      // configure
                   AUDIOMIXER_STREAM_NUM  = 0;           // ParamL: number of input streams
 
+  RM_FMRECEIVER_CFG                         = 210;      // configure
+                 FMRECEIVER_MODE           = 0;        // set working mode
+                          FMRECEIVER_STEREO = 0;
+                          FMRECEIVER_MONO   = 1;
+                 FMRECEIVER_DEEMPHASIS_TIME_CONSTANT = 1; // set de-emphasis time constant, ParamL: time constant in us, typical value 50/75us
+
   RM_USER            = 1000;
 
 type

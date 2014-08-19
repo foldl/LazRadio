@@ -56,6 +56,7 @@ type
 
 var
   FFTProvider: TFFTFuncs;
+  PlanCS: TRTLCriticalSection;
 
 procedure SelectFFTProvider(const AProvider: TFFTProvider);
 begin
@@ -92,17 +93,23 @@ end;
 
 function BuildFFTPlan(const N: Integer; const Inverse: Boolean): PFFTPlan;
 begin
+  EnterCriticalsection(PlanCS);
   Result := FFTProvider.BuildFFTPlan(N, Inverse);
+  LeaveCriticalsection(PlanCS);
 end;
 
 procedure ChangePlan(Plan: PFFTPlan; const N: Integer; const Inverse: Boolean);
 begin
+  EnterCriticalsection(PlanCS);
   FFTProvider.ChangePlan(Plan, N, Inverse);
+  LeaveCriticalsection(PlanCS);
 end;
 
 procedure FinalizePlan(P: PFFTPlan);
 begin
+  EnterCriticalsection(PlanCS);
   FFTProvider.FinalizePlan(P);
+  LeaveCriticalsection(PlanCS);
 end;
 
 procedure FFT(Plan: PFFTPlan; Input: PComplex; Output: PComplex);
@@ -117,5 +124,9 @@ end;
 
 initialization
   SelectFFTProvider(fpFFTW);
+  InitCriticalSection(PlanCS);
+
+finalization
+  DoneCriticalsection(PlanCS);
 end.
 

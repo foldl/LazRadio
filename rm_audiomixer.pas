@@ -71,9 +71,6 @@ type
 
 implementation
 
-const
-  DEF_GAIN = 32760;
-
 { TRadioAudioMixer }
 
 procedure TRadioAudioMixer.ReceiveMixedData(const P: PComplex;

@@ -472,11 +472,13 @@ begin
   for I := 1 to Length(N) do
   begin
     if N[I] in ['A'..'Z'] then
-      Result := Result + ' ';
+    begin
+      if (I < Length(N)) and not (N[I + 1] in ['A'..'Z']) then
+        Result := Result + ' ';
+    end;
     Result := Result + N[I];
   end;
-  if Length(Result) > 0 then
-   Delete(Result, 1, 1);
+  if (Length(Result) > 0) and (Result[1] = ' ') then Delete(Result, 1, 1);
 end;
 
 { TTripleBuffer }

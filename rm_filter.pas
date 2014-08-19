@@ -35,6 +35,9 @@ type
     procedure DesignBPF(LowFreq, HighFreq: Integer);
     procedure DesignBPFReal(LowFreq, HighFreq: Integer);
     procedure DesignBPFComplex(LowFreq, HighFreq: Integer);
+  public
+    class procedure DesignBPFComplex(FIR: TFIRNode; const Taps, SampleRate: Integer; LowFreq, HighFreq: Integer);
+    class procedure DesignBPFReal(FIR: TFIRNode; const Taps, SampleRate: Integer; LowFreq, HighFreq: Integer);
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
@@ -212,6 +215,52 @@ begin
   FOmega := (LowFreq + HighFreq) div 2;
   FBandwidth := HighFreq - LowFreq;
   RedesignComplex;
+end;
+
+class procedure TFilterModule.DesignBPFComplex(FIR: TFIRNode; const Taps,
+  SampleRate: Integer; LowFreq, HighFreq: Integer);
+var
+  Omega: Double;
+  Coeff: array of Double;
+  C: array of Complex;
+  N: Integer;
+  I: Integer;
+  P: Complex = (re: 0; im: 0);
+begin
+  N := Taps;
+  SetLength(Coeff, N);
+  SetLength(C, N);
+
+  Omega := (HighFreq - LowFreq) / SampleRate;
+  FIRDesign(@Coeff[0], N, ftLPF,
+        Omega, 0,
+        wfKaiser,
+        0);
+
+  Omega := (HighFreq + LowFreq) / SampleRate / 2;
+  for I := 0 to N - 1 do
+  begin
+    P.im := 2 * Pi * Omega * I / SampleRate;
+    C[I] := Coeff[I] * cexp(P);
+  end;
+  FIR.SetFIR(PComplex(@C[0]), N);
+end;
+
+class procedure TFilterModule.DesignBPFReal(FIR: TFIRNode; const Taps,
+  SampleRate: Integer; LowFreq, HighFreq: Integer);
+var
+  Coeff: array of Double;
+  N: Integer;
+begin
+  N := Taps;
+  SetLength(Coeff, N);
+
+  FIRDesign(@Coeff[0], N, ftBPF,
+        (HighFreq + LowFreq) / SampleRate / 2, (HighFreq - LowFreq) / SampleRate,
+        wfKaiser,
+        0);
+
+  FIR.SetFIR(PDouble(@Coeff[0]), N);
 end;
 
 procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
