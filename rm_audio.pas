@@ -360,6 +360,7 @@ begin
   FGainDb := Round(20 * log10(FGain));
   for I := 0 to High(FEvents) do
     FEvents[I] := CreateEvent(nil, True, True, nil);
+  FFmt := AUDIO_OUT_FMT_STEREO_IQ;
 end;
 
 destructor TRadioAudioOut.Destroy;

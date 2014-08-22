@@ -34,8 +34,8 @@ type
     procedure ShowSystem;
 
     function AddModule(const Name, T: string): Boolean;
-    function ConnectBoth(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
-    function ConnectData(const ModuleFrom, ModuleTo: string; const ToPort: Integer = 0): Boolean;
+    function ConnectBoth(const ModuleFrom, ModuleTo: string; const TargetPort: Integer = 0; const SourcePort: Integer = 0): Boolean;
+    function ConnectData(const ModuleFrom, ModuleTo: string; const TargetPort: Integer = 0; const SourcePort: Integer = 0): Boolean;
     function ConnectFeature(const ModuleFrom, ModuleTo: string): Boolean;
     function ConfigModule(const Name: string): Boolean;
 
@@ -211,8 +211,8 @@ begin
       M.GraphNode.SetPortName(epIn, I, IntToStr(I - 1)[1]);
     if M.GraphNode.GetPortsNum(epOut) >= 1 then
       M.GraphNode.SetPortName(epOut, 0, 'f');
-    if M.GraphNode.GetPortsNum(epOut) >= 2 then
-      M.GraphNode.SetPortName(epOut, 1, 'd');
+    for I := 1 to M.GraphNode.GetPortsNum(epOut) do
+      M.GraphNode.SetPortName(epOut, I, IntToStr(I - 1)[1]);
   end;
   FGraph.EndUpdate;
 end;
@@ -252,7 +252,7 @@ Quit:
 end;
 
 function TRadioSystem.ConnectBoth(const ModuleFrom, ModuleTo: string;
-  const ToPort: Integer): Boolean;
+  const TargetPort: Integer; const SourcePort: Integer): Boolean;
 var
   MF, MT: TRadioModule;
 begin
@@ -261,21 +261,21 @@ begin
   if Assigned(MF) and Assigned(MT) then
   begin
     MF.AddFeatureListener(MT);
-    MF.AddDataListener(MT, ToPort);
+    MF.AddDataListener(MT, SourcePort, TargetPort);
   end
   else
     TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
 end;
 
 function TRadioSystem.ConnectData(const ModuleFrom, ModuleTo: string;
-  const ToPort: Integer): Boolean;
+  const TargetPort: Integer; const SourcePort: Integer): Boolean;
 var
   MF, MT: TRadioModule;
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
   if Assigned(MF) and Assigned(MT) then
-    MF.AddDataListener(MT, ToPort)
+    MF.AddDataListener(MT, SourcePort, TargetPort)
   else
     TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
 end;

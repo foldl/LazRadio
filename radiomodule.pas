@@ -34,6 +34,7 @@ type
     FBuffers: array of PDataStreamRec;
     FFree: PDataStreamRec;
     FModule: TRadioModule;
+    FPortId: Integer;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;
     function GetDefBufferSize: Integer;
@@ -60,6 +61,7 @@ type
     property Buffer[const Index: Integer]: PComplex read GetBuffer;
     property BufferSize: Integer read GetDefBufferSize write SetDefBufferSize;
     property BufferCount: Integer read GetBufferCount;
+    property PortId: Integer read FPortId write FPortId;
   end;
 
   TReceiveData = procedure (const P: PComplex; const Len: Integer) of object;
@@ -188,7 +190,8 @@ type
 
   TDataListener = record
     M: TRadioModule;
-    Port: Integer;
+    SourcePort: Integer;
+    TargetPort: Integer;
   end;
   PDataListener = ^TDataListener;
 
@@ -269,7 +272,7 @@ type
     procedure Broadcast(const Msg: TRadioMessage); overload;
     procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
 
-    procedure AddDataListener(Listener: TRadioModule; const Port: Integer);
+    procedure AddDataListener(Listener: TRadioModule; const SourcePort, TargetPort: Integer);
     procedure AddFeatureListener(Listener: TRadioModule);
     procedure RemoveDataListener(Listener: TRadioModule);
     procedure RemoveFeatureListener(Listener: TRadioModule);
@@ -388,8 +391,8 @@ type
     FRegulator: TStreamRegulator;
     FTaps: Integer;
     function GetProcessingSize: Integer;
-    procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer);
-    procedure RegulatedData(const P: PComplex; const Len: Integer);
+    procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer); virtual;
+    procedure RegulatedData(const P: PComplex; const Len: Integer); virtual;
   protected
     procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
   public
@@ -400,6 +403,17 @@ type
     procedure SetFIR(const P: PDouble; const Len: Integer);
 
     property ProcessingSize: Integer read GetProcessingSize;
+  end;
+
+  { TRealFIRNode }
+
+  TRealFIRNode = class(TFIRNode)
+  private
+    FMono: Boolean;
+    procedure RegulatedData(const P: PComplex; const Len: Integer); override;
+    procedure SetMono(AValue: Boolean);
+  public
+    property Mono: Boolean read FMono write SetMono;
   end;
 
   { TResampleNode }
@@ -485,6 +499,58 @@ begin
   else
     if Result[1] in ['t', 'T'] then Delete(Result, 1, 1);
   if Copy(Result, Length(Result) - 5, 6) = 'Module' then Delete(Result, Length(Result) - 5, 6);
+end;
+
+{ TRealFIRNode }
+
+procedure TRealFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+begin
+  if Assigned(FFPlan) then
+  begin
+    if Len <> High(FBuf) + 1 then
+    begin
+      TRadioLogger.Report(llWarn, 'TRealFIRNode.RegulatedData: Len <> High(FBuf) + 1');
+      Exit;
+    end;
+  end
+  else begin
+    TRadioLogger.Report(llWarn, 'TRealFIRNode.RegulatedData: FPlan = nil');
+    Exit;
+  end;
+
+  FillChar(FRes[0], Len * SizeOf(FRes[0]), 0);
+  FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
+  for I := 0 to Len - 1 do
+    FBuf[I].re := P[I].re;
+  FFT(FFPlan, @FBuf[0], @FBuf[0]);
+  for I := 0 to Len - 1 do
+    FBuf[I] := FBuf[I] * FHFIR[I];
+  FFT(FIPlan, @FBuf[0], @FBuf[0]);
+  for I := 0 to Len - 1 do
+    FRes[I].re := FBuf[I].re;
+
+  if not FMono then
+  begin
+    FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
+    for I := 0 to Len - 1 do
+      FBuf[I].re := P[I].im;
+    FFT(FFPlan, @FBuf[0], @FBuf[0]);
+    for I := 0 to Len - 1 do
+      FBuf[I] := FBuf[I] * FHFIR[I];
+    FFT(FIPlan, @FBuf[0], @FBuf[0]);
+    for I := 0 to Len - 1 do
+      FRes[I].im := FBuf[I].re;
+  end;
+  I := FTaps - 1;
+  SendToNext(@FRes[I], Len - I);
+end;
+
+procedure TRealFIRNode.SetMono(AValue: Boolean);
+begin
+  if FMono = AValue then Exit;
+  FMono := AValue;
 end;
 
 { TRadioLogger }
@@ -1453,10 +1519,15 @@ var
 begin
   // assumption: buffer must be allocated!
   X := FBuffers[Index];
+  X^.Counter := 0;
+  for P in Listeners do
+  begin
+    L := PDataListener(P);
+    if L^.SourcePort = PortId then Inc(X^.Counter);
+  end;
 
-  if Listeners.Count > 0 then
-    X^.Counter := Listeners.Count
-  else begin
+  if X^.Counter < 1 then
+  begin
     Lock;
     FreeBlock(X); // free it
     Unlock;
@@ -1473,7 +1544,9 @@ begin
   for P in Listeners do
   begin
     L := PDataListener(P);
-    M.ParamL := (L^.Port shl 16) or Index;
+    if L^.SourcePort <> PortId then Continue;
+
+    M.ParamL := (L^.TargetPort shl 16) or Index;
     L^.M.PostMessage(M);
   end;
 end;
@@ -1831,7 +1904,7 @@ begin
   for P in FDataListeners do
   begin
     Graph.AddConnection(GraphNode, PDataListener(P)^.M.GraphNode,
-                        PORT_DATA, PDataListener(P)^.Port + PORT_DATA);
+                        PDataListener(P)^.SourcePort + PORT_DATA, PDataListener(P)^.TargetPort + PORT_DATA);
   end;
 
   for P in FFeatureListeners do
@@ -1890,7 +1963,7 @@ begin
 end;
 
 procedure TRadioModule.AddDataListener(Listener: TRadioModule;
-  const Port: Integer);
+  const SourcePort, TargetPort: Integer);
 var
   P: PDataListener;
 begin
@@ -1898,7 +1971,8 @@ begin
   begin
     New(P);
     P^.M := Listener;
-    P^.Port := Port;
+    P^.SourcePort := SourcePort;
+    P^.TargetPort := TargetPort;
     FDataListeners.Add(P);
   end;
 end;

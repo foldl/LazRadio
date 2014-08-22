@@ -15,6 +15,10 @@ type
 
   TPLLNode = class
   private
+    FZero: Double;
+    FPreV: Double;
+    FRealAmp: Double;
+    FLPFAlpha: Double;
     FBandwidth: Cardinal;
     FErrorFilterTimeConst: Double;
     FFreqRange: Cardinal;
@@ -33,6 +37,7 @@ type
     FPhaseDelta: Double;
     FPhaseDeltaMin: Double;
     FPhaseDeltaMax: Double;
+    FSamplesPerPeriod: Integer;
     function GetLocked: Boolean;
     procedure SetBandwidth(AValue: Cardinal);
     procedure SetDefaultFrequency(AValue: Cardinal);
@@ -46,7 +51,9 @@ type
     constructor Create;
 
     // Phase.re = Phase; Phase.im = phase error
-    procedure ProcessData(Data: PComplex; Phase: PComplex; const Len: Integer);
+    procedure ProcessComplex(Data: PComplex; Phase: PComplex; const Len: Integer);
+    procedure ProcessReal(IO: PComplex; const Len: Integer);
+
 
     property Locked: Boolean read GetLocked;
 
@@ -64,6 +71,9 @@ type
   end;
 
 implementation
+
+uses
+  SignalBasic;
 
 { TPLLNode }
 
@@ -122,7 +132,8 @@ begin
   FErrorAlpha := 1 - Exp(-1/(FSampleRate * FErrorFilterTimeConst));
   FError1MinusAlpha := 1 - FErrorAlpha;
   FAlpha := 2.0 * FZeta * FBandwidth * PhasePerSample;
-  FBeta := (FAlpha * FAlpha) / (4.0 * FZeta * FZeta);;
+  FBeta := (FAlpha * FAlpha) / (4.0 * FZeta * FZeta);
+  FSamplesPerPeriod := Round(FSampleRate / FDefaultFrequency);
 end;
 
 procedure TPLLNode.SetZeta(AValue: Double);
@@ -145,13 +156,15 @@ begin
   FSampleRate := 1024;
   FDefaultFrequency := 10;
   FZeta := 0.707;
-  FTolerance := 0.5;
+  FTolerance := 1.0;
   FBandwidth := 10;
   FFreqRange := 20;
-  FErrorFilterTimeConst := 0.5
+  FErrorFilterTimeConst := 0.5;
+  FRealAmp := 1.0;
+  FLPFAlpha := 0.1;
 end;
 
-procedure TPLLNode.ProcessData(Data: PComplex; Phase: PComplex;
+procedure TPLLNode.ProcessComplex(Data: PComplex; Phase: PComplex;
   const Len: Integer);
 var
   I: Integer;
@@ -159,6 +172,22 @@ var
   V: Double;
   A: Double;
   E: Double;
+  procedure Save;
+  var
+    F: TFileStream;
+    S: string;
+    I: Integer;
+  begin
+    F := TFileStream.Create('e:\pll.txt', fmCreate);
+    for I := 0 to Len - 1 do
+    begin
+      S := Format('%2.8f, %2.8f' + #13#10, [Phase[I].re, Phase[I].im]);
+      F.Write(S[1], Length(S));
+    end;
+
+    F.Free;
+  end;
+
 begin
   V := FNextPhase;
   E := FError;
@@ -169,13 +198,90 @@ begin
     T.re := Cos(V);
     T.im := Sin(V);
     T := T * Data[I];
-    A := ArcTan2(T.im, T.re);
+    A := -ArcTan2(T.im, T.re);
 
     FPhaseDelta := EnsureRange(FPhaseDelta + FBeta * A, FPhaseDeltaMin, FPhaseDeltaMax);
-    V := FPhaseDelta + FAlpha * A;
+    V := V + FPhaseDelta + FAlpha * A;
+    if V > 2 * Pi then V := V - 2 * Pi;
 
     E := E * FError1MinusAlpha + A * A * FErrorAlpha;
-    Phase[I].im := FError;
+    Phase[I].im := E;
+  end;
+  FNextPhase := V;
+  FError     := E;
+  if FError < FTolerance then
+    FState := psLocked
+  else
+    FState := psCapture;
+end;
+
+procedure TPLLNode.ProcessReal(IO: PComplex; const Len: Integer);
+var
+  I: Integer;
+  T, C: Complex;
+  V: Double;
+  A: Double;
+  P: Double;
+  E: Double;
+  Dc: Double = 0.0;
+  Amp: Double = 0.0;
+
+  function arcsin(const X: Double): Double; inline;
+  begin
+    Result := Math.arcsin(EnsureRange(X, -1, 1));
+  end;
+
+begin
+  V := FNextPhase;
+  E := FError;
+
+  for I := 0 to Len - 1 do
+  begin
+    T.re := IO[I].re - FZero;
+    FZero := (1 - FLPFAlpha) * FZero + FLPFAlpha * T.re;
+
+    if T.re > 0 then
+    begin
+      if FPrev <= 0 then
+      begin
+        // cross-zero, a new period starts
+        if Amp > 0 then FRealAmp := Amp;
+        Amp := 0;
+      end;
+      if T.re > FPreV then
+      begin
+        Amp := T.re;
+        P := ArcSin(T.re / FRealAmp);
+      end
+      else begin
+        P := Pi - ArcSin(T.re / FRealAmp);
+      end;
+    end
+    else begin
+      if T.re > FPreV then
+      begin
+        P := 2 * Pi + ArcSin(T.re / FRealAmp);
+      end
+      else begin
+        Amp := Max(Amp, -T.re);
+        P := Pi - ArcSin(T.re / FRealAmp);
+      end;
+    end;
+
+    FPreV := T.re;
+
+    // A in [-pi, pi]
+    A := P - V;
+    if A < -Pi then A := A + 2 * Pi;
+    if A > Pi then A := 2 * Pi - A;
+
+    FPhaseDelta := EnsureRange(FPhaseDelta + FBeta * A, FPhaseDeltaMin, FPhaseDeltaMax);
+    V := V + FPhaseDelta + FAlpha * A;
+    if V > 2 * Pi then V := V - 2 * Pi;
+
+    E := E * FError1MinusAlpha + A * A * FErrorAlpha;
+    IO[I].re := V;
+    IO[I].im := E;
   end;
   FNextPhase := V;
   FError     := E;

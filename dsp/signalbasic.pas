@@ -25,6 +25,10 @@ type
 procedure SetIIROrders(var AFilter: TIIRFilter; XDelay, YDelay: Integer);
 procedure IIRFilter(var AFilter: TIIRFilter; X, Y: PComplex; const N: Integer); overload;
 procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
+procedure IIRFilter(var AFilter: TIIRFilter; IO: PDouble; const N: Integer);
+
+procedure IIRFilterReal(var AFilter: TIIRFilter; IO: PComplex; const N: Integer); overload;
+procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PDouble; const N: Integer); overload;
 
 // Output.re = amplitude
 // Output.im = arg
@@ -59,6 +63,24 @@ procedure FIRDesign(Coef: PDouble; const N: Integer;
   const OmegaC: Double; const Bandwidth: Double;
   const Wf: TWindowFunction; const WfParam: Double);
 
+{
+ T = symbol rate
+ Beta: roll-off factor
+
+ H(f) = T, if |f| <= (1 - beta) / (2T)
+      = (T/2) [1 + Cos(pi T / beta * (|f| - (1-beta)/(2T)))], (1-beta)/(2T) < |f| <= (1+beta)/(2T)
+      = 0, else
+
+if beta -> 0,
+ H(f) -> rect(f T)
+
+if beta = 1,
+ H(f) = T/2 (1 + Cos(pi f T)), if |f| <= 1/T
+      = 0, else
+}
+procedure RaisedCosinFilterDesign(Coef: PDouble; const N: Integer;
+  const SampleRate: Integer; const Beta: Double; const T: Double);
+
 type
   TShelvingFilterType = (sfBassShelf, sfTrebleShelf);
 
@@ -81,8 +103,21 @@ type
 procedure ShelvingFilterDesign(G: Double; Fc: Integer; Fs: Cardinal; Q: Double;
                          T: TShelvingFilterType;
                          out A, B: array of Double);
-
-function ToString(Input: PComplex; const N: Integer): string;
+{
+Ref: http://www.musicdsp.org/files/Audio-EQ-Cookbook.txt
+ Fs (the sampling frequency)
+ f0 ("wherever it's happenin', man."  Center Frequency or
+        Corner Frequency, or shelf midpoint frequency, depending
+        on which filter type.  The "significant frequency".)
+ Q (the EE kind of definition, except for peakingEQ in which A*Q is
+      the classic EE Q.  That adjustment in definition was made so that
+      a boost of N dB followed by a cut of N dB for identical Q and
+      f0/Fs results in a precisely flat unity gain filter or "wire".)
+   Q = f0 / (f2 - f1) = f0 / Bw.
+}
+procedure AudioEQFilterDesign(F0: Double; Fs: Cardinal; Q: Double;
+                         T: TFilterType;
+                         out A, B: array of Double);
 
 {
 reference: multirate_alg from http://www.dspguru.com
@@ -212,6 +247,11 @@ procedure Resample(const IntepL, DecimM: Integer; H: array of Double;
                    var Z: array of Complex; var CurPhase: Integer;
                    Input: PComplex; InLen: Integer;
                    Output: PComplex; out OutLen: Integer);
+
+function ToString(Input: PComplex; const N: Integer): string;
+
+procedure DumpData(const P: PComplex; const Len: Integer; const Fn: string); overload;
+procedure DumpData(const P: PDouble; const Len: Integer; const Fn: string); overload;
 
 var
   gWindowFunctionNames: array [TWindowFunction] of string =
@@ -403,6 +443,14 @@ begin
     Coef[J] := Coef[J] / G;
 end;
 
+procedure RaisedCosinFilterDesign(Coef: PDouble; const N: Integer;
+  const SampleRate: Integer; const Beta: Double; const T: Double);
+begin
+  if not odd(N) then
+    raise Exception.Create('RaisedCosinFilterDesign: N must be odd');
+
+end;
+
 procedure ShelvingFilterDesign(G: Double; Fc: Integer; Fs: Cardinal; Q: Double;
   T: TShelvingFilterType; out A, B: array of Double);
 var
@@ -469,6 +517,55 @@ begin
   end;
 end;
 
+procedure AudioEQFilterDesign(F0: Double; Fs: Cardinal; Q: Double;
+  T: TFilterType; out A, B: array of Double);
+var
+  w0: Double;
+  alpha: Double;
+begin
+  if (High(A) <> 2) or (High(B) <> 2) then Exit;
+  w0 := 2 * Pi * f0 / Fs;
+  alpha := sin(w0)/(2*Q);
+  case T of
+    ftLPF:
+      begin
+        b[0] := ((1.0 - Cos(w0)) / 2.0);
+        b[1] := ( 1.0 - Cos(w0));
+        b[2] := ((1.0 - Cos(w0)) / 2.0);
+        a[0] := ( 1.0 + alpha);
+        a[1] := (-2.0 * Cos(w0));
+        a[2] := ( 1.0 - alpha);
+      end;
+    ftHPF:
+      begin
+        b[0] := ((1.0 + Cos(w0)) / 2.0);
+        b[1] := (-1.0 - Cos(w0));
+        b[2] := ((1.0 + Cos(w0)) / 2.0);
+        a[0] := ( 1.0 + alpha);
+        a[1] := (-2.0 * Cos(w0));
+        a[2] := ( 1.0 - alpha);
+      end;
+    ftBPF:
+      begin
+        b[0] := alpha;
+        b[1] := 0;
+        b[2] := -alpha;
+        a[0] := ( 1.0 + alpha);
+        a[1] := (-2.0 * Cos(w0));
+        a[2] := ( 1.0 - alpha);
+      end;
+    ftBSF:
+      begin
+        b[0] := 1.0;
+        b[1] := (-2.0 * Cos(w0));
+        b[2] := 1.0;
+        a[0] := ( 1.0 + alpha);
+        a[1] := (-2.0 * Cos(w0));
+        a[2] := ( 1.0 - alpha);
+      end;
+  end;
+end;
+
 function ToString(Input: PComplex; const N: Integer): string;
 var
   I: Integer;
@@ -478,11 +575,52 @@ begin
     Result := '[' + cstr(Input[0]);
     for I := 1 to N - 1 do
       Result := Result + ',' + cstr(Input[I]);
-    Result := StringReplace(Result + ']', 'i', 'j', [rfReplaceAll]);
+    Result := Result + ']';
   end
   else begin
     Result := '[]';
   end;
+end;
+
+function CreateFileStream(const Fn: string): TFileStream;
+begin
+  if FileExists(Fn) then
+  begin
+    Result := TFileStream.Create(Fn, fmOpenReadWrite);
+    Result.Seek(0, soFromEnd);
+  end
+  else
+    Result := TFileStream.Create(Fn, fmCreate);
+end;
+
+procedure DumpData(const P: PComplex; const Len: Integer; const Fn: string);
+var
+  F: TFileStream;
+  S: string;
+  I: Integer;
+begin
+  F := CreateFileStream(Fn);
+  for I := 0 to Len - 1 do
+  begin
+    S := Format('%2.8f, %2.8f' + #13#10, [P[I].re, P[I].im]);
+    F.Write(S[1], Length(S));
+  end;
+  F.Free;
+end;
+
+procedure DumpData(const P: PDouble; const Len: Integer; const Fn: string);
+var
+  F: TFileStream;
+  S: string;
+  I: Integer;
+begin
+  F := CreateFileStream(Fn);
+  for I := 0 to Len - 1 do
+  begin
+    S := Format('%.8f' + #13#10, [P[I]]);
+    F.Write(S[1], Length(S));
+  end;
+  F.Free;
 end;
 
 procedure Decimate(const FactorM: Integer; H: array of Double;
@@ -694,6 +832,87 @@ begin
     AFilter.Zy[0] := T;
     IO^ := T;
     Inc(IO);
+  end;
+end;
+
+procedure IIRFilter(var AFilter: TIIRFilter; IO: PDouble; const N: Integer);
+var
+  I: Integer;
+  J: Integer;
+  T: Double;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := IO^ * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J].re * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T - AFilter.Zy[J].re * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
+
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J].re := AFilter.Zx[J - 1].re;
+    AFilter.Zx[0].re := IO^;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J].re := AFilter.Zy[J - 1].re;
+    AFilter.Zy[0].re := T;
+    IO^ := T;
+    Inc(IO);
+  end;
+end;
+
+procedure IIRFilterReal(var AFilter: TIIRFilter; IO: PComplex; const N: Integer
+  );
+var
+  I: Integer;
+  J: Integer;
+  T: Double;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := IO^.re * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J].re * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T - AFilter.Zy[J].re * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
+
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J].re := AFilter.Zx[J - 1].re;
+    AFilter.Zx[0].re := IO^.re;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J].re := AFilter.Zy[J - 1].re;
+    AFilter.Zy[0].re := T;
+    IO^.re := T;
+    Inc(IO);
+  end;
+end;
+
+procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PDouble;
+  const N: Integer);
+var
+  I: Integer;
+  J: Integer;
+  T: Double;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := X^.re * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J].re * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T - AFilter.Zy[J].re * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
+
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J].re := AFilter.Zx[J - 1].re;
+    AFilter.Zx[0].re := X^.re;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J].re := AFilter.Zy[J - 1].re;
+    AFilter.Zy[0].re := T;
+    Y^ := T;
+    Inc(X);
+    Inc(Y);
   end;
 end;
 

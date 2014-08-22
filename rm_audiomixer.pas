@@ -343,9 +343,9 @@ begin
       for J := 0 to M - 1 do
         Cache[Cursor + J] := P[I + J] * TotalGain;
       if not IsZero(BassGain) then
-        IIRFilter(Bass, @Cache[Cursor], M);
+        IIRFilter(Bass, PComplex(@Cache[Cursor]), M);
       if not IsZero(TrebleGain) then
-        IIRFilter(Treble, @Cache[Cursor], M);
+        IIRFilter(Treble, PComplex(@Cache[Cursor]), M);
     end;
 
     Inc(FStreams[Port].Cursor, M);

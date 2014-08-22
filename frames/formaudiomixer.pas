@@ -153,7 +153,7 @@ const
   WAYS: array [0..8] of string = (
   'OFF',
   'IQ -> IQ',
-  'QI -> QI',
+  'IQ -> QI',
   'I+Q -> I',
   'I+Q -> Q',
   'I -> I',
