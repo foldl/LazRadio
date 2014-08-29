@@ -82,7 +82,7 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, logger_treeview, radiomessage;
+  Genfft, UComplex, SignalBasic, logger_treeview, radiomessage, rm_fm;
 
 {$R *.lfm}
 
@@ -173,25 +173,21 @@ end;
 
 procedure TMainForm.Button3Click(Sender: TObject);
 var
-  F: TIIRFilter;
-  P: PFFTPlan;
-  X: array [0..10] of Complex;
-  I: Integer;
+  M: Cardinal = $1234;
+  C: Cardinal;
+  S: Cardinal;
+  X: Word;
+  E: Integer;
+  B: Boolean;
 begin
-{
-  SetIIROrders(F, 2, 2);
-  F.A[0] := 1;  F.A[1] := 2; F.A[2] := 3;
-  F.B[0] := 4;  F.B[1] := 5; F.B[2] := 6;
-  for I := 0 to High(X) do
-  begin
-    X[I].re := I;
-    X[I].im := 0;
-  end;
-  IIRFilter(F, @X[0], Length(X));
-  for I := 0 to High(X) do
-    Memo1.Lines.Add(Format('[%d] = %f', [I, X[I].re]));
-  exit;
-}
+  C := EncodeMessage(M);
+  S := CalcSyndrome(C);
+  TRadioLogger.Report(llError, 'encoded = %7x, syndrome = %3x', [C, S]);
+  C := C xor ($1f shl 10);
+  B := DecodeMessage(C, X, E);
+  TRadioLogger.Report(llError, 'received = %7x', [C]);
+  TRadioLogger.Report(llError, 'decoded = %7x, ok = %d, errbits = %d', [X, Ord(B), E]);
+  Exit;
   RadioPostMessage(RM_DUMP_PLAYER_STOP, 0, 0, 'src');
 end;
 

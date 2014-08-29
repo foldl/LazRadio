@@ -81,6 +81,8 @@ function  StyledTextExtent(ACanvas: TCanvas; const Strs: TStrings): TSize;
 
 function  VarNameToWords(const N: string): string;
 
+procedure MakeBlankStr(var S: string; const Len: Integer);
+
 implementation
 
 procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
@@ -479,6 +481,12 @@ begin
     Result := Result + N[I];
   end;
   if (Length(Result) > 0) and (Result[1] = ' ') then Delete(Result, 1, 1);
+end;
+
+procedure MakeBlankStr(var S: string; const Len: Integer);
+begin
+  SetLength(S, Len);
+  FillChar(S[1], Len, ' ');
 end;
 
 { TTripleBuffer }

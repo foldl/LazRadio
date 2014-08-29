@@ -51,20 +51,40 @@ type
     property Mono: Boolean read FMono write SetMono;
   end;
 
+  TRDSDecodeState = procedure (const B: Boolean) of object;
+
   { TRDSDecoder }
 
   TRDSDecoder = class(TRadioModule)
   private
+    FRadioText: string;
+    FProgremmeName: string;
+    FBlock: array [0..3] of Word;
     FLastTimingData: Double;
     FLastSlope: Double;
     FLastData: Double;
+    FLastBit: Boolean;
     FCounter: Integer;
+    FReg: Cardinal;
     FData: array of Complex;
     FRate: Integer;
     FMatchedFilter: TFIRNode;
     FBPF: TIIRFilter;
     FTimingBPF: TIIRFilter;
-    procedure ReceiveBit(const B: Integer);
+    FState: TRDSDecodeState;
+    function  AFMap(V: Integer): Double;
+    procedure DecodeBasicInfoA;
+    procedure DecodeBasicInfoB;
+    procedure DecodeRadioTextA;
+    procedure DecodeRadioTextB;
+    procedure DecodeClockTime;
+    procedure GroupDecode;
+    function  DecodeRec(const B: Boolean): Boolean;
+    procedure DecodeB(const B: Boolean);
+    procedure DecodeC(const B: Boolean);
+    procedure DecodeD(const B: Boolean);
+    procedure DecodeA(const B: Boolean);
+    procedure Sync(const B: Boolean);
   protected
     procedure ReceiveFilteredData(const P: PComplex; const Len: Integer);
 
@@ -103,21 +123,293 @@ type
     procedure ReceiveData(const P: PComplex; const Len: Integer); override;
   end;
 
+function EncodeMessage(M: Word): Cardinal;
+function CalcSyndrome(M: Cardinal): Cardinal;
+function DecodeMessage(M: Cardinal; out Decoded: Word; out ErrBits: Integer;
+  const SyndromeOffset: Cardinal = 0): Boolean;
+
 implementation
 
 uses
-  rm_filter;
+  rm_filter, utils;
+
+const
+  SYNDROME_OFFSET_A  = $3d8;
+  SYNDROME_OFFSET_B  = $3d4;
+  SYNDROME_OFFSET_C  = $25c;
+  SYNDROME_OFFSET_C2 = $3cc;
+  SYNDROME_OFFSET_D  = $258;
+
+  G = $5b9;   // x^{10, 8, 7, 5, 4, 3, 1}
+  K = 16;
+  N = 26;
+
+function EncodeMessage(M: Word): Cardinal;
+const
+  H: array [0..15] of Cardinal =
+    ( %0001110111,
+      %1011100111,
+      %1110101111,
+      %1100001011,
+      %1101011001,
+      %1101110000,
+      %0110111000,
+      %0011011100,
+      %0001101110,
+      %0000110111,
+      %1011000111,
+      %1110111111,
+      %1100000011,
+      %1101011101,
+      %1101110010,
+      %0110111001);
+var
+  I: Integer;
+  Q: Integer;
+begin
+  Q := 1 shl 15;
+  Result := 0;
+  for I := 0 to 15 do
+  begin
+    if (M and Q) <> 0 then
+      Result := Result xor H[I];
+    Q := Q shr 1;
+  end;
+  Result := (M shl 10) or Result;
+end;
+
+function CalcSyndrome(M: Cardinal): Cardinal;
+const
+  H: array [0..15] of Cardinal =
+    ( %1011011100,
+      %0101101110,
+      %0010110111,
+      %1010000111,
+      %1110011111,
+      %1100010011,
+      %1101010101,
+      %1101110110,
+      %0110111011,
+      %1000000001,
+      %1111011100,
+      %0111101110,
+      %0011110111,
+      %1010100111,
+      %1110001111,
+      %1100011011);
+var
+  I: Integer;
+begin
+  Result := (M shr 16) and $3FF;
+  M := M and $FFFF;
+  for I := 0 to 15 do
+  begin
+    if (M and $8000) <> 0 then
+      Result := Result xor H[I];
+    M := M shl 1;
+  end;
+end;
+
+// ref: http://the-art-of-ecc.com/3_Cyclic_BCH/RBDS.c
+function DecodeMessage(M: Cardinal; out Decoded: Word; out
+  ErrBits: Integer; const SyndromeOffset: Cardinal): Boolean;
+const
+  K2  = 1 shl (K - 1);        // 2 ** (K - 1);
+  K21 = K2 - 1;
+  FLAG = 1 shl (N - K);       // 2 ** (N - K);     // 1024
+  NK2  = 1 shl (N - K - 1);   // 2 ** (N - K - 1); // 512
+  NK   = $7FF;                // n - k + 1 ones
+  TRAP = %0000011111;
+var
+  S: Cardinal;
+  I: Integer;
+  J: Integer;
+  B: Boolean;
+  E: Boolean;
+begin
+  ErrBits := 0;
+  S := CalcSyndrome(M) xor SyndromeOffset;
+  M := (M shr 10) and $FFFF;
+  J := K2;
+  Decoded := 0;
+  for I := 15 downto 0 do
+  begin
+    B := (J and M) <> 0;
+    if (S and TRAP) = 0 then
+    begin
+      // check error
+      if (S and NK2) <> 0 then
+      begin
+        B := not B;
+        Inc(ErrBits);
+      end
+      else;
+      S := (S shl 1) and NK;
+    end
+    else begin
+      S := (S shl 1) and NK;
+      if (S and FLAG) <> 0 then
+        S := (S xor G) and NK;
+    end;
+    Decoded := (Decoded shl 1) or Ord(B);
+    J := J shr 1;
+  end;
+  Result := (S and $3FF) = 0;
+end;
 
 { TRDSDecoder }
 
-procedure TRDSDecoder.ReceiveBit(const B: Integer);
+function TRDSDecoder.AFMap(V: Integer): Double;
 begin
+  if (V >= 0) and (V <= 204) then
+    Result := 87.5 + V / 10
+  else
+    Result := -1;
+end;
 
+procedure TRDSDecoder.DecodeBasicInfoA;
+var
+  F1, F2: Double;
+begin
+  DecodeBasicInfoB;
+  F1 := AFMap(FBlock[2] shr 8);
+  F2 := AFMap(FBlock[2] and $FF);
+end;
+
+procedure TRDSDecoder.DecodeBasicInfoB;
+var
+  I: Integer;
+begin
+  I := FBlock[1] and $3;
+  FProgremmeName[I * 2 + 0] := Chr(FBlock[3] shr 8);
+  FProgremmeName[I * 2 + 1] := Chr(FBlock[3] and $FF);
+end;
+
+procedure TRDSDecoder.DecodeRadioTextA;
+var
+  I: Integer;
+begin
+  I := FBlock[1] and $F;
+  if Length(FRadioText) <> 64 then MakeBlankStr(FRadioText, 64);
+  FRadioText[I * 4 + 0] := Chr(FBlock[2] shr 8);
+  FRadioText[I * 4 + 1] := Chr(FBlock[2] and $FF);
+  FRadioText[I * 4 + 2] := Chr(FBlock[3] shr 8);
+  FRadioText[I * 4 + 3] := Chr(FBlock[3] and $FF);
+end;
+
+procedure TRDSDecoder.DecodeRadioTextB;
+var
+  I: Integer;
+begin
+  I := FBlock[1] and $F;
+  if Length(FRadioText) <> 32 then MakeBlankStr(FRadioText, 32);
+  FRadioText[I * 4 + 0] := Chr(FBlock[3] shr 8);
+  FRadioText[I * 4 + 1] := Chr(FBlock[3] and $FF);
+end;
+
+procedure TRDSDecoder.DecodeClockTime;
+var
+  J: Integer;
+  H, M: Integer;
+  O: Integer;
+begin
+  J := (FBlock[1] and $3) shl 15 + FBlock[2] shr 1;
+  H := (FBlock[2] and 1) shl 4 + FBlock[3] shr 12;
+  M := (FBlock[3] shr 6) and $3F;
+  O := FBlock[3] and $1F;
+  if (FBlock[3] and $20) <> 0 then O := -O;
+
+end;
+
+procedure TRDSDecoder.GroupDecode;
+begin
+  case FBlock[0] and $f800 of
+    $0000: DecodeBasicInfoA;
+    $0800: DecodeBasicInfoB;
+    $2000: DecodeRadioTextA;
+    $2800: DecodeRadioTextB;
+    $4000: DecodeClockTime;
+  end;
+end;
+
+function TRDSDecoder.DecodeRec(const B: Boolean): Boolean;
+begin
+  FReg := (FReg shl 1) or Ord(B);
+  Inc(FCounter);
+  if FCounter >= N then
+  begin
+    Result := True;
+    FCounter := 0;
+  end
+  else
+    Result := False;
+end;
+
+procedure TRDSDecoder.DecodeB(const B: Boolean);
+var
+  E: Integer;
+begin
+  if not DecodeRec(B) then Exit;
+  if DecodeMessage(FReg, FBlock[1], E, SYNDROME_OFFSET_B) then
+    FState := @DecodeC
+  else
+    FState := @Sync;
+end;
+
+procedure TRDSDecoder.DecodeC(const B: Boolean);
+var
+  E: Integer;
+begin
+  if not DecodeRec(B) then Exit;
+  if DecodeMessage(FReg, FBlock[2], E, SYNDROME_OFFSET_C) then
+    FState := @DecodeD
+  else if DecodeMessage(FReg, FBlock[2], E, SYNDROME_OFFSET_C2) then
+    FState := @DecodeD
+  else
+    FState := @Sync;
+end;
+
+procedure TRDSDecoder.DecodeD(const B: Boolean);
+var
+  E: Integer;
+begin
+  if not DecodeRec(B) then Exit;
+  if DecodeMessage(FReg, FBlock[3], E, SYNDROME_OFFSET_D) then
+  begin
+    GroupDecode;
+    FState := @DecodeA
+  end
+  else
+    FState := @Sync;
+end;
+
+procedure TRDSDecoder.DecodeA(const B: Boolean);
+var
+  E: Integer;
+begin
+  if not DecodeRec(B) then Exit;
+  if DecodeMessage(FReg, FBlock[0], E, SYNDROME_OFFSET_A) then
+    FState := @DecodeB
+  else
+    FState := @Sync;
+end;
+
+procedure TRDSDecoder.Sync(const B: Boolean);
+var
+  E: Integer;
+begin
+  FReg := (FReg shl 1) or Ord(B);
+  if DecodeMessage(FReg, FBlock[0], E, SYNDROME_OFFSET_A) then
+  begin
+    FCounter := 0;
+    FState := @DecodeB;
+  end;
 end;
 
 procedure TRDSDecoder.ReceiveFilteredData(const P: PComplex; const Len: Integer
   );
 var
+  B: Boolean;
   I: Integer;
   Slope: Double;
 begin
@@ -134,15 +426,25 @@ begin
   for I := 0 to Len - 1 do
   begin
     Slope := P[I].re - FLastTimingData;
-    if Slope = 0.0
-    P[I].im := P[I].re;
-    P[I].re := Abs(P[I].re);
-  end;
+    FLastTimingData := P[I].re;
+    if Slope > 0.0 then
+    begin
+      FLastSlope := Slope;
+    end
+    else if Slope < 0 then
+    begin
+      if FLastSlope > 0 then
+      begin
+        // sample data
+        B := FLastData > 0;
+        FState(B xor FLastBit);
+        FLastBit := B;
+      end;
+      FLastSlope := Slope;
+    end;
 
-  Inc(FCounter);
-  if FCounter = 10 then
-    FCounter := 0;
-  DumpData(P, Len, 'e:\rds.txt');
+    FLastData := P[I].im;
+  end;
 end;
 
 function TRDSDecoder.RMSetSampleRate(const Msg: TRadioMessage;
@@ -201,6 +503,8 @@ begin
   SetIIROrders(FTimingBPF, 2, 2);
   FMatchedFilter := TFIRNode.Create;
   FMatchedFilter.OnSendToNext := @ReceiveFilteredData;
+  FState := @Sync;
+  MakeBlankStr(FProgremmeName, 8);
 end;
 
 destructor TRDSDecoder.Destroy;
