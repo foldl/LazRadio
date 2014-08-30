@@ -283,6 +283,8 @@ begin
   I := FBlock[1] and $3;
   FProgremmeName[I * 2 + 0] := Chr(FBlock[3] shr 8);
   FProgremmeName[I * 2 + 1] := Chr(FBlock[3] and $FF);
+
+  TRadioLogger.Report(llError, 'programme = %s', [FProgremmeName]);
 end;
 
 procedure TRDSDecoder.DecodeRadioTextA;
@@ -295,6 +297,7 @@ begin
   FRadioText[I * 4 + 1] := Chr(FBlock[2] and $FF);
   FRadioText[I * 4 + 2] := Chr(FBlock[3] shr 8);
   FRadioText[I * 4 + 3] := Chr(FBlock[3] and $FF);
+  TRadioLogger.Report(llError, 'txt = %s', [FRadioText]);
 end;
 
 procedure TRDSDecoder.DecodeRadioTextB;
@@ -318,7 +321,7 @@ begin
   M := (FBlock[3] shr 6) and $3F;
   O := FBlock[3] and $1F;
   if (FBlock[3] and $20) <> 0 then O := -O;
-
+  TRadioLogger.Report(llError, 'J = %d, h = %d, m = %d, O = %d', [J, H, M, O]);
 end;
 
 procedure TRDSDecoder.GroupDecode;

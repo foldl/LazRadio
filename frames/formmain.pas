@@ -100,7 +100,7 @@ begin
   FSystem.AddModule('f1', 'Filter');
   FSystem.AddModule('f2', 'Filter');
   FSystem.AddModule('r', 'DumpPlayer');
-  FSystem.AddModule('src', 'DumpPlayer');
+  FSystem.AddModule('src', 'Rtl');
   FSystem.AddModule('dump', 'Dump');
   FSystem.AddModule('fd1', 'FreqDiscriminator');
   FSystem.AddModule('fm1', 'FMReceiver');
@@ -160,8 +160,8 @@ begin
 
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
-   RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
- //   RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+ //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;
@@ -180,14 +180,14 @@ var
   E: Integer;
   B: Boolean;
 begin
-  C := EncodeMessage(M);
+  {C := EncodeMessage(M);
   S := CalcSyndrome(C);
   TRadioLogger.Report(llError, 'encoded = %7x, syndrome = %3x', [C, S]);
   C := C xor ($1f shl 10);
   B := DecodeMessage(C, X, E);
   TRadioLogger.Report(llError, 'received = %7x', [C]);
   TRadioLogger.Report(llError, 'decoded = %7x, ok = %d, errbits = %d', [X, Ord(B), E]);
-  Exit;
+  }
   RadioPostMessage(RM_DUMP_PLAYER_STOP, 0, 0, 'src');
 end;
 
