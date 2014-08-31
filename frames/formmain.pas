@@ -100,7 +100,7 @@ begin
   FSystem.AddModule('f1', 'Filter');
   FSystem.AddModule('f2', 'Filter');
   FSystem.AddModule('r', 'DumpPlayer');
-  FSystem.AddModule('src', 'Rtl');
+  FSystem.AddModule('src', 'DumpPlayer');
   FSystem.AddModule('dump', 'Dump');
   FSystem.AddModule('fd1', 'FreqDiscriminator');
   FSystem.AddModule('fm1', 'FMReceiver');
@@ -119,9 +119,11 @@ begin
   FSystem.ConnectBoth('mixer1', 're1');
   FSystem.ConnectBoth('re1', 'fd1');
   FSystem.ConnectBoth('fd1', 'fm1');
-  FSystem.ConnectBoth('fm1', 'aumixer', 0);
+  FSystem.ConnectBoth('fm1', 'aumixer');
 
   FSystem.ConnectBoth('fm1', 'rds', 0, 1);
+
+  FSystem.ConnectBoth('rds', 's2');
 
   //FSystem.ConnectBoth('fm1', 's2');
 
@@ -161,7 +163,7 @@ begin
  // FSystem.ConfigModule('a');
  // FSystem.ConfigModule('r');
  //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
-  //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+    RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //FSystem.ConfigModule('src');
   FSystem.ShowSystem;
 end;

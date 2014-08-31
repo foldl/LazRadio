@@ -11,7 +11,7 @@ object MainForm: TMainForm
   OnClose = FormClose
   OnCreate = FormCreate
   Position = poScreenCenter
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.2.2.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -37,9 +37,9 @@ object MainForm: TMainForm
       Height = 516
       Top = 1
       Width = 843
-      ActivePage = SheetCode
+      ActivePage = SheetGraph
       Align = alClient
-      TabIndex = 0
+      TabIndex = 1
       TabOrder = 1
       object SheetCode: TTabSheet
         Caption = 'Code'
@@ -557,22 +557,22 @@ object MainForm: TMainForm
       end
       object SheetGraph: TTabSheet
         Caption = 'Graph'
-        ClientHeight = 362
+        ClientHeight = 484
         ClientWidth = 835
         object ScrollBox1: TScrollBox
           Left = 0
-          Height = 362
+          Height = 484
           Top = 0
           Width = 835
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 600
+          HorzScrollBar.Page = 831
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 341
+          VertScrollBar.Page = 480
           VertScrollBar.Tracking = True
           Align = alClient
-          ClientHeight = 358
-          ClientWidth = 814
+          ClientHeight = 480
+          ClientWidth = 831
           TabOrder = 0
           TabStop = True
           object PaintBox1: TPaintBox

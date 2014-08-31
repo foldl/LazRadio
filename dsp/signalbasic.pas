@@ -28,7 +28,8 @@ procedure IIRFilter(var AFilter: TIIRFilter; IO: PComplex; const N: Integer);
 procedure IIRFilter(var AFilter: TIIRFilter; IO: PDouble; const N: Integer);
 
 procedure IIRFilterReal(var AFilter: TIIRFilter; IO: PComplex; const N: Integer); overload;
-procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PDouble; const N: Integer); overload;
+procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PDouble; const N: Integer);
+procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PComplex; const N: Integer);
 
 // Output.re = amplitude
 // Output.im = arg
@@ -911,6 +912,34 @@ begin
       AFilter.Zy[J].re := AFilter.Zy[J - 1].re;
     AFilter.Zy[0].re := T;
     Y^ := T;
+    Inc(X);
+    Inc(Y);
+  end;
+end;
+
+procedure IIRFilterReal(var AFilter: TIIRFilter; X: PComplex; Y: PComplex;
+  const N: Integer);
+var
+  I: Integer;
+  J: Integer;
+  T: Double;
+begin
+  for I := 0 to N - 1 do
+  begin
+    T := X^.re * AFilter.B[0];
+    for J := 0 to High(AFilter.Zx) do
+      T := T + AFilter.Zx[J].re * AFilter.B[J + 1];
+    for J := 0 to High(AFilter.Zy) do
+      T := T - AFilter.Zy[J].re * AFilter.A[J + 1];
+    T := T / AFilter.A[0];
+
+    for J := High(AFilter.Zx) downto 1 do
+      AFilter.Zx[J].re := AFilter.Zx[J - 1].re;
+    AFilter.Zx[0].re := X^.re;
+    for J := High(AFilter.Zy) downto 1 do
+      AFilter.Zy[J].re := AFilter.Zy[J - 1].re;
+    AFilter.Zy[0].re := T;
+    Y^.re := T;
     Inc(X);
     Inc(Y);
   end;

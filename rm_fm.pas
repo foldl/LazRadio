@@ -69,10 +69,12 @@ type
     FData: array of Complex;
     FRate: Integer;
     FMatchedFilter: TFIRNode;
-    FBPF: TIIRFilter;
+    FLPF: TFIRNode;
     FTimingBPF: TIIRFilter;
     FState: TRDSDecodeState;
+    procedure DgbOutData(const P: PComplex; const Len: Integer);
     function  AFMap(V: Integer): Double;
+    procedure Write2Ch(var S: string; const Index: Integer; const W: Word);
     procedure DecodeBasicInfoA;
     procedure DecodeBasicInfoB;
     procedure DecodeRadioTextA;
@@ -259,12 +261,39 @@ end;
 
 { TRDSDecoder }
 
+procedure TRDSDecoder.DgbOutData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+  X: PComplex;
+begin
+  DefOutput.BufferSize := Len;
+  X := Alloc(DefOutput, I);
+  if Assigned(X) then
+  begin
+    Move(P^, X^, Len * SizeOf(Complex));
+    DefOutput.Broadcast(I, FDataListeners);
+  end;
+end;
+
 function TRDSDecoder.AFMap(V: Integer): Double;
 begin
   if (V >= 0) and (V <= 204) then
     Result := 87.5 + V / 10
   else
     Result := -1;
+end;
+
+procedure TRDSDecoder.Write2Ch(var S: string; const Index: Integer;
+  const W: Word);
+var
+  X: Integer;
+begin
+  X := FBlock[3] shr 8;
+  if (X >= Ord(' ')) and (X <= Ord('~')) then
+    S[Index] := Chr(X);
+  X := FBlock[3] and $FF;
+  if (X >= Ord(' ')) and (X <= Ord('~')) then
+    S[Index + 1] := Chr(X);
 end;
 
 procedure TRDSDecoder.DecodeBasicInfoA;
@@ -281,8 +310,7 @@ var
   I: Integer;
 begin
   I := FBlock[1] and $3;
-  FProgremmeName[I * 2 + 0] := Chr(FBlock[3] shr 8);
-  FProgremmeName[I * 2 + 1] := Chr(FBlock[3] and $FF);
+  Write2Ch(FProgremmeName, 2 * I, FBlock[3]);
 
   TRadioLogger.Report(llError, 'programme = %s', [FProgremmeName]);
 end;
@@ -293,10 +321,9 @@ var
 begin
   I := FBlock[1] and $F;
   if Length(FRadioText) <> 64 then MakeBlankStr(FRadioText, 64);
-  FRadioText[I * 4 + 0] := Chr(FBlock[2] shr 8);
-  FRadioText[I * 4 + 1] := Chr(FBlock[2] and $FF);
-  FRadioText[I * 4 + 2] := Chr(FBlock[3] shr 8);
-  FRadioText[I * 4 + 3] := Chr(FBlock[3] and $FF);
+  Write2Ch(FRadioText, 4 * I, FBlock[2]);
+  Write2Ch(FRadioText, 4 * I + 2, FBlock[3]);
+
   TRadioLogger.Report(llError, 'txt = %s', [FRadioText]);
 end;
 
@@ -306,8 +333,7 @@ var
 begin
   I := FBlock[1] and $F;
   if Length(FRadioText) <> 32 then MakeBlankStr(FRadioText, 32);
-  FRadioText[I * 4 + 0] := Chr(FBlock[3] shr 8);
-  FRadioText[I * 4 + 1] := Chr(FBlock[3] and $FF);
+  Write2Ch(FRadioText, 2 * I, FBlock[3]);
 end;
 
 procedure TRDSDecoder.DecodeClockTime;
@@ -409,6 +435,8 @@ begin
   end;
 end;
 
+var
+  kkk: Integer = 0;
 procedure TRDSDecoder.ReceiveFilteredData(const P: PComplex; const Len: Integer
   );
 var
@@ -416,6 +444,7 @@ var
   I: Integer;
   Slope: Double;
 begin
+  DgbOutData(P, Len);
   for I := 0 to Len - 1 do
   begin
     P[I].im := P[I].re;
@@ -425,6 +454,10 @@ begin
   // construct sampling signal
   IIRFilterReal(FTimingBPF, P, Len);
 
+  DumpData(P, Len, 'e:\1183.txt');
+  Inc(kkk);
+  if kkk = 20 then
+    kkk := 0;
   // now, sampling values at the peak of sampling signal
   for I := 0 to Len - 1 do
   begin
@@ -455,15 +488,17 @@ function TRDSDecoder.RMSetSampleRate(const Msg: TRadioMessage;
 const
   td = 1/1187.5;
   td2 = td * td;
+  td3 = td * td * td;
+  td4 = td * td * td * td;
 var
   h: array of Double;
   I, J, M: Integer;
   t: Double;
 begin
   FRate := Integer(Rate);
+  Result := 0;
   if FRate < 1 then Exit;
 
-  AudioEQFilterDesign(57000, Rate, 57000 / 5000, ftBPF, FBPF.A, FBPF.B);
   AudioEQFilterDesign( 1 /td, Rate, 500, ftBPF, FTimingBPF.A, FTimingBPF.B);
 
   // design matched fielter
@@ -474,6 +509,11 @@ begin
              8 td^2 Cos[4 pi t / td]
      h(t) = ----------------------------------
                pi (-64 t^2 + td^2)
+     since it's biphase symbol, we should use h(t + td/4) - h(t - td/4), so
+
+                (512 t td^3 Cos[(4 pi t)/td])
+     h(t) =  ----------------------------------------
+             (pi (4096 t^4 - 640 t^2 td^2 + 9 td^4))
   }
 
   // h length = 2 * td is enough
@@ -481,17 +521,24 @@ begin
   if not Odd(I) then Inc(I);
   SetLength(h, I);
   M := I div 2;
-  h[M] := 8 / Pi;
-  for J := 1 to I div 2 do
+  h[M] := 0;
+  for J := 1 to M do
   begin
     t := J / FRate;
-    if Abs(t - td/8) > 1e-6 then
-      h[M + J] := 8 * td2 * Cos(4 * Pi * t / td) / pi / (-64 * t * t + td2)
-    else
-      h[M + J] := 2.0;
-    h[M - J] := h[M + J];
+    h[M + J] := -512 * t * td3 * Cos(4 * Pi * t / td)
+                / Pi / (4096 * Power(t, 4) - 640 * Sqr(td) * td2 + 9 * td4);
+    h[M - J] := -h[M + J];
   end;
+
   FMatchedFilter.SetFIR(PDouble(@h[0]), Length(h));
+
+  SetLength(h, 200);
+  FIRDesign(@h[0], Length(h), ftLPF, 2500 / FRate * 2, 0, wfKaiser, 0);
+  FLPF.SetFIR(PDouble(@h[0]), Length(h));
+
+  //FMatchedFilter.SetFIR(PDouble(@h[0]), Length(h));
+
+  Result := inherited; // for debugging
 end;
 
 procedure TRDSDecoder.Describe(Strs: TStrings);
@@ -502,10 +549,11 @@ end;
 constructor TRDSDecoder.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
-  SetIIROrders(FBPF, 2, 2);
   SetIIROrders(FTimingBPF, 2, 2);
+  FLPF := TFIRNode.Create;
   FMatchedFilter := TFIRNode.Create;
   FMatchedFilter.OnSendToNext := @ReceiveFilteredData;
+  FLPF.Connect(FMatchedFilter);
   FState := @Sync;
   MakeBlankStr(FProgremmeName, 8);
 end;
@@ -523,11 +571,10 @@ begin
   if Len > Length(FData) then
     SetLength(FData, Len);
 
+  FillByte(FData[0], Len * SizeOf(FData[0]), 0);
+
   for I := 0 to Len - 1 do
-  begin
     FData[I].re := P[I].re * Sin(3 * P[I].im);
-    FData[I].im := 0;
-  end;
 
   FMatchedFilter.ReceiveData(@FData[0], Len);
 end;
