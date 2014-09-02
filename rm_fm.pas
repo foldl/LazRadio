@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, UComplex, RadioModule, RadioSystem, Math, SignalBasic,
-  radiomessage, rm_pll;
+  radiomessage, rm_pll, rm_oscillator;
 
 type
 
@@ -57,6 +57,7 @@ type
 
   TRDSDecoder = class(TRadioModule)
   private
+    FOsc57: TOscRec;
     FRadioText: string;
     FProgremmeName: string;
     FBlock: array [0..3] of Word;
@@ -67,9 +68,11 @@ type
     FCounter: Integer;
     FReg: Cardinal;
     FData: array of Complex;
+    FPhase: array of Complex;
     FRate: Integer;
     FMatchedFilter: TFIRNode;
     FLPF: TFIRNode;
+    FPLL: TPLLNode;
     FTimingBPF: TIIRFilter;
     FState: TRDSDecodeState;
     procedure DgbOutData(const P: PComplex; const Len: Integer);
@@ -443,21 +446,29 @@ var
   B: Boolean;
   I: Integer;
   Slope: Double;
+  T: Complex;
 begin
-  DgbOutData(P, Len);
+  if Len > Length(FPhase) then
+    SetLength(FPhase, Len);
+
+  DumpData(P, Len, 'e:\1187.5.txt');
+  Inc(kkk);
+  if kkk = 20 then
+    kkk := 0;
+
+  FPLL.ProcessComplex(P, @FPhase[0], Len);
+
   for I := 0 to Len - 1 do
   begin
-    P[I].im := P[I].re;
+    P[I].im := P[I].re * Cos(FPhase[I].re);
     P[I].re := Abs(P[I].re);
   end;
 
   // construct sampling signal
   IIRFilterReal(FTimingBPF, P, Len);
+ {
 
-  DumpData(P, Len, 'e:\1183.txt');
-  Inc(kkk);
-  if kkk = 20 then
-    kkk := 0;
+     }
   // now, sampling values at the peak of sampling signal
   for I := 0 to Len - 1 do
   begin
@@ -499,7 +510,11 @@ begin
   Result := 0;
   if FRate < 1 then Exit;
 
-  AudioEQFilterDesign( 1 /td, Rate, 500, ftBPF, FTimingBPF.A, FTimingBPF.B);
+  FPLL.SampleRate := Rate;
+  InitSimpleOsc(FOsc57, 57000, FRate);
+
+  AudioEQFilterDesign( 1 /td, Rate, 1500, ftBPF, FTimingBPF.A, FTimingBPF.B);
+  //AudioEQFilterDesign(57000, Rate, 5000, ftBPF, FTimingBPF.A, FTimingBPF.B);
 
   // design matched fielter
   {
@@ -556,6 +571,11 @@ begin
   FLPF.Connect(FMatchedFilter);
   FState := @Sync;
   MakeBlankStr(FProgremmeName, 8);
+
+  FPLL := TPLLNode.Create;
+  FPLL.Bandwidth := 1;
+  FPLL.FreqRange := 10;
+  FPLL.DefaultFrequency := 0;
 end;
 
 destructor TRDSDecoder.Destroy;
@@ -571,11 +591,14 @@ begin
   if Len > Length(FData) then
     SetLength(FData, Len);
 
-  FillByte(FData[0], Len * SizeOf(FData[0]), 0);
-
+{
   for I := 0 to Len - 1 do
-    FData[I].re := P[I].re * Sin(3 * P[I].im);
-
+  begin
+    FData[I].re := P[I].re * Sin(-3 * P[I].im);
+    FData[I].im := P[I].re * Cos(-3 * P[I].im);
+  end;
+}
+  Move(P^, FData[0], Len * SizeOf(P^));
   FMatchedFilter.ReceiveData(@FData[0], Len);
 end;
 
@@ -703,13 +726,13 @@ procedure TRadioFMReceiver.Describe(Strs: TStrings);
 begin
   if FMono then
   begin
-    Strs.Add('^bMode: ^nMono');
+    Strs.Add('^bMono');
   end
   else begin
     if FPLL.Locked then
-      Strs.Add('^bMode: ^n((stereo))')
+      Strs.Add('(((^bstereo^n)))')
     else
-      Strs.Add('^bMode: ^nMono');
+      Strs.Add('^bMono');
   end;
 end;
 

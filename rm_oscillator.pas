@@ -40,6 +40,13 @@ type
     destructor Destroy; override;
   end;
 
+  TOscRec = record
+    Freq: Integer;
+    PhaseDelta: Double;
+    SampleRate: Cardinal;
+    Phase: Double;
+  end;
+
   { TRadioFreqMixer }
 
   TRadioFreqMixer = class(TRadioModule)
@@ -47,11 +54,13 @@ type
     FExternalOsc: Boolean;
     FBandIndex: Integer;
     FFreq: Integer;
+    FOscFreq: Integer;
     FPhaseDelta: Double;
     FSampleRate: Cardinal;
     FCounter: Cardinal;
     FPhase: Double;
     FRegulator: TStreamRegulator;
+    procedure SetOscFreq(const Freq: Cardinal);
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
@@ -64,26 +73,87 @@ type
     procedure ReceiveData(const P: PComplex; const Len: Integer); override;
   end;
 
+  procedure InitSimpleOsc(var Osc: TOscRec; const Freq, SampleRate: Integer);
+  procedure SimpleOscMix(var Osc: TOscRec; P: PComplex; const Len: Integer);
+  procedure SimpleOscMixRe(var Osc: TOscRec; P: PComplex; const Len: Integer);
+
 implementation
 
 uses
   Math, RadioSystem, SignalBasic;
 
+procedure InitSimpleOsc(var Osc: TOscRec; const Freq, SampleRate: Integer);
+begin
+  FillByte(Osc, SizeOf(Osc), 0);
+  Osc.Freq := Freq;
+  Osc.SampleRate := SampleRate;
+  if SampleRate > 0 then Osc.PhaseDelta := 2 * Pi * Freq / SampleRate;
+end;
+
+procedure SimpleOscMix(var Osc: TOscRec; P: PComplex; const Len: Integer);
+var
+  J: Integer;
+  C: Integer;
+  V: Double;
+  T: Complex;
+  O: Double;
+begin
+  O := Osc.PhaseDelta;
+  V := Osc.Phase;
+  for J := 0 to Len - 1 do
+  begin
+    T.re := Cos(V);
+    T.im := Sin(V);
+    P[J] := P[J] * T;
+    V := V + O;
+  end;
+  C := Trunc(V / (2 * Pi));
+  Osc.Phase := V - (2 * Pi * C);
+end;
+
+procedure SimpleOscMixRe(var Osc: TOscRec; P: PComplex; const Len: Integer);
+var
+  J: Integer;
+  C: Integer;
+  V: Double;
+  O: Double;
+begin
+  O := Osc.PhaseDelta;
+  V := Osc.Phase;
+  for J := 0 to Len - 1 do
+  begin
+    P[J].re := P[J].re * Cos(V);
+    P[J].im := P[J].re * Sin(V);
+    V := V + O;
+  end;
+  C := Trunc(V / (2 * Pi));
+  Osc.Phase := V - (2 * Pi * C);
+end;
+
 { TRadioFreqMixer }
+
+procedure TRadioFreqMixer.SetOscFreq(const Freq: Cardinal);
+begin
+  FOscFreq := Integer(Freq);
+  FPhase := 0;
+  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * (FFreq - FOscFreq) / FSampleRate;
+end;
 
 function TRadioFreqMixer.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
-  FFreq := -Integer(Freq);
+  FFreq := Integer(Freq);
   FPhase := 0;
-  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
+  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * (FFreq - FOscFreq) / FSampleRate;
+  Result := 0;
 end;
 
 function TRadioFreqMixer.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FSampleRate := Rate;
-  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * FFreq / FSampleRate;
+  FPhase := 0;
+  if FSampleRate > 0 then FPhaseDelta := 2 * Pi * (FFreq - FOscFreq) / FSampleRate;
   Result := inherited;
 end;
 
@@ -119,12 +189,13 @@ procedure TRadioFreqMixer.ProccessMessage(const Msg: TRadioMessage;
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
   begin
-    RMSetFrequency(Msg, Cardinal((Integer(Msg.ParamH) + Integer(Msg.ParamL)) div 2));
+    SetOscFreq(Cardinal((Integer(Msg.ParamH) + Integer(Msg.ParamL)) div 2));
     Ret := 0;
     Exit;
   end;
 
   case Msg.Id of
+    RM_FREQMIXER_SET_FREQ:        SetOscFreq(Msg.ParamH);
     RM_FREQMIXER_USE_BAND_SELECT: FBandIndex := Msg.ParamH
   else
     inherited
@@ -134,9 +205,9 @@ end;
 procedure TRadioFreqMixer.Describe(Strs: TStrings);
 begin
   if FExternalOsc then
-    Strs.Add(Format('^bExternal Oscillator', []))
+    Strs.Add(Format('^bExternal Osc.', []))
   else
-    Strs.Add(Format('^bLocal Osc. Freq: ^n%s', [FormatFreq(FFReq)]));
+    Strs.Add(Format('^bLFrequency: ^n%s', [FormatFreq(FOscFreq)]));
 end;
 
 constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);

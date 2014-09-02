@@ -37,7 +37,6 @@ type
     FPhaseDelta: Double;
     FPhaseDeltaMin: Double;
     FPhaseDeltaMax: Double;
-    FSamplesPerPeriod: Integer;
     function GetLocked: Boolean;
     procedure SetBandwidth(AValue: Cardinal);
     procedure SetDefaultFrequency(AValue: Cardinal);
@@ -53,7 +52,6 @@ type
     // Phase.re = Phase; Phase.im = phase error
     procedure ProcessComplex(Data: PComplex; Phase: PComplex; const Len: Integer);
     procedure ProcessReal(IO: PComplex; const Len: Integer);
-
 
     property Locked: Boolean read GetLocked;
 
@@ -133,7 +131,6 @@ begin
   FError1MinusAlpha := 1 - FErrorAlpha;
   FAlpha := 2.0 * FZeta * FBandwidth * PhasePerSample;
   FBeta := (FAlpha * FAlpha) / (4.0 * FZeta * FZeta);
-  FSamplesPerPeriod := Round(FSampleRate / FDefaultFrequency);
 end;
 
 procedure TPLLNode.SetZeta(AValue: Double);
