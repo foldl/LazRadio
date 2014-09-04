@@ -17,10 +17,16 @@ type
     FRegulator: TStreamRegulator;
     FLastValue: Complex;
     FSampleRate: Cardinal;
+    FLastPhase: Double;
+    FMaxPhaseDiff: Double;
+    FFreqDev: Integer;
+    FCancelDC: Boolean;
+    FSourceFm: Integer;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
+    procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -56,6 +62,8 @@ type
   { TRDSDecoder }
 
   TRDSDecoder = class(TRadioModule)
+  const
+    Td = 1/1187.5;
   private
     FOsc57: TOscRec;
     FRadioText: string;
@@ -444,18 +452,67 @@ procedure TRDSDecoder.ReceiveFilteredData(const P: PComplex; const Len: Integer
   );
 var
   B: Boolean;
-  I: Integer;
+  I, J, K: Integer;
   Slope: Double;
   T: Complex;
+  Off: Double;
+  Index: array of Integer;
+  Sum: Double;
+  MS: Double = -1;
+  MI: Integer;
 begin
   if Len > Length(FPhase) then
     SetLength(FPhase, Len);
+
+  Off := FRate * Td;
+  SetLength(Index, Trunc(Len / Off) + 1);
+
+  for I := 0 to High(Index) do
+    Index[I] := Round(I * Off);
+
+  if High(Index) < 10 then Exit;
+
+  for J := 0 to Index[1] - 1 do
+  begin
+    Sum := 0;
+    for I := 0 to High(Index) do
+    begin
+      K := J + Index[I];
+      if K < Len then
+        Sum := Sum + Abs(P[K].re)
+      else
+        Break;
+    end;
+    Sum := Sum / I;
+    if Sum > MS then
+    begin
+      MS := Sum;
+      MI := J;
+    end;
+  end;
+
+  for I := 0 to High(Index) do
+  begin
+    K := MI + Index[I];
+    if K < Len then
+    begin
+      B := P[K].re > 0;
+      FState(B xor FLastBit);
+      FLastBit := B;
+    end
+    else
+      Break;
+  end;
+  Exit;
 
   DumpData(P, Len, 'e:\1187.5.txt');
   Inc(kkk);
   if kkk = 20 then
     kkk := 0;
 
+ {
+
+   }   {
   FPLL.ProcessComplex(P, @FPhase[0], Len);
 
   for I := 0 to Len - 1 do
@@ -463,9 +520,12 @@ begin
     P[I].im := P[I].re * Cos(FPhase[I].re);
     P[I].re := Abs(P[I].re);
   end;
-
+          }
   // construct sampling signal
   IIRFilterReal(FTimingBPF, P, Len);
+
+
+
  {
 
      }
@@ -497,7 +557,6 @@ end;
 function TRDSDecoder.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 const
-  td = 1/1187.5;
   td2 = td * td;
   td3 = td * td * td;
   td4 = td * td * td * td;
@@ -509,6 +568,11 @@ begin
   FRate := Integer(Rate);
   Result := 0;
   if FRate < 1 then Exit;
+
+  with FLPF.LastNode as TRegulatorNode do
+  begin
+    Regulator.Size := Round(100 * FRate * td);
+  end;
 
   FPLL.SampleRate := Rate;
   InitSimpleOsc(FOsc57, 57000, FRate);
@@ -567,8 +631,10 @@ begin
   SetIIROrders(FTimingBPF, 2, 2);
   FLPF := TFIRNode.Create;
   FMatchedFilter := TFIRNode.Create;
-  FMatchedFilter.OnSendToNext := @ReceiveFilteredData;
-  FLPF.Connect(FMatchedFilter);
+
+  FLPF.Connect(FMatchedFilter).Connect(TRegulatorNode.Create);
+  FLPF.LastNode.OnSendToNext := @ReceiveFilteredData;
+
   FState := @Sync;
   MakeBlankStr(FProgremmeName, 8);
 
@@ -580,7 +646,7 @@ end;
 
 destructor TRDSDecoder.Destroy;
 begin
-  FMatchedFilter.Free;
+  FLPF.Free;
   inherited Destroy;
 end;
 
@@ -668,7 +734,7 @@ function TRadioFMReceiver.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FSampleRate := Rate;
-  TFilterModule.DesignBPFReal(FAudioChain as TFIRNode, 128, Rate, 30, 15000);
+  TFilterModule.DesignBPFReal(FAudioChain as TFIRNode, 500, Rate, 20, 16000);
   FDeEmphasis.SampleRate := Rate;
   FPLL.SampleRate := Rate;
   AudioEQFilterDesign(19000, Rate, 200, ftBPF, FPilotFilter.A, FPilotFilter.B);
@@ -808,11 +874,12 @@ begin
   for I := 0 to Len - 1 do
   begin
     A := P[I].re;    // L+R
-    B := 2 * P[I].re * Sin(2 * FPLLPhases[I].re);  // L-R, coherent demodulation with 2 * 19kHz
+    B := 2 * P[I].re * Cos(-2 * FPLLPhases[I].re);  // L-R, coherent demodulation with 2 * 19kHz
 
     FPLLPhases[I].re := A + B;
     FPLLPhases[I].im := A - B;
   end;
+
   FAudioChain.ReceiveData(@FPLLPhases[0], Len);
 end;
 
@@ -822,6 +889,9 @@ end;
 // y[n] = A/2 exp(-j (2 pi f0 n Ts + f_delta integrate[x(tao), 0, n Ts]))
 // y[n] * conj[y[n - 1]] = A^2 / 4 exp(-j (2 pi f0 Ts + f_delta Ts x(nTs)))
 // arctan2 is in (-pi, pi)
+//
+// FM applications use peak deviations of 75 kHz (200 kHz spacing), 5 kHz (25 kHz spacing),
+//    2.25 kHz (12.5 kHz spacing), and 2 kHz (8.33 kHz spacing)
 procedure TRadioFreqDiscriminator.ReceiveRegulatedData(const P: PComplex;
   const Len: Integer);
 var
@@ -830,16 +900,16 @@ var
   O: PComplex;
   T: Complex;
   X: Complex;
-  F: Double;
+  A: Double;
 begin
   if FSampleRate = 0 then Exit;
-  F := Pi;  // in [0, Pi]
   O := Alloc(DefOutput, I);
   if not Assigned(O) then
   begin
     TRadioLogger.Report(llWarn, 'TRadioFreqDiscriminator.ReceiveRegulatedData: data lost');
     Exit;
   end;
+
   T := FLastValue;
   for J := 0 to Len - 1 do
   begin
@@ -847,11 +917,22 @@ begin
     T := P[J];
     O[J].im := 0;
     if X.re <> 0 then
-      O[J].re := arctan2(X.im, X.re) + F
+      A := arctan2(X.im, X.re)
     else
-      O[J].re := IfThen(X.im > 0, Pi / 2, -Pi / 2) + F;
+      A := IfThen(X.im > 0, Pi / 2, -Pi / 2);
+
+    if A - FLastPhase > Pi then
+      A := A - 2 * Pi
+    else if A - FLastPhase < -Pi then
+      A := A + 2 * Pi;
+
+    A := EnsureRange(A, FLastPhase - FMaxPhaseDiff, FLastPhase + FMaxPhaseDiff);
+    FLastPhase := A;
+    O[J].re := A;
   end;
-  CancelDC(O, Len);
+
+  if FCancelDC then CancelDC(O, Len);
+
   FLastValue := T;
   DefOutput.Broadcast(I, FDataListeners);
 end;
@@ -865,10 +946,21 @@ end;
 function TRadioFreqDiscriminator.RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
- // if FSampleRate = Rate then Exit;
+  // if FSampleRate = Rate then Exit;
   FSampleRate := Rate;
   Result := inherited;
   Broadcast(RM_SET_FEATURE, RM_FEATURE_FREQ, 0);
+
+  // 0.8 is chosen from trial
+  if FSampleRate > 0 then
+    FMaxPhaseDiff := 0.8 * 2 * Pi * FFreqDev * FSourceFm / FSampleRate / FSampleRate;
+end;
+
+procedure TRadioFreqDiscriminator.Describe(Strs: TStrings);
+begin
+  Strs.Add(Format('^bFreq Deviation : ^n%s', [FormatFreq(FFreqDev)]));
+  Strs.Add(Format('^bSingal Max Freq: ^n%s', [FormatFreq(FSourceFm)]));
+  Strs.Add(Format('^bDC Cancellation: ^n%s', [BoolToStr(FCancelDC)]));
 end;
 
 constructor TRadioFreqDiscriminator.Create(RunQueue: TRadioRunQueue);
@@ -879,6 +971,8 @@ begin
   FRegulator := TStreamRegulator.Create;
   FRegulator.Size := DefOutput.BufferSize;
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;
+  FFreqDev := 75000;
+  FSourceFm := 60000;
 end;
 
 destructor TRadioFreqDiscriminator.Destroy;

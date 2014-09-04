@@ -93,6 +93,7 @@ begin
   FSystem.Graph.PaintBox := PaintBox1;
   FSystem.AddModule('s', 'Spectrum');
   FSystem.AddModule('s2', 'Spectrum');
+  FSystem.AddModule('iqcor', 'IQCorrecter');
   FSystem.AddModule('a', 'AudioIn');
   FSystem.AddModule('u', 'AudioOut');
   FSystem.AddModule('mixer1', 'FreqMixer');
@@ -108,17 +109,11 @@ begin
   FSystem.AddModule('re2', 'Resampling');
   FSystem.AddModule('aumixer', 'AudioMixer');
   FSystem.AddModule('rds', 'RDSDecoder');
-  {
-  FSystem.ConnectBoth('src', 's');
-  FSystem.ConnectFeature('s', 'mixer1');
-  FSystem.ConnectFeature('s', 're1');
-  }
 
-  FSystem.ConnectBoth('src', 'mixer1');
+  FSystem.ConnectBoth('src', 'iqcor');
+  FSystem.ConnectBoth('iqcor', 'mixer1');
   FSystem.ConnectBoth('mixer1', 're1');
   FSystem.ConnectBoth('re1', 'fd1');
-  FSystem.ConnectBoth('fd1', 'fm1');
-  FSystem.ConnectBoth('fm1', 'aumixer');
 
   FSystem.ConnectBoth('fd1', 'f1');
   FSystem.ConnectBoth('f1', 'mixer2');
@@ -139,10 +134,8 @@ begin
   FSystem.ConnectData('f2', 'aumixer', 1);
 }
 
-  FSystem.ConnectBoth('aumixer', 'u');
-
   // set-up channel 1
-  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 80000, 're1');
+  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
 
   // set-up rds
   RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
@@ -165,9 +158,9 @@ begin
 
   RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
 //  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
- // RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
 //  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
   //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
 

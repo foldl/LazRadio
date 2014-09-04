@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="38">
+    <Units Count="41">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -254,6 +254,21 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="logger_treeview"/>
       </Unit37>
+      <Unit38>
+        <Filename Value="rm_am.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_am"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="rm_soundfx.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_soundfx"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="rm_iqcorrection.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_iqcorrection"/>
+      </Unit40>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

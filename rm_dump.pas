@@ -75,6 +75,9 @@ type
 
 implementation
 
+uses
+  SignalBasic;
+
 const
   DUMP_FILE_VERSION = 1;
 
@@ -186,6 +189,7 @@ begin
     Sleep(10);
     D := DefOutput.TryAlloc(I);
   end;
+  if not Assigned(D) then Exit;
   Move(P^, D^, Len * SizeOf(P^));
   DefOutput.Broadcast(I, FDataListeners);
 end;

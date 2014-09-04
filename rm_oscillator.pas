@@ -207,7 +207,7 @@ begin
   if FExternalOsc then
     Strs.Add(Format('^bExternal Osc.', []))
   else
-    Strs.Add(Format('^bLFrequency: ^n%s', [FormatFreq(FOscFreq)]));
+    Strs.Add(Format('^bFrequency: ^n%s', [FormatFreq(FOscFreq)]));
 end;
 
 constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);

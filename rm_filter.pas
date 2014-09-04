@@ -332,9 +332,9 @@ begin
   end;
   Strs.Add('^bType: ^n' + FT[FType]);
   if FCoeffDomain = FILTER_COEFF_DOMAIN_REAL then
-    Strs.Add('^bCoeff. Domain: ^nReal')
+    Strs.Add('^bCoeff.: ^nReal')
   else
-    Strs.Add('^bCoeff. Domain: ^nComplex');
+    Strs.Add('^bCoeff.: ^nComplex');
 
   Strs.Add(Format('^bTaps: ^n%d', [FTaps]));
   case FType of
@@ -342,11 +342,11 @@ begin
       Strs.Add(Format('^bCutoff Freq: ^n%dHz', [FOmega]));
     ftBPF, ftBSF:
       begin
-        Strs.Add(Format('^bBand Center Freq: ^n%dHz', [FOmega]));
+        Strs.Add(Format('^bBand Center: ^n%dHz', [FOmega]));
         Strs.Add(Format('^bBandwidth: ^n%dHz', [FBandwidth]));
       end;
   end;
-  Strs.Add(Format('^bWindow Func: ^n%s', [gWindowFunctionNames[FWnd]]));
+  Strs.Add(Format('^bWindow: ^n%s', [gWindowFunctionNames[FWnd]]));
 end;
 
 constructor TFilterModule.Create(RunQueue: TRadioRunQueue);
