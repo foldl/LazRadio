@@ -13,7 +13,7 @@ uses
   logger, tachartlazaruspkg, lazcontrols, formfilter, rm_fm, rm_pll, fft2,
   genfft, fftw, gen_graph, radiomessage, minij, util_config, rm_resampling,
   mathlut, rm_audiomixer, formaudiomixer, util_math, logger_treeview, rm_am,
-  rm_soundfx, rm_iqcorrection;
+  rm_soundfx, rm_iqcorrection, rm_oscilloscope, formoscilloscope;
 
 {$R *.res}
 
@@ -27,6 +27,7 @@ begin
   Application.CreateForm(TAudioInForm, AudioInForm);
   Application.CreateForm(TFilterForm, FilterForm);
   Application.CreateForm(TAudioMixerForm, AudioMixerForm);
+  Application.CreateForm(TOscilloscopeForm, OscilloscopeForm);
   Application.Run;
 end.
 

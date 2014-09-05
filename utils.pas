@@ -40,6 +40,9 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
+    procedure Bg2Draw;
+
     procedure SetSize(const W, H: Integer); override;
     property Background: TBitmap read FBackground;
   end;
@@ -505,6 +508,11 @@ destructor TTripleBuffer.Destroy;
 begin
   FBackground.Free;
   inherited Destroy;
+end;
+
+procedure TTripleBuffer.Bg2Draw;
+begin
+  FDrawBuffer.Canvas.Draw(0, 0, FBackground);
 end;
 
 procedure TTripleBuffer.SetSize(const W, H: Integer);

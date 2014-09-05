@@ -339,11 +339,11 @@ begin
   Strs.Add(Format('^bTaps: ^n%d', [FTaps]));
   case FType of
     ftLPF, ftHPF:
-      Strs.Add(Format('^bCutoff Freq: ^n%dHz', [FOmega]));
+      Strs.Add(Format('^bCutoff Freq: ^n%sHz', [FormatFreq(FOmega)]));
     ftBPF, ftBSF:
       begin
-        Strs.Add(Format('^bBand Center: ^n%dHz', [FOmega]));
-        Strs.Add(Format('^bBandwidth: ^n%dHz', [FBandwidth]));
+        Strs.Add(Format('^bBand Center: ^n%sHz', [FormatFreq(FOmega)]));
+        Strs.Add(Format('^bBandwidth: ^n%sHz', [FormatFreq(FBandwidth)]));
       end;
   end;
   Strs.Add(Format('^bWindow: ^n%s', [gWindowFunctionNames[FWnd]]));

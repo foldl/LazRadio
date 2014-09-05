@@ -161,6 +161,35 @@ const
                           FMRECEIVER_MONO   = 1;
                  FMRECEIVER_DEEMPHASIS_TIME_CONSTANT = 1; // set de-emphasis time constant, ParamL: time constant in us, typical value 50/75us
 
+  RM_OSCILLOSCOPE_CFG                       = 220;     // configure
+                 OSCILLOSCOPE_SET_CHANNEL   = 0;       // set channal mode
+                                            OSCILLOSCOPE_CHANNEL_I = 0;
+                                            OSCILLOSCOPE_CHANNEL_Q = 1;
+                                            OSCILLOSCOPE_CHANNEL_DUAL = 2;
+                                            OSCILLOSCOPE_CHANNEL_XY = 3;
+                 OSCILLOSCOPE_ARITH_FOR_DUAL = 1;
+                                            OSCILLOSCOPE_ARITH_NULL     = 0;
+                                            OSCILLOSCOPE_ARITH_I_PLUS_Q = 1;
+                                            OSCILLOSCOPE_ARITH_I_SUBS_Q = 2;
+                                            OSCILLOSCOPE_ARITH_Q_SUBS_I = 3;
+                                            OSCILLOSCOPE_ARITH_I_MULT_Q = 4;
+                                            OSCILLOSCOPE_ARITH_I_DIV_Q  = 5;
+                                            OSCILLOSCOPE_ARITH_Q_DIV_I  = 6;
+                                            OSCILLOSCOPE_ARITH_ARG      = 7;
+                 OSCILLOSCOPE_SET_Y_MAX      = 2; // set Y max; ParamL: float as Integer
+                 OSCILLOSCOPE_SET_Y_MIN      = 3; // set Y min; ParamL: float as Integer
+                 OSCILLOSCOPE_SET_Y_AUTO     = 4; // enable Y auto; ParamL: 1-enable, 0-disable
+                 OSCILLOSCOPE_SET_SWEEP_SPEED= 5; // sweep speed in second; ParamL: float as Integer
+                 OSCILLOSCOPE_SET_RUN_MODE   = 6; // set run mode
+                                            OSCILLOSCOPE_RUN_SINGLE    = 0;
+                                            OSCILLOSCOPE_RUN_CONTINOUS = 1;
+                 OSCILLOSCOPE_SET_DRAW_MIN_INTERVAL = 7; // minimal interval between updates in milli-second
+                 OSCILLOSCOPE_SET_SAMPLE_GRID= 8; // grid lines based on samples; ParamL: sample number (0 to disable)
+                 OSCILLOSCOPE_GUI_RESET      = 9; // gui resized; ParamL: ignore
+                 OSCILLOSCOPE_SET_COUPLING   = 10;// coupling mode
+                                            OSCILLOSCOPE_DC_COUPLING = 0;
+                                            OSCILLOSCOPE_AC_COUPLING = 1;
+
   RM_USER            = 1000;
 
 type

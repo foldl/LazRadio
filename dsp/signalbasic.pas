@@ -53,7 +53,8 @@ procedure CreateWindowFunction(P: PDouble; const N: Integer; const Func: TWindow
 
 function BesselI0(const Z: Double): Double;
 
-procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen, TargetLen: Integer);
+procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen, TargetLen: Integer); overload;
+procedure Xpolate(Source: PComplex; Target: PComplex; const SourceLen, TargetLen: Integer);
 
 procedure CancelDC(Signal: PComplex; const N: Integer);
 
@@ -317,6 +318,61 @@ procedure Xpolate(Source: PDouble; Target: PDouble; const SourceLen,
   end;
 
   procedure Interpolate(Source: PDouble; Target: PDouble; const SourceLen,
+    TargetLen: Integer);
+  var
+    Ratio: Double;
+    P: Double = 0;
+    I: Integer;
+    K: Integer;
+  begin
+    Ratio := SourceLen / TargetLen;
+    for I := 0 to TargetLen - 1 do
+    begin
+      K := Trunc(P);
+      Target[I] := Source[K] + (P - K) * (Source[K + 1] - Source[K]);
+      P := P + Ratio;
+    end;
+  end;
+begin
+  if (SourceLen < 1) or (TargetLen < 1) then Exit;
+  if SourceLen = TargetLen then
+  begin
+    Move(Source^, Target^, SourceLen * SizeOf(Source^));
+    Exit;
+  end;
+  if SourceLen > TargetLen then
+    Smooth(Source, Target, SourceLen, TargetLen)
+  else
+    Interpolate(Source, Target, SourceLen, TargetLen);
+end;
+
+procedure Xpolate(Source: PComplex; Target: PComplex; const SourceLen,
+  TargetLen: Integer);
+  procedure Smooth(Source: PComplex; Target: PComplex; const SourceLen,
+    TargetLen: Integer);
+  var
+    Ratio: Double;
+    P: Double = 0;
+    I: Integer;
+    K: Integer;
+    L: Integer = 0;
+    J: Integer;
+    T: Complex;
+  begin
+    Ratio := SourceLen / TargetLen;
+    for I := 0 to TargetLen - 1 do
+    begin
+      K := Trunc(P);
+      T := Source[L];
+      for J := L + 1 to K do
+        T := T + Source[J];
+      Target[I] := T / (K - L + 1);
+      L := K + 1;
+      P := P + Ratio;
+    end;
+  end;
+
+  procedure Interpolate(Source: PComplex; Target: PComplex; const SourceLen,
     TargetLen: Integer);
   var
     Ratio: Double;

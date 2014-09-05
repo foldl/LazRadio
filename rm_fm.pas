@@ -448,6 +448,7 @@ end;
 
 var
   kkk: Integer = 0;
+
 procedure TRDSDecoder.ReceiveFilteredData(const P: PComplex; const Len: Integer
   );
 var
@@ -463,7 +464,7 @@ var
 begin
   if Len > Length(FPhase) then
     SetLength(FPhase, Len);
-
+{
   Off := FRate * Td;
   SetLength(Index, Trunc(Len / Off) + 1);
 
@@ -503,32 +504,31 @@ begin
     else
       Break;
   end;
-  Exit;
+
 
   DumpData(P, Len, 'e:\1187.5.txt');
   Inc(kkk);
   if kkk = 20 then
     kkk := 0;
+  Exit;
+}
 
- {
-
-   }   {
   FPLL.ProcessComplex(P, @FPhase[0], Len);
 
   for I := 0 to Len - 1 do
   begin
-    P[I].im := P[I].re * Cos(FPhase[I].re);
+    P[I] := P[I] * Cexp(FPhase[I].re);
     P[I].re := Abs(P[I].re);
-  end;
-          }
+  end;   {
+  DumpData(P, Len, 'e:\1187.5.txt');
+  Inc(kkk);
+  if kkk = 20 then
+    kkk := 0;
+  Exit;
+        }
   // construct sampling signal
   IIRFilterReal(FTimingBPF, P, Len);
 
-
-
- {
-
-     }
   // now, sampling values at the peak of sampling signal
   for I := 0 to Len - 1 do
   begin
@@ -639,8 +639,8 @@ begin
   MakeBlankStr(FProgremmeName, 8);
 
   FPLL := TPLLNode.Create;
-  FPLL.Bandwidth := 1;
-  FPLL.FreqRange := 10;
+  FPLL.Bandwidth := 50;
+  FPLL.FreqRange := 100;
   FPLL.DefaultFrequency := 0;
 end;
 
