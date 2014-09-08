@@ -24,6 +24,7 @@ type
     FChMode: Integer;
     FChArith: Integer;
     FRunMode: Integer;
+    FSingleFlag: Boolean;
     FSampleGrid: Integer;
     FCoupling: Integer;
     FMinInterval: Double;
@@ -67,8 +68,8 @@ const
   FRAME_MARGIN_TOP    = 1;
   FRAME_MARGIN_BOTTOM = 16;
 
-  THEME: array [0..8] of TColor =
-    (482559, 654847, 505739, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712);
+  THEME: array [0..6] of TColor =   // 482559, 654847,
+    (505739, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712);
 
 { TRadioOscilloscope }
 
@@ -158,11 +159,11 @@ begin
     Pen.Color := TColor($404040);
     while T <= FYMax do
     begin
-      I := Round(T / (FYMax - FYMin) * (Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP));
+      I := Height - FRAME_MARGIN_BOTTOM - Round((T - FYMin) / (FYMax - FYMin) * (Height - FRAME_MARGIN_BOTTOM - FRAME_MARGIN_TOP));
       Line(FRAME_MARGIN_LEFT, FRAME_MARGIN_TOP + I, Width - FRAME_MARGIN_RIGHT, FRAME_MARGIN_TOP + I);
       R.Top := I - E.cy div 2;
-      R.Top := I + E.cy div 2;
-      TextRect(R, 0, 0, FloatToStr(T), Style);
+      R.Bottom := R.Top + E.cy;
+      TextRect(R, R.Left, R.Top, FloatToStr(T), Style);
       T := T + Step;
     end;
 
@@ -266,7 +267,7 @@ begin
 
     with R do
     begin
-      Left := 1;
+      Left := FRAME_MARGIN_LEFT + 1 + (Width - FRAME_MARGIN_LEFT - FRAME_MARGIN_RIGHT) div 2;
       Right := Left + FRAME_MARGIN_LEFT - 2;
       Top := 0;
       Bottom := Top + E.cy;
@@ -280,11 +281,9 @@ begin
       Line(FRAME_MARGIN_LEFT, Mid + I, Width - FRAME_MARGIN_RIGHT, Mid + I);
       Line(FRAME_MARGIN_LEFT, Mid - I, Width - FRAME_MARGIN_RIGHT, Mid - I);
       R.Top := Mid + I - E.cy div 2;
-      R.Top := Mid + I + E.cy div 2;
-      TextRect(R, 0, 0, FloatToStr(T), Style);
+      TextOut(R.Left, R.Top, FloatToStr(T));
       R.Top := Mid - I - E.cy div 2;
-      R.Top := Mid - I + E.cy div 2;
-      TextRect(R, 0, 0, FloatToStr(-T), Style);
+      TextOut(R.Left, R.Top, FloatToStr(-T));
       T := T + Step;
     end;
 
@@ -305,12 +304,15 @@ begin
       I := Round(T / Range * PR);
       Line(Mid + I, FRAME_MARGIN_TOP, Mid + I, Height - FRAME_MARGIN_BOTTOM);
       Line(Mid - I, FRAME_MARGIN_TOP, Mid - I, Height - FRAME_MARGIN_BOTTOM);
-      S := FloatToStr(T);
-      E := TextExtent(S);
-      TextOut(Mid + I - E.cx div 2, R.Top, S);
-      S := FloatToStr(-T);
-      E := TextExtent(S);
-      TextOut(Mid - I - E.cx div 2, R.Top, S);
+      if T <> Start then
+      begin
+        S := FloatToStr(T);
+        E := TextExtent(S);
+        TextOut(Mid + I - E.cx div 2, R.Top, S);
+        S := FloatToStr(-T);
+        E := TextExtent(S);
+        TextOut(Mid - I - E.cx div 2, R.Top, S);
+      end;
       T := T + Step;
     end;
   end;
@@ -321,6 +323,7 @@ label
   PAINT;
 var
   I: Integer;
+  J: Integer;
   Dual: Boolean = False;
   MI, MA: Double;
   Y2Pixes: Double;
@@ -332,9 +335,10 @@ begin
     Exit;
   end;
 
+  if FRate < 1 then Exit;
+
   SetLength(FUIData, FGraphBox.Background.Canvas.Width - FRAME_MARGIN_RIGHT - FRAME_MARGIN_LEFT);
   SetLength(FPts, Length(FUIData));
-  if Length(FUIData) < 1 then Exit;
 
   case FChArith of
     OSCILLOSCOPE_ARITH_I_PLUS_Q:
@@ -375,7 +379,17 @@ begin
     end;
   end;
 
-  Xpolate(P, @FUIData[0], Len, Length(FUIData));
+  // align time and x-axis
+  I := Round(FSweep * FRate);
+  if I <= Len then
+  begin
+    Xpolate(P, @FUIData[0], I, Length(FUIData));
+  end
+  else begin
+    I := Round(Len / FRate / FSweep * Length(FUIData));
+    FillByte(FUIData[0], Length(FUIData) * SizeOf(FUIData[0]), 0);
+    Xpolate(P, @FUIData[0], Len, I);
+  end;
 
   if FAutoY then
   begin
@@ -390,8 +404,8 @@ begin
     begin
       for I := 0 to High(FUIData) do
       begin
-        MI := Min(MI, FUIData[I].re);
-        MA := Max(MA, FUIData[I].re);
+        MI := Min(MI, FUIData[I].im);
+        MA := Max(MA, FUIData[I].im);
       end;
     end;
     if MA = MI then MA := MI + 0.1;
@@ -402,7 +416,7 @@ begin
 
   if FYMax <= FYMin then goto PAINT;
 
-  YRange := FGraphBox.DrawBuffer.Canvas.Width - FRAME_MARGIN_TOP - FRAME_MARGIN_BOTTOM;
+  YRange := FGraphBox.DrawBuffer.Canvas.Height - FRAME_MARGIN_TOP - FRAME_MARGIN_BOTTOM;
   Y2Pixes := YRange / (FYMax - FYMin);
   FGraphBox.Bg2Draw;
 
@@ -434,8 +448,48 @@ PAINT:
 end;
 
 procedure TRadioOscilloscope.DrawDataXY(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+  Dual: Boolean = False;
+  MA: Double;
+  Y2Pixes: Double;
+  XRange, YRange: Integer;
+  MidX, MidY: Integer;
+  X, Y: Integer;
 begin
+  if FAutoY then
+  begin
+    MA := Max(Abs(P[0].re), Abs(P[0].im));
+    for I := 1 to Len - 1 do
+      MA := Max(MA, Max(Abs(P[I].re), Abs(P[I].im)));
+    FYMax := MA;
+    DrawFrameXY;
+  end;
 
+  FGraphBox.Bg2Draw;
+  if FYMax <= 0 then Exit;
+
+  XRange := (FGraphBox.DrawBuffer.Width - FRAME_MARGIN_LEFT - FRAME_MARGIN_RIGHT) div 2;
+  YRange := (FGraphBox.DrawBuffer.Height - FRAME_MARGIN_TOP - FRAME_MARGIN_BOTTOM) div 2;
+  MidX   := FRAME_MARGIN_LEFT + XRange;
+  MidY   := FRAME_MARGIN_TOP  + YRange;
+  with FGraphBox.DrawBuffer.Canvas do
+  begin
+    Pen.Width := 2;
+    Pen.Style := psSolid;
+    Pen.Color := THEME[0];
+    Brush.Color := Pen.Color;
+    Brush.Style := bsSolid;
+    for I := 0 to Len - 1 do
+    begin
+      X := MidX + Round(P[I].re / FYMax * XRange);
+      Y := MidY + Round(P[I].im / FYMax * YRange);
+      RadialPie(X - 1, Y - 1, X + 1, Y + 1, 0, 360 * 16);
+    end;
+  end;
+
+  FGraphBox.Draw2Paint;
+  FGraphBox.Paint;
 end;
 
 procedure TRadioOscilloscope.RedrawFull;
@@ -481,7 +535,11 @@ begin
               CfgRegulator;
               DrawFrame;
             end;
-          OSCILLOSCOPE_SET_RUN_MODE:   FRunMode := Integer(Msg.ParamL);
+          OSCILLOSCOPE_SET_RUN_MODE:
+            begin
+              FRunMode := Integer(Msg.ParamL);
+              FSingleFlag := True;
+            end;
           OSCILLOSCOPE_SET_DRAW_MIN_INTERVAL:  FMinInterval := Msg.ParamL / MSecsPerDay;
           OSCILLOSCOPE_SET_SAMPLE_GRID:
             begin
@@ -503,6 +561,13 @@ procedure TRadioOscilloscope.ReceiveWindowedData(const P: PComplex;
 var
   T: TDateTime;
 begin
+  if Len < 1 then Exit;
+  if FRunMode = OSCILLOSCOPE_RUN_SINGLE then
+  begin
+    if not FSingleFlag then Exit;
+    FSingleFlag := False;
+  end;
+
   T := Now;
   if T - FLastFrameTime < FMinInterval then Exit;
   FLastFrameTime := T;
@@ -545,7 +610,7 @@ end;
 
 procedure TRadioOscilloscope.ReceiveData(const P: PComplex; const Len: Integer);
 begin
-  inherited ReceiveData(P, Len);
+  FRegulator.ReceiveData(P, Len);
 end;
 
 initialization

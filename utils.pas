@@ -89,8 +89,6 @@ procedure MakeBlankStr(var S: string; const Len: Integer);
 implementation
 
 procedure StrIconDraw(ACanvas: TCanvas; ARect: TRect; Icon: string);
-const
-  DEF_COLOR = $d0d0d0;
 var
   Command, Tag, Param: string;
   Pts: array of TPoint;
@@ -257,18 +255,12 @@ var
   end;
 
   procedure HandleLine(Param: string);
-  var
-    V: Real;
   begin
     ReadCoords(Param);
     ACanvas.Polyline(Pts);
   end;
 
   procedure HandlePolygon(Param: string);
-  var
-    V: Real;
-    Pt: TPoint = (x: 0; y: 0);
-    I: Integer;
   begin
     ReadCoords(Param);
     if High(Pts) < 2 then Exit;
@@ -280,7 +272,6 @@ var
     V: Real;
     R0, R1: Integer;
     Pt: TPoint = (x: 0; y: 0);
-    I: Integer;
   begin
     if not ReadCoord(Param, Pt) then Exit;
     if not RequireAndDel(Param, ',') then Exit;
@@ -295,7 +286,6 @@ var
 
   procedure HandleText(Param: string);
   var
-    V: Real;
     Pt: TPoint = (x: 0; y: 0);
     E: TSize;
   begin

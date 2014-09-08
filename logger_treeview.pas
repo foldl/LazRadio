@@ -5,8 +5,8 @@ unit logger_treeview;
 interface
 
 uses
-  Classes, SysUtils, Controls, GraphType, Graphics, Dialogs, Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls,
-  Buttons, RadioSystem, RadioModule, IntfGraphics, FPReadPNG;
+  Classes, SysUtils, Controls, GraphType, Graphics, ComCtrls,
+  RadioModule, IntfGraphics, FPReadPNG;
 
 type
 
@@ -40,7 +40,6 @@ const
   LogLevel2ImageID: array[TRadioLogLevel] of Integer = (0, 1, 2, 3);
   LogLevel2ImageFn: array[TRadioLogLevel] of string = ('state12x12_hint.png',
                     'state12x12_information.png', 'state12x12_warning.png', 'state12x12_error.png');
-  LogLevel2Str: array[TRadioLogLevel] of string = ('verb', 'inf', 'warn', 'err');
 
 { TTreeViewLogger }
 

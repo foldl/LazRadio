@@ -228,7 +228,6 @@ function DecodeMessage(M: Cardinal; out Decoded: Word; out
   ErrBits: Integer; const SyndromeOffset: Cardinal): Boolean;
 const
   K2  = 1 shl (K - 1);        // 2 ** (K - 1);
-  K21 = K2 - 1;
   FLAG = 1 shl (N - K);       // 2 ** (N - K);     // 1024
   NK2  = 1 shl (N - K - 1);   // 2 ** (N - K - 1); // 512
   NK   = $7FF;                // n - k + 1 ones
@@ -238,7 +237,6 @@ var
   I: Integer;
   J: Integer;
   B: Boolean;
-  E: Boolean;
 begin
   ErrBits := 0;
   S := CalcSyndrome(M) xor SyndromeOffset;

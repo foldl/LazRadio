@@ -72,6 +72,9 @@ type
     procedure ViewLogLevelUpdate(Sender: TObject);
   private
     FSystem: TRadioSystem;
+    procedure FMSys;
+    procedure AMSys;
+    procedure RDSSys;
   public
     { public declarations }
   end;
@@ -91,88 +94,8 @@ uses
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
   FSystem.Graph.PaintBox := PaintBox1;
-  FSystem.AddModule('s', 'Spectrum');
-  FSystem.AddModule('s2', 'Spectrum');
-  FSystem.AddModule('iqcor', 'IQCorrecter');
-  FSystem.AddModule('a', 'AudioIn');
-  FSystem.AddModule('u', 'AudioOut');
-  FSystem.AddModule('mixer1', 'FreqMixer');
-  FSystem.AddModule('mixer2', 'FreqMixer');
-  FSystem.AddModule('f1', 'Filter');
-  FSystem.AddModule('f2', 'Filter');
-  FSystem.AddModule('r', 'DumpPlayer');
-  FSystem.AddModule('src', 'DumpPlayer');
-  FSystem.AddModule('dump', 'Dump');
-  FSystem.AddModule('fd1', 'FreqDiscriminator');
-  FSystem.AddModule('fm1', 'FMReceiver');
-  FSystem.AddModule('re1', 'Resampling');
-  FSystem.AddModule('re2', 'Resampling');
-  FSystem.AddModule('aumixer', 'AudioMixer');
-  FSystem.AddModule('rds', 'RDSDecoder');
 
-  FSystem.ConnectBoth('src', 'iqcor');
-  FSystem.ConnectBoth('iqcor', 'mixer1');
-  FSystem.ConnectBoth('mixer1', 're1');
-  FSystem.ConnectBoth('re1', 'fd1');
-
-  FSystem.ConnectBoth('fd1', 'f1');
-  FSystem.ConnectBoth('f1', 'mixer2');
-  FSystem.ConnectBoth('mixer2', 're2');
-  FSystem.ConnectBoth('re2', 'f2');
-  FSystem.ConnectBoth('f2', 'rds');
-
-  FSystem.ConnectBoth('mixer2', 's');
-  FSystem.ConnectBoth('f2', 's2');
-
-  //FSystem.ConnectBoth('fm1', 's2');
-
-{
-  FSystem.ConnectBoth('src', 'mixer2');
-  FSystem.ConnectBoth('mixer2', 're2');
-  FSystem.ConnectBoth('re2', 'fm2');
-  FSystem.ConnectBoth('fm2', 'f2');
-  FSystem.ConnectData('f2', 'aumixer', 1);
-}
-
-  // set-up channel 1
-  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
-
-  // set-up rds
-  RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
-  RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f1');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 400, 'f1');
-  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 4500, 57000 + 4500, 'f1');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftLPF), 'f2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f2');
-  RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f2');
-
-  //FSystem.ConnectBoth('src', 'dump');
-
- // FSystem.ConnectBoth('f', 's2');
-  //FSystem.ConnectBoth('f', 'u');
- // FSystem.ConnectBoth('dump', 'u');
-
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
-//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
-  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
-//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
-  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
-
-  RadioPostMessage(RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4, 'aumixer');
-  RadioPostMessage(RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0, 'u');
-
- // FSystem.ConfigModule('a');
- // FSystem.ConfigModule('r');
-   RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
-  //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
-  //FSystem.ConfigModule('src');
-  FSystem.ShowSystem;
+  FMSys;
 end;
 
 procedure TMainForm.Button2Click(Sender: TObject);
@@ -233,6 +156,273 @@ begin
   if Sender is TAction then
     with Sender as TAction do
       Checked := TRadioLogger.Level = TRadioLogLevel(Tag);
+end;
+
+procedure TMainForm.FMSys;
+begin
+  FSystem.AddModule('s', 'Spectrum');
+  FSystem.AddModule('s2', 'Spectrum');
+  FSystem.AddModule('iqcor', 'IQCorrecter');
+  FSystem.AddModule('a', 'AudioIn');
+  FSystem.AddModule('u', 'AudioOut');
+  FSystem.AddModule('mixer1', 'FreqMixer');
+  FSystem.AddModule('mixer2', 'FreqMixer');
+  FSystem.AddModule('f1', 'Filter');
+  FSystem.AddModule('f2', 'Filter');
+  FSystem.AddModule('r', 'DumpPlayer');
+  FSystem.AddModule('src', 'Rtl');
+  FSystem.AddModule('dump', 'Dump');
+  FSystem.AddModule('fd1', 'FreqDiscriminator');
+  FSystem.AddModule('fm1', 'FMReceiver');
+  FSystem.AddModule('re1', 'Resampling');
+  FSystem.AddModule('re2', 'Resampling');
+  FSystem.AddModule('aumixer', 'AudioMixer');
+  FSystem.AddModule('rds', 'RDSDecoder');
+  FSystem.AddModule('scope', 'Oscilloscope');
+
+  FSystem.ConnectBoth('src', 'iqcor');
+  FSystem.ConnectBoth('iqcor', 'f1');
+  FSystem.ConnectBoth('f1', 'mixer1');
+  FSystem.ConnectBoth('mixer1', 're1');
+  FSystem.ConnectBoth('re1', 'fd1');
+{
+  FSystem.ConnectBoth('fd1', 'f1');
+  FSystem.ConnectBoth('f1', 'mixer2');
+  FSystem.ConnectBoth('mixer2', 're2');
+  FSystem.ConnectBoth('re2', 'f2');
+  FSystem.ConnectBoth('f2', 'rds');
+
+  FSystem.ConnectBoth('mixer2', 's');
+  FSystem.ConnectBoth('f2', 's2');
+
+  FSystem.ConnectBoth('f2', 'scope');
+  }
+
+  FSystem.ConnectBoth('mixer1', 's2');
+  FSystem.ConnectBoth('iqcor', 's');
+  FSystem.ConnectFeature('s', 'mixer1');
+  FSystem.ConnectFeature('s', 'f1');
+
+  FSystem.ConnectBoth('fd1', 'fm1');
+  FSystem.ConnectBoth('fm1', 'aumixer');
+  FSystem.ConnectBoth('aumixer', 'u');
+
+{
+  FSystem.ConnectBoth('src', 'mixer2');
+  FSystem.ConnectBoth('mixer2', 're2');
+  FSystem.ConnectBoth('re2', 'fm2');
+  FSystem.ConnectBoth('fm2', 'f2');
+  FSystem.ConnectData('f2', 'aumixer', 1);
+}
+
+  // set-up channel 1
+  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
+
+  // set-up rds
+  RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
+  RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f1');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 400, 'f1');
+  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 4500, 57000 + 4500, 'f1');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftLPF), 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f2');
+  RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f2');
+
+  //FSystem.ConnectBoth('src', 'dump');
+
+ // FSystem.ConnectBoth('f', 's2');
+  //FSystem.ConnectBoth('f', 'u');
+ // FSystem.ConnectBoth('dump', 'u');
+
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
+//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
+
+  RadioPostMessage(RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4, 'aumixer');
+  RadioPostMessage(RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0, 'u');
+
+ // FSystem.ConfigModule('a');
+ // FSystem.ConfigModule('r');
+  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  //  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  //FSystem.ConfigModule('src');
+  FSystem.ShowSystem;
+end;
+
+procedure TMainForm.AMSys;
+begin
+  FSystem.AddModule('s', 'Spectrum');
+  FSystem.AddModule('s2', 'Spectrum');
+  FSystem.AddModule('iqcor', 'IQCorrecter');
+  FSystem.AddModule('a', 'AudioIn');
+  FSystem.AddModule('u', 'AudioOut');
+  FSystem.AddModule('mixer1', 'FreqMixer');
+  FSystem.AddModule('mixer2', 'FreqMixer');
+  FSystem.AddModule('f1', 'Filter');
+  FSystem.AddModule('f2', 'Filter');
+  FSystem.AddModule('r', 'DumpPlayer');
+  FSystem.AddModule('src', 'Rtl');
+  FSystem.AddModule('dump', 'Dump');
+  FSystem.AddModule('fd1', 'FreqDiscriminator');
+  FSystem.AddModule('fm1', 'FMReceiver');
+  FSystem.AddModule('re1', 'Resampling');
+  FSystem.AddModule('re2', 'Resampling');
+  FSystem.AddModule('aumixer', 'AudioMixer');
+  FSystem.AddModule('rds', 'RDSDecoder');
+  FSystem.AddModule('scope', 'Oscilloscope');
+
+  FSystem.ConnectBoth('src', 'iqcor');
+  FSystem.ConnectBoth('iqcor', 'f1');
+  FSystem.ConnectBoth('f1', 'mixer1');
+  FSystem.ConnectBoth('mixer1', 're1');
+  FSystem.ConnectBoth('re1', 'fd1');
+
+
+  FSystem.ConnectBoth('mixer1', 's2');
+  FSystem.ConnectBoth('iqcor', 's');
+  FSystem.ConnectFeature('s', 'mixer1');
+  FSystem.ConnectFeature('s', 'f1');
+
+  FSystem.ConnectBoth('fm1', 'aumixer');
+  FSystem.ConnectBoth('aumixer', 'u');
+
+{
+  FSystem.ConnectBoth('src', 'mixer2');
+  FSystem.ConnectBoth('mixer2', 're2');
+  FSystem.ConnectBoth('re2', 'fm2');
+  FSystem.ConnectBoth('fm2', 'f2');
+  FSystem.ConnectData('f2', 'aumixer', 1);
+}
+
+  // set-up channel 1
+  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
+
+  // set-up rds
+  RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
+  RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f1');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 400, 'f1');
+  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 4500, 57000 + 4500, 'f1');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftLPF), 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f2');
+  RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f2');
+
+  //FSystem.ConnectBoth('src', 'dump');
+
+ // FSystem.ConnectBoth('f', 's2');
+  //FSystem.ConnectBoth('f', 'u');
+ // FSystem.ConnectBoth('dump', 'u');
+
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
+//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
+
+  RadioPostMessage(RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4, 'aumixer');
+  RadioPostMessage(RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0, 'u');
+
+  FSystem.ShowSystem;
+end;
+
+procedure TMainForm.RDSSys;
+begin
+  FSystem.AddModule('s', 'Spectrum');
+  FSystem.AddModule('s2', 'Spectrum');
+  FSystem.AddModule('iqcor', 'IQCorrecter');
+  FSystem.AddModule('a', 'AudioIn');
+  FSystem.AddModule('u', 'AudioOut');
+  FSystem.AddModule('mixer1', 'FreqMixer');
+  FSystem.AddModule('mixer2', 'FreqMixer');
+  FSystem.AddModule('f1', 'Filter');
+  FSystem.AddModule('f2', 'Filter');
+  FSystem.AddModule('r', 'DumpPlayer');
+  FSystem.AddModule('src', 'Rtl');
+  FSystem.AddModule('dump', 'Dump');
+  FSystem.AddModule('fd1', 'FreqDiscriminator');
+  FSystem.AddModule('fm1', 'FMReceiver');
+  FSystem.AddModule('re1', 'Resampling');
+  FSystem.AddModule('re2', 'Resampling');
+  FSystem.AddModule('aumixer', 'AudioMixer');
+  FSystem.AddModule('rds', 'RDSDecoder');
+  FSystem.AddModule('scope', 'Oscilloscope');
+
+  FSystem.ConnectBoth('src', 'iqcor');
+  FSystem.ConnectBoth('iqcor', 'f1');
+  FSystem.ConnectBoth('f1', 'mixer1');
+  FSystem.ConnectBoth('mixer1', 're1');
+  FSystem.ConnectBoth('re1', 'fd1');
+
+  FSystem.ConnectBoth('fd1', 'f1');
+  FSystem.ConnectBoth('f1', 'mixer2');
+  FSystem.ConnectBoth('mixer2', 're2');
+  FSystem.ConnectBoth('re2', 'f2');
+  FSystem.ConnectBoth('f2', 'rds');
+
+  FSystem.ConnectBoth('mixer2', 's');
+  FSystem.ConnectBoth('f2', 's2');
+
+  FSystem.ConnectBoth('f2', 'scope');
+
+{
+  FSystem.ConnectBoth('src', 'mixer2');
+  FSystem.ConnectBoth('mixer2', 're2');
+  FSystem.ConnectBoth('re2', 'fm2');
+  FSystem.ConnectBoth('fm2', 'f2');
+  FSystem.ConnectData('f2', 'aumixer', 1);
+}
+
+  // set-up channel 1
+  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
+
+  // set-up rds
+  RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
+  RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f1');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 400, 'f1');
+  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 4500, 57000 + 4500, 'f1');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftLPF), 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f2');
+  RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f2');
+
+  //FSystem.ConnectBoth('src', 'dump');
+
+ // FSystem.ConnectBoth('f', 's2');
+  //FSystem.ConnectBoth('f', 'u');
+ // FSystem.ConnectBoth('dump', 'u');
+
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
+//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
+  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
+//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
+  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
+
+  RadioPostMessage(RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4, 'aumixer');
+  RadioPostMessage(RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0, 'u');
+
+ // FSystem.ConfigModule('a');
+ // FSystem.ConfigModule('r');
+  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  //FSystem.ConfigModule('src');
+  FSystem.ShowSystem;
 end;
 
 end.

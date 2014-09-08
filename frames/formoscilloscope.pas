@@ -80,7 +80,7 @@ procedure TOscilloscopeForm.LabeledEdit1KeyUp(Sender: TObject; var Key: Word;
 begin
   if Key <> VK_RETURN then Exit;
   RadioPostMessage(RM_OSCILLOSCOPE_CFG, OSCILLOSCOPE_SET_Y_MAX,
-                              FloatAsInt(StrToFloatDef(LabeledEdit1.Text, 0)), FModule);
+                              FloatAsInt(StrToFloatDef(LabeledEdit1.Text, 1)), FModule);
 end;
 
 procedure TOscilloscopeForm.Button2Click(Sender: TObject);

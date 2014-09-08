@@ -422,7 +422,7 @@ var
 begin
   Result := IntToStr(F);
   I := Length(Result);
-  while Result[I] = '0' do
+  while (I > 0) and (Result[I] = '0') do
   begin
     Inc(C);
     Dec(I);

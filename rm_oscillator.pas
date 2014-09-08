@@ -60,7 +60,7 @@ type
     FCounter: Cardinal;
     FPhase: Double;
     FRegulator: TStreamRegulator;
-    procedure SetOscFreq(const Freq: Cardinal);
+    procedure SetOscFreq(const Freq: Integer);
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
@@ -132,7 +132,7 @@ end;
 
 { TRadioFreqMixer }
 
-procedure TRadioFreqMixer.SetOscFreq(const Freq: Cardinal);
+procedure TRadioFreqMixer.SetOscFreq(const Freq: Integer);
 begin
   FOscFreq := Integer(Freq);
   FPhase := 0;
@@ -189,7 +189,7 @@ procedure TRadioFreqMixer.ProccessMessage(const Msg: TRadioMessage;
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
   begin
-    SetOscFreq(Cardinal((Integer(Msg.ParamH) + Integer(Msg.ParamL)) div 2));
+    SetOscFreq(FFreq + ((Integer(Msg.ParamH) + Integer(Msg.ParamL)) div 2));
     Ret := 0;
     Exit;
   end;

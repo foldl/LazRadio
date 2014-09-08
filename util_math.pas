@@ -20,7 +20,7 @@ function  GCD(X, Y: Cardinal): Cardinal;
 
 function  DBtoMultiplier(const Db: Double): Integer;
 
-function FloatAsInt(const F: Float): Integer;
+function FloatAsInt(const F: Single): Integer;
 function IntAsFloat(const N: Integer): Float;
 
 implementation
@@ -185,14 +185,14 @@ begin
   Result := Round(Power(10, Db / 20));
 end;
 
-function FloatAsInt(const F: Float): Integer;
+function FloatAsInt(const F: Single): Integer;
 begin
   Result := PInteger(@F)^;
 end;
 
 function IntAsFloat(const N: Integer): Float;
 begin
-  Result := PFloat(@N)^;
+  Result := PSingle(@N)^;
 end;
 
 end.
