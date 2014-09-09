@@ -589,9 +589,14 @@ begin
 end;
 
 procedure TRadioSpectrum.RedrawFull;
+var
+  W, H: Integer;
 begin
-  SetLength(FLine, FRt.PaintBox.Width - FRAME_MARGIN_LEFT - FRAME_MARGIN_RIGHT);
-  FRt.SetSize(FRt.PaintBox.Width, FRt.PaintBox.Height);
+  W := FRt.PaintBox.Width;
+  H := FRt.PaintBox.Height;
+  if W < FRAME_MARGIN_LEFT + FRAME_MARGIN_RIGHT then Exit;
+  SetLength(FLine, W - FRAME_MARGIN_LEFT - FRAME_MARGIN_RIGHT);
+  FRt.SetSize(W, H);
   FWf.SetSize(FWf.PaintBox.Width, FWf.PaintBox.Height);
   DrawFrame;
   FRt.DrawBuffer.Canvas.Draw(0, 0, FRt.Background);

@@ -146,7 +146,7 @@ end;
 constructor TRadioSystem.Create;
 begin
   if Assigned(FInstance) then raise Exception.Create('TRadioSystem is singleton');
-  FRunQueue   := TRadioRunQueue.Create(1);
+  FRunQueue   := TRadioRunQueue.Create(2);
   FModuleDict := TSuperTableString.Create;
   FInstance := Self;
   FGraph := TGenGraph.Create;

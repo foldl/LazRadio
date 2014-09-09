@@ -63,14 +63,14 @@ var
   CosPhiRep, TanPhi: Double;
 begin
   CancelDC(P, Len);
-  for I := 0 to Len do
+  for I := 0 to Len - 1 do
   begin
     CI := CI + P[I].re * P[I].re;
     CQ := CQ + P[I].im * P[I].im;
   end;
   if CQ > 0 then FGain := FAlpha * (CI / CQ) + (1 - FAlpha) * FGain;
   CQ := 0;
-  for I := 0 to Len do
+  for I := 0 to Len - 1 do
   begin
     P[I].im := FGain * P[I].im;
     CQ := CQ + P[I].re * P[I].im;
@@ -79,7 +79,7 @@ begin
   FPhi := FAlpha * (-arcsin(EnsureRange(CQ / CI, -0.99999, 0.99999))) + (1 - FAlpha) * FPhi;
   CosPhiRep := 1 / Cos(FPhi);
   TanPhi := Tan(FPhi);
-  for I := 0 to Len do
+  for I := 0 to Len - 1 do
     P[I].im := TanPhi * P[I].re + CosPhiRep * P[I].Im;
 
   O := Alloc(DefOutput, I);

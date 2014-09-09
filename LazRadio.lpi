@@ -296,9 +296,7 @@
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <CodeGeneration>
-      <Checks>
-        <StackChecks Value="True"/>
-      </Checks>
+      <StackSize Value="1000000"/>
       <TargetProcessor Value="pentiumm"/>
       <TargetCPU Value="i386"/>
     </CodeGeneration>

@@ -137,9 +137,9 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   FSystem := TRadioSystem.Create;
   FSystem.ShowModules(ModuleTree);
-  TRadioLogger.Level := llVerbose;
-  TTextLogger.Start;
-  //TTreeViewLogger.Start;
+  TRadioLogger.Level := llError;
+  //TTextLogger.Start;
+  TTreeViewLogger.Start;
   if TRadioLogger.GetInstance is TTreeViewLogger then
     with TRadioLogger.GetInstance as TTreeViewLogger do
     begin
@@ -342,9 +342,14 @@ end;
 procedure TMainForm.RDSSys;
 begin
   FSystem.AddModule('src', 'DumpPlayer');
-  FSystem.AddModule('s', 'Spectrum');
-  FSystem.AddModule('s2', 'Spectrum');
   FSystem.AddModule('iqcor', 'IQCorrecter');
+  FSystem.AddModule('s', 'Spectrum');
+
+  FSystem.ConnectBoth('src', 'iqcor');
+  FSystem.ConnectBoth('iqcor', 's');
+
+ { FSystem.AddModule('s2', 'Spectrum');
+
   FSystem.AddModule('mixer1', 'FreqMixer');
   FSystem.AddModule('f1', 'Filter');
   FSystem.AddModule('f2', 'Filter');
@@ -407,11 +412,10 @@ begin
  // FSystem.ConfigModule('r');
   //FSystem.ConfigModule('src');
 
-
+ }
   FSystem.ShowSystem;
-
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
-  //RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+//  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
 end;
 
 end.

@@ -1269,13 +1269,15 @@ begin
 
   T := Now;
   J.RunThread := Self;
-  while (not Terminated) and J.NeedExecution do
+  // we only exec one message here, and this job will be at the tail of the queue
+  // if it has more messaages.
+  if J.NeedExecution then
     J.MessageExceute;
+  T := Now - T;
+  J.FCPUTime := J.FCPUTime + T;
   J.RunThread := nil;
   J.InQueue := False;
 
-  T := Now - T;
-  J.FCPUTime := J.FCPUTime + T;
   Result := Round(T * MSecsPerDay);
 end;
 
