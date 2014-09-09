@@ -1628,11 +1628,15 @@ const
   Margin_V = 40;
 var
   P: Pointer;
+  I: Integer;
   R: TRect = (Left: 0; Top: 0; Right: 0; Bottom: 0);
 begin
   if FUpdateCount > 0 then Exit;
 
-  for P in FEntities do TGenEntityNode(P).Measure(FDBuffer.PaintBuffer.Canvas);
+  for I := 0 to FEntities.Count - 1 do
+  begin
+    TGenEntityNode(FEntities[I]).Measure(FDBuffer.PaintBuffer.Canvas);
+  end;
 
   Layout;
   for P in FEntities do

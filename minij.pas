@@ -18,7 +18,7 @@ About (mini)J expression:
 
 unit MiniJ;
 
-{$mode objfpc}{$H+}
+{$mode objfpc}{$H+}{$R-}
 
 interface
 

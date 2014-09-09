@@ -114,6 +114,10 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+
+    // Job want to yield, worker will pick a new job
+    function Yield(Job: TRadioMessageQueue): Cardinal;
+
     property Job: TRadioMessageQueue read FJob write FJob;
     property Node: PRadioThreadNode read FNode write FNode;
     property Terminated;
@@ -146,6 +150,7 @@ type
   public
     constructor Create(const SMP: Integer = 4);
     destructor Destroy; override;
+    function  PickJob: TRadioMessageQueue;
     procedure Request(Job: TRadioMessageQueue);
     procedure Terminate;
   end;
@@ -158,15 +163,12 @@ type
     FInQueue: Boolean;
     FFirstExecMsg: TRadioMessageNode;
     FLastExecMsg: PRadioMessageNode;
-    FFirstMsg: TRadioMessageNode;
-    FLastMsg: PRadioMessageNode;
     FMessageFilter: TRadioMessageIdSet;
     FRunQueue: TRadioRunQueue;
     FCPUTime: TTime;
     FRunThread: TRadioThread;
-    function GetNotEmpty: Boolean;
+    function GetNeedExec: Boolean;
     procedure SetInQueue(AValue: Boolean);
-    procedure SetMessageFilter(AValue: TRadioMessageIdSet);
     procedure RequestSchudule;
   protected
     procedure MessageExceute;      // execute one message in a single call
@@ -179,8 +181,7 @@ type
     procedure StoreMessage(const Msg: TRadioMessage);
     procedure MessageQueueReset;
 
-    property NotEmpty: Boolean read GetNotEmpty;
-    property MessageFilter: TRadioMessageIdSet read FMessageFilter write SetMessageFilter;
+    property NeedExecution: Boolean read GetNeedExec;
     property InQueue: Boolean read FInQueue write SetInQueue;
 
     property Name: string read FName write FName;
@@ -911,7 +912,7 @@ end;
 
 { TRadioMessageQueue }
 
-function TRadioMessageQueue.GetNotEmpty: Boolean;
+function TRadioMessageQueue.GetNeedExec: Boolean;
 begin
   Result := Assigned(FFirstExecMsg.Next);
 end;
@@ -927,44 +928,8 @@ begin
     Req := not AValue;
   end;
   Unlock;
-  if Req and NotEmpty then
+  if Req and NeedExecution then
     RequestSchudule;
-end;
-
-procedure TRadioMessageQueue.SetMessageFilter(AValue: TRadioMessageIdSet);
-var
-  P: PRadioMessageNode;
-  T: PRadioMessageNode;
-  F: Boolean = False;
-begin
-  if FMessageFilter = AValue then Exit;
-  FMessageFilter := AValue;
-  P := @FFirstMsg;
-  if not Assigned(P^.Next) then Exit;
-
-  Lock;
-  while Assigned(P^.Next) do
-  begin
-    T := P^.Next;
-    if (FMessageFilter and (1 shl T^.Msg.Id)) > 0 then
-    begin
-      P^.Next := T^.Next;
-      FLastExecMsg^.Next := T;
-      T^.Next := nil;
-      FLastExecMsg := T;
-      F := True;
-      if not Assigned(P^.Next) then
-      begin
-        FLastMsg := P;
-        Break;
-      end;
-    end
-    else
-      P := T;
-  end;
-  UnLock;
-
-  if F then RequestSchudule;
 end;
 
 procedure TRadioMessageQueue.RequestSchudule;
@@ -988,16 +953,20 @@ begin
   UnLock;
   Dispose(P);
 
-  TRadioLogger.Report(llVerbose, 'in thread #' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
-  ProccessMessage(Msg, Ret);
-  TRadioLogger.Report(llVerbose, Name + ' msg exec done');
+  try
+    TRadioLogger.Report(llVerbose, 'in thread #' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
+    ProccessMessage(Msg, Ret);
+    TRadioLogger.Report(llVerbose, Name + ' msg exec done');
+  except
+    on E: Exception do
+      TRadioLogger.Report(llError, 'Exception: ' + E.Message);
+  end;
 end;
 
 constructor TRadioMessageQueue.Create(RunQueue: TRadioRunQueue);
 begin
   FMessageFilter := $FFFFFFFF;
   FLastExecMsg := @FFirstExecMsg;
-  FLastMsg := @FFirstMsg;
   FRunQueue := RunQueue;
 end;
 
@@ -1018,20 +987,12 @@ begin
   New(P);
   P^.Msg := Msg;
   P^.Next := nil;
-  if (MessageFilter and (1 shl Msg.Id)) > 0 then
-  begin
-    Lock;
-    FLastExecMsg^.Next := P;
-    FLastExecMsg := P;
-    UnLock;
-    RequestSchudule;
-  end
-  else begin
-    Lock;
-    FLastMsg^.Next := P;
-    FLastMsg := P;
-    UnLock;
-  end;
+
+  Lock;
+  FLastExecMsg^.Next := P;
+  FLastExecMsg := P;
+  UnLock;
+  RequestSchudule;
 end;
 
 procedure TRadioMessageQueue.MessageQueueReset;
@@ -1049,10 +1010,7 @@ procedure TRadioMessageQueue.MessageQueueReset;
 
 begin
   Lock;
-  FreeList(FFirstMsg.Next);
   FreeList(FFirstExecMsg.Next);
-  FFirstMsg.Next := nil;
-  FLastMsg := @FFirstMsg;
   FFirstExecMsg.Next := nil;
   FLastExecMsg := @FFirstExecMsg;
   UnLock;
@@ -1178,6 +1136,27 @@ begin
   inherited;
 end;
 
+function TRadioRunQueue.PickJob: TRadioMessageQueue;
+var
+  P: PMessageQueueNode;
+begin
+  Result := nil;
+  if not Assigned(FFirstJob.Next) then Exit;
+
+  Lock;
+  if not Assigned(FFirstJob.Next) then
+  begin
+    UnLock;
+    Exit;
+  end;
+  P := FFirstJob.Next;
+  FFirstJob.Next := P^.Next;
+  UnLock;
+
+  Result := P^.Queue;
+  Dispose(P);
+end;
+
 procedure TRadioRunQueue.Request(Job: TRadioMessageQueue);
 var
   T: PRadioThreadNode;
@@ -1249,11 +1228,8 @@ begin
       T := Now;
 
       J.RunThread := Self;
-      while J.NotEmpty do
-      begin
+      while (not Terminated) and J.NeedExecution do
         J.MessageExceute;
-        if Terminated then Break;
-      end;
       J.RunThread := nil;
       J.FCPUTime := J.FCPUTime + Now - T;
 
@@ -1277,6 +1253,30 @@ begin
   WaitFor;
   RTLEventDestroy(FJobScheduled);
   inherited Destroy;
+end;
+
+function TRadioThread.Yield(Job: TRadioMessageQueue): Cardinal;
+label
+  PICK_JOB;
+var
+  J: TRadioMessageQueue;
+  T: TTime;
+begin
+  Result := 0;
+
+  J := FRunQueue.PickJob;
+  if not Assigned(J) then Exit;
+
+  T := Now;
+  J.RunThread := Self;
+  while (not Terminated) and J.NeedExecution do
+    J.MessageExceute;
+  J.RunThread := nil;
+  J.InQueue := False;
+
+  T := Now - T;
+  J.FCPUTime := J.FCPUTime + T;
+  Result := Round(T * MSecsPerDay);
 end;
 
 { TStreamRegulator }
@@ -1319,7 +1319,7 @@ begin
     Inc(I, FSize - FOverlap);
     Dec(FCursor, FSize - FOverlap);
   end;
-  if I > 0 then
+  if FCursor > 0 then
     Move(FData[I], FData[0], FCursor * SizeOf(FData[0]));
 end;
 
@@ -1770,6 +1770,26 @@ end;
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
   ): PComplex;
 var
+  T: Cardinal = 0;
+  I: Cardinal;
+begin
+  Result := Stream.TryAlloc(Index);
+  while (not Assigned(Result)) and (not RunThread.Terminated) and (T < 1500) do
+  begin
+    I := RunThread.Yield(Self);
+    if I = 0 then
+    begin
+      Sleep(10);
+      I := 10;
+    end;
+    Inc(T, I);
+    Result := Stream.TryAlloc(Index);
+  end;
+end;
+{
+function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
+  ): PComplex;
+var
   C: Integer = 0;
 begin
   Result := Stream.TryAlloc(Index);
@@ -1785,7 +1805,7 @@ begin
     Result := Stream.TryAlloc(Index);
   end;
 end;
-
+}
 procedure TRadioModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
@@ -1921,7 +1941,6 @@ begin
   FDataListeners := TList.Create;
   FFeatureListeners := TList.Create;
   FDefOutput := TRadioDataStream.Create(Self, 'output', 1024 * 5);
-  FLastMsg := @FFirstMsg;
   FDescStr := TStringList.Create;
   FIcon := LoadDefIconRes;
 end;

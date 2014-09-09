@@ -6,7 +6,6 @@ object SpectrumForm: TSpectrumForm
   Caption = 'SpectrumForm'
   ClientHeight = 601
   ClientWidth = 772
-  FormStyle = fsStayOnTop
   Position = poMainFormCenter
   LCLVersion = '1.2.4.0'
   object Panel1: TPanel

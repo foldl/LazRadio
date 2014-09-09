@@ -12,7 +12,7 @@ const
   // ParamL: (Port shl 16) or (index of data)
   // Note: call TRadioDataStream.Release after processed
   RM_DATA            = 0;
-  // RM_DATA_DONE       = 1;  // this is stupid
+  RM_DATA_DONE       = 1;  // this is stupid
 
   // ParamH: Frequency   (0)    ParamL: in Hz
   // ParamH: Sample rate (1)    ParamL: in samples per second

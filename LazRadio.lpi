@@ -295,16 +295,8 @@
       <OtherUnitFiles Value="frames;..\superobject;dsp;graph"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
-    <Parsing>
-      <SyntaxOptions>
-        <IncludeAssertionCode Value="True"/>
-      </SyntaxOptions>
-    </Parsing>
     <CodeGeneration>
       <Checks>
-        <IOChecks Value="True"/>
-        <RangeChecks Value="True"/>
-        <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
       <TargetProcessor Value="pentiumm"/>
