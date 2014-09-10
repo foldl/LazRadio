@@ -8,11 +8,14 @@ uses
   Classes, SysUtils;
 
 const
+  INVALID_MODULE_ID = $FFFFFFFF;
+
   // ParamH: TRadioDataStream
   // ParamL: (Port shl 16) or (index of data)
   // Note: call TRadioDataStream.Release after processed
   RM_DATA            = 0;
-  RM_DATA_DONE       = 1;  // this is stupid
+
+  // RM_DATA_DONE       = 1;  // this is stupid
 
   // ParamH: Frequency   (0)    ParamL: in Hz
   // ParamH: Sample rate (1)    ParamL: in samples per second
@@ -24,13 +27,9 @@ const
                      RM_FEATURE_BANDWIDTH   = 2;
                      RM_FEATURE_PHASE_ADJ   = 3;
 
-  // ParamH: RUN   (0)    ParamL: ignore
-  // ParamH: PAUSE (1)    ParamL: ignore
-  // ParamH: RESET (2)    ParamL: ignore
+  // ParamH: RESET (0)    ParamL: ignore
   RM_CONTROL         = 3;
-                     RM_CONTROL_RUN   = 0;
-                     RM_CONTROL_PAUSE = 1;
-                     RM_CONTROL_RESET = 2;
+                     RM_CONTROL_RESET = 0;
 
   // ParamH: timer id    ParamL: timer interval
   RM_TIMER           = 4;
@@ -50,6 +49,20 @@ const
   RM_CONFIGURE       = 8;
 
   RM_SHOW_MAIN_GUI   = 9;
+
+  RM_DESTROY         = 10;
+
+  // ParamH: ignore; ParamL: TRadioModule id
+  RM_ADD_FEATURE_LISTENER    = 11;
+
+  // ParamH: ignore; ParamL: TRadioModule id (if = INVALID_MODULE_ID, then remove all)
+  RM_REMOVE_FEATURE_LISTENER = 12;
+
+  // ParamH: (source port << 16) | (target port); ParamL: TRadioModule id
+  RM_ADD_DATA_LISTENER       = 13;
+
+  // ParamH: (source port << 16); ParamL: TRadioModule id (if = INVALID_MODULE_ID, then remove all)
+  RM_REMOVE_DATA_LISTENER    = 14;
 
   RM_AUDIO_IN_START = 100;   // ParamH = dev id; ParamL = samples per sec
   RM_AUDIO_IN_STOP  = 101;

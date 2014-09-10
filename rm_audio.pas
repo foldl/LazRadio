@@ -66,8 +66,8 @@ type
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
-    function DoStart: Boolean; override;
-    function DoStop: Boolean; override;
+    procedure DoStart;
+    procedure DoBeforeDestroy; override;
     procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -290,11 +290,10 @@ begin
   end;
 end;
 
-function TRadioAudioOut.DoStart: Boolean;
+procedure TRadioAudioOut.DoStart;
 var
   F: WAVEFORMATEX;
 begin
-  Result := False;
   CloseDev;
   with F do
   begin
@@ -318,13 +317,11 @@ begin
     Exit;
   end;
   PrepareBufs;
-  Result := inherited;
 end;
 
-function TRadioAudioOut.DoStop: Boolean;
+procedure TRadioAudioOut.DoBeforeDestroy;
 begin
   CloseDev;
-  Result := inherited;
 end;
 
 procedure TRadioAudioOut.Describe(Strs: TStrings);
@@ -361,6 +358,7 @@ begin
   for I := 0 to High(FEvents) do
     FEvents[I] := CreateEvent(nil, True, True, nil);
   FFmt := AUDIO_OUT_FMT_STEREO_IQ;
+  DoStart;
 end;
 
 destructor TRadioAudioOut.Destroy;

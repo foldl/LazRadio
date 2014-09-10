@@ -67,6 +67,7 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
     procedure DoConfigure; override;
+    procedure DoBeforeDestroy; override;
     procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -116,7 +117,7 @@ begin
   RTLeventResetEvent(FStartEvent);
   RTLeventResetEvent(FStoppedEvent);
   F := FFile;
-  if FThread.Terminated then goto Wait;
+  if FThread.Terminated then Exit;
 
   if not Assigned(F) then goto Wait;
 
@@ -212,6 +213,14 @@ begin
   D.Free;
 end;
 
+procedure TRadioDumpPlayer.DoBeforeDestroy;
+begin
+  FFile := nil;
+
+  RTLeventSetEvent(FStartEvent);
+  RTLeventWaitFor(FStoppedEvent);
+end;
+
 procedure TRadioDumpPlayer.Describe(Strs: TStrings);
 begin
   if Assigned(FFile) then
@@ -231,12 +240,6 @@ end;
 
 destructor TRadioDumpPlayer.Destroy;
 begin
-  FFile := nil;
-  FThread.Terminate;
-
-  RTLeventSetEvent(FStartEvent);
-  RTLeventWaitFor(FStoppedEvent);
-
   RTLeventdestroy(FStartEvent);
   RTLeventdestroy(FStoppedEvent);
   inherited Destroy;

@@ -35,6 +35,8 @@ type
     procedure ThreadFun(Thread: TGenericRadioThread); override;
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
+
+    procedure DoStopThreadFun; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -363,7 +365,7 @@ var
 begin
   if FSampleRate = 0 then goto Wait;
 
-  while (not FThread.Terminated) and Assigned(DefOutput.TryAlloc(I)) do
+  if Assigned(DefOutput.TryAlloc(I)) do
   begin
     C := DefOutput.BufferSize;
     D := D + C / FSampleRate;
@@ -391,6 +393,11 @@ begin
     Strs.Add('^bWave: ^nTriangle');
   if FWaveFunc <> @GenSin then
     Strs.Add(Format('^bDuty: ^n%d%', [FRatio]));
+end;
+
+procedure TRadioOscillator.DoStopThreadFun;
+begin
+  // nop
 end;
 
 initialization

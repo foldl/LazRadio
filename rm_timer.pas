@@ -25,11 +25,11 @@ type
     procedure Unlock;
     procedure OnTimer(Sender: TObject);
     // *lock* required when call FindTimer
-    function  FindTimer(const Id: PtrUInt): PTimerNode;
+    function  FindTimer(const AId: PtrUInt): PTimerNode;
   protected
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
-    procedure CreateTimer(const Id: PtrUInt; const AInterval: Cardinal);
-    procedure DeleteTimer(const Id: PtrUInt);
+    procedure CreateTimer(const AId: PtrUInt; const AInterval: Cardinal);
+    procedure DeleteTimer(const AId: PtrUInt);
 
     procedure Describe(Strs: TStrings); override;
   end;
@@ -69,7 +69,7 @@ begin
   RadioPostMessage(M, Cardinal(P^.Id shr 32));
 end;
 
-function TRadioTimer.FindTimer(const Id: PtrUInt): PTimerNode;
+function TRadioTimer.FindTimer(const AId: PtrUInt): PTimerNode;
 begin
   Result := FHead.Next;
   while Assigned(Result) and (Result^.Id <> Id) do Result := Result^.Next;
@@ -94,7 +94,8 @@ begin
   end;
 end;
 
-procedure TRadioTimer.CreateTimer(const Id: PtrUInt; const AInterval: Cardinal);
+procedure TRadioTimer.CreateTimer(const AId: PtrUInt; const AInterval: Cardinal
+  );
 label
   Quit;
 var
@@ -120,7 +121,7 @@ Quit:
   Unlock;
 end;
 
-procedure TRadioTimer.DeleteTimer(const Id: PtrUInt);
+procedure TRadioTimer.DeleteTimer(const AId: PtrUInt);
 var
   P: PTimerNode;
 begin

@@ -36,6 +36,8 @@ type
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
     procedure ThreadFun(Thread: TGenericRadioThread); override;
     procedure Describe(Strs: TStrings); override;
+
+    procedure DoStopThreadFun; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -59,13 +61,17 @@ begin
 end;
 
 procedure TRtlModule.CloseDev;
+var
+  D: PRtlSdrDev;
 begin
   if Assigned(FDev) then
   begin
     FClosing := True;
-    RtlSdrCancelAsync(FDev);
-    RtlSdrClose(FDev);
+    D := FDev;
     FDev := nil;
+
+    RtlSdrCancelAsync(D);
+    RtlSdrClose(D);
     FClosing := False;
   end;
 end;
@@ -200,7 +206,8 @@ begin
         GraphInvalidate;
       end;
     PRIV_RM_RTL_DATA:
-      DataIn(PByte(Msg.ParamH), Msg.ParamL);
+      if Assigned(FDev) then
+        DataIn(PByte(Msg.ParamH), Msg.ParamL);
   else
     inherited;
   end;
@@ -224,12 +231,9 @@ end;
 
 destructor TRtlModule.Destroy;
 begin
-  CloseDev;
-  RTLeventSetEvent(FEvent);
   RTLeventdestroy(FEvent);
   FConfig.Free;
-  RtlSdrClose(FDev);
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TRtlModule.DoConfigure;
@@ -256,14 +260,11 @@ end;
 
 procedure TRtlModule.ThreadFun(Thread: TGenericRadioThread);
 begin
-  while True do
-  begin
-    RTLeventWaitFor(FEvent);
-    RTLeventResetEvent(FEvent);
-    if not Assigned(FDev) then
-      Break;
-    RtlSdrReadASync(FDev, TRtlSdrReadAsyncCB(@SDRCallback), Self, 0, DefOutput.BufferSize * 2);
-  end;
+  RTLeventWaitFor(FEvent);
+  RTLeventResetEvent(FEvent);
+  if not Assigned(FDev) then
+    Continue;
+  RtlSdrReadASync(FDev, TRtlSdrReadAsyncCB(@SDRCallback), Self, 0, DefOutput.BufferSize * 2);
 end;
 
 procedure TRtlModule.Describe(Strs: TStrings);
@@ -274,6 +275,12 @@ begin
     Exit;
   end;
   Strs.Add(Format('^bTunner Gain: ^n%.1fdB', [RtlSdrGetTunerGain(FDev) / 10]));
+end;
+
+procedure TRtlModule.DoStopThreadFun;
+begin
+  CloseDev;
+  RTLeventSetEvent(FEvent);
 end;
 
 initialization

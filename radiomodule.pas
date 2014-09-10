@@ -9,6 +9,8 @@ uses
 
 type
 
+  TModuleId = Cardinal;
+
   PDataStreamRec = ^TDataStreamRec;
   TDataStreamRec = record
     Next: PDataStreamRec;
@@ -167,6 +169,7 @@ type
     FRunQueue: TRadioRunQueue;
     FCPUTime: TTime;
     FRunThread: TRadioThread;
+    FDestroying: Boolean;
     function GetNeedExec: Boolean;
     procedure SetInQueue(AValue: Boolean);
     procedure RequestSchudule;
@@ -190,7 +193,7 @@ type
   end;
 
   TDataListener = record
-    M: TRadioModule;
+    M: TModuleId;
     SourcePort: Integer;
     TargetPort: Integer;
   end;
@@ -208,13 +211,14 @@ type
     BODER_WIDTH = 2;
   private
     FGraphNode: TGenEntityNode;
+    FId: TModuleId;
     FRefCount: Integer;
     FDefOutput: TRadioDataStream;
-    FRunning: Boolean;
     FDescStr: TStringList;
     FGUIBtnRect: TRect;
     FConfigBtnRect: TRect;
-    function FindDataListener(Listener: TRadioModule): Integer;
+    FModRef: Integer;
+    procedure SetId(AValue: TModuleId);
   protected
     FIcon: string;
     FHasGUI: Boolean;
@@ -234,6 +238,13 @@ type
   protected
     FDataListeners: TList;
     FFeatureListeners: TList;
+    function  FindDataListener(Listener: TModuleId): Integer;
+    procedure AddDataListener(Listener: TModuleId; const SourcePort, TargetPort: Integer);
+    procedure AddFeatureListener(Listener: TModuleId);
+    procedure RemoveDataListener(Listener: TModuleId);
+    procedure RemoveFeatureListener(Listener: TModuleId);
+    procedure ClearDataListeners;
+    procedure ClearFeatureListeners;
 
     function Alloc(Stream: TRadioDataStream; out Index: Integer): PComplex;
 
@@ -254,8 +265,7 @@ type
     procedure DoShowGUI; virtual;
 
     procedure DoReset; virtual;
-    function DoStart: Boolean; virtual;
-    function DoStop: Boolean; virtual;
+    procedure DoBeforeDestroy; virtual;
 
     procedure Describe(Strs: TStrings); virtual;
   public
@@ -273,18 +283,11 @@ type
     procedure Broadcast(const Msg: TRadioMessage); overload;
     procedure Broadcast(const AId: Integer; const AParamH, AParamL: PtrUInt); overload;
 
-    procedure AddDataListener(Listener: TRadioModule; const SourcePort, TargetPort: Integer);
-    procedure AddFeatureListener(Listener: TRadioModule);
-    procedure RemoveDataListener(Listener: TRadioModule);
-    procedure RemoveFeatureListener(Listener: TRadioModule);
-    procedure ClearDataListeners;
-    procedure ClearFeatureListeners;
-
     procedure ReceiveData(const P: PComplex; const Len: Integer); virtual; overload;
     procedure ReceiveData(const Port: Integer; const P: PComplex; const Len: Integer); virtual;
 
     property DefOutput: TRadioDataStream read FDefOutput;
-    property Running: Boolean read FRunning;
+    property Id: TModuleId read FId write SetId;
   end;
 
   TRadioModuleClass = class of TRadioModule;
@@ -312,8 +315,8 @@ type
   protected
     FThread: TGenericRadioThread;
     procedure ThreadFun(Thread: TGenericRadioThread); virtual;
-    function DoStart: Boolean; override;
-    function DoStop: Boolean; override;
+    procedure DoStopThreadFun; virtual; abstract;
+    procedure DoBeforeDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -468,7 +471,7 @@ function ClassNameToModuleName(const S: string): string;
 implementation
 
 uses
-  Math, SignalBasic, utils, util_math, util_config;
+  Math, SignalBasic, utils, util_math, util_config, RadioSystem;
 
 var
   RadioGlobalCS: TRTLCriticalSection;
@@ -914,7 +917,7 @@ end;
 
 function TRadioMessageQueue.GetNeedExec: Boolean;
 begin
-  Result := Assigned(FFirstExecMsg.Next);
+  Result := (not FDestroying) and Assigned(FFirstExecMsg.Next);
 end;
 
 procedure TRadioMessageQueue.SetInQueue(AValue: Boolean);
@@ -928,13 +931,20 @@ begin
     Req := not AValue;
   end;
   Unlock;
+
+  if FDestroying and (not FInQueue) then
+  begin
+    Free;
+    Exit;
+  end;
+
   if Req and NeedExecution then
     RequestSchudule;
 end;
 
 procedure TRadioMessageQueue.RequestSchudule;
 begin
-  if not FInQueue then FRunQueue.Request(Self);
+  if (not FDestroying) and (not FInQueue) then FRunQueue.Request(Self);
 end;
 
 procedure TRadioMessageQueue.MessageExceute;
@@ -943,6 +953,7 @@ var
   Ret: Integer = 0;
   P: PRadioMessageNode;
 begin
+  if FDestroying then Exit;
   if not Assigned(FFirstExecMsg.Next) then Exit;
   Lock;
   P := FFirstExecMsg.Next;
@@ -984,6 +995,8 @@ procedure TRadioMessageQueue.StoreMessage(const Msg: TRadioMessage);
 var
   P: PRadioMessageNode;
 begin
+  if FDestroying then Exit;
+
   New(P);
   P^.Msg := Msg;
   P^.Next := nil;
@@ -1023,16 +1036,12 @@ begin
   Sleep(10);
 end;
 
-function TBackgroundRadioModule.DoStart: Boolean;
+procedure TBackgroundRadioModule.DoBeforeDestroy;
 begin
-  FThread.Suspended := False;
-  Result := inherited;
-end;
-
-function TBackgroundRadioModule.DoStop: Boolean;
-begin
-  FThread.Suspended := True;
-  Result := inherited;
+  FThread.Terminate;
+  DoStopThreadFun;
+  FThread.WaitFor;
+  inherited DoBeforeDestroy;
 end;
 
 constructor TBackgroundRadioModule.Create(RunQueue: TRadioRunQueue);
@@ -1549,7 +1558,8 @@ begin
     if L^.SourcePort <> PortId then Continue;
 
     M.ParamL := (L^.TargetPort shl 16) or Index;
-    L^.M.PostMessage(M);
+    if not RadioPostMessage(M, L^.M) then
+      Release(Index);
   end;
 end;
 
@@ -1571,7 +1581,6 @@ end;
 
 procedure TRadioModule.PostMessage(const Msg: TRadioMessage);
 begin
-  //if (not Running) and (Msg.Id <> RM_CONTROL) then Exit;
   StoreMessage(Msg);
 end;
 
@@ -1598,7 +1607,7 @@ begin
   Broadcast(M);
 end;
 
-function TRadioModule.FindDataListener(Listener: TRadioModule): Integer;
+function TRadioModule.FindDataListener(Listener: TModuleId): Integer;
 var
   I: Integer;
 begin
@@ -1631,6 +1640,12 @@ begin
   end
   else
     Result := 'text (0,0),' + ClassNameToModuleName(ClassName);
+end;
+
+procedure TRadioModule.SetId(AValue: TModuleId);
+begin
+  if FId <> 0 then Exception.Create('TRadioModule.SetId');
+  FId := AValue;
 end;
 
 function TRadioModule.QueryInterface(constref iid: tguid; out obj): longint;
@@ -1788,6 +1803,7 @@ begin
     Result := Stream.TryAlloc(Index);
   end;
 end;
+
 {
 function TRadioModule.Alloc(Stream: TRadioDataStream; out Index: Integer
   ): PComplex;
@@ -1808,6 +1824,7 @@ begin
   end;
 end;
 }
+
 procedure TRadioModule.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
@@ -1818,7 +1835,17 @@ begin
     RM_SET_FEATURE: RMSetFeature(Msg, Ret);
     RM_TIMER      : RMTimer(Msg, Ret);
     RM_CONFIGURE:   TThread.Synchronize(nil, @DoConfigure);
-    RM_SHOW_MAIN_GUI:   TThread.Synchronize(nil, @DoShowGUI)
+    RM_SHOW_MAIN_GUI:   TThread.Synchronize(nil, @DoShowGUI);
+    RM_DESTROY:
+      begin
+        // Free is called when InQueue := False
+        FDestroying := True;
+        DoBeforeDestroy;
+      end;
+    RM_ADD_FEATURE_LISTENER: AddFeatureListener(Msg.ParamL);
+    RM_REMOVE_FEATURE_LISTENER: RemoveFeatureListener(Msg.ParamL);
+    RM_ADD_DATA_LISTENER: AddDataListener(Msg.ParamL, Msg.ParamH shr 16, Msg.ParamH and $FFFF);
+    RM_REMOVE_DATA_LISTENER: RemoveDataListener(Msg.ParamL)
   else
   end;
 end;
@@ -1826,9 +1853,7 @@ end;
 procedure TRadioModule.RMControl(const Msg: TRadioMessage; var Ret: Integer);
 begin
   case Msg.ParamH of
-    0: FRunning := DoStart;
-    1: FRunning := not DoStop;
-    2: DoReset;
+    RM_CONTROL_RESET: DoReset;
   end;
 end;
 
@@ -1902,14 +1927,9 @@ begin
   MessageQueueReset;
 end;
 
-function TRadioModule.DoStart: Boolean;
+procedure TRadioModule.DoBeforeDestroy;
 begin
-  Result := True;
-end;
 
-function TRadioModule.DoStop: Boolean;
-begin
-  Result := True;
 end;
 
 procedure TRadioModule.Describe(Strs: TStrings);
@@ -1922,15 +1942,20 @@ const
   PORT_DATA    = 1;
 var
   P: Pointer;
+  M: TRadioModule;
 begin
   for P in FDataListeners do
   begin
-    Graph.AddConnection(GraphNode, PDataListener(P)^.M.GraphNode,
+    M := TRadioSystem.Instance.ModuleFromId[PDataListener(P)^.M];
+    if not Assigned(M) then Continue;
+    Graph.AddConnection(GraphNode, M.GraphNode,
                         PDataListener(P)^.SourcePort + PORT_DATA, PDataListener(P)^.TargetPort + PORT_DATA);
   end;
 
   for P in FFeatureListeners do
   begin
+    M := TRadioSystem.Instance.ModuleFromId[TModuleId(P)];
+    if not Assigned(M) then Continue;
     Graph.AddConnection(GraphNode, TRadioModule(P).GraphNode,
                         PORT_FEATURE, PORT_FEATURE).PenStyle := psDash;
   end;
@@ -1949,6 +1974,8 @@ end;
 
 destructor TRadioModule.Destroy;
 begin
+  if not FDestroying then raise Exception.Create('Destroy must be done by message: RM_DESTROY');
+  TRadioLogger.Report(llWarn, 'free %s, cpu time %.f', [FName, FCPUTime * MSecsPerDay]);
   FDescStr.Free;
   ClearDataListeners;
   FDefOutput.SafeFree;
@@ -1983,8 +2010,8 @@ begin
 
 end;
 
-procedure TRadioModule.AddDataListener(Listener: TRadioModule;
-  const SourcePort, TargetPort: Integer);
+procedure TRadioModule.AddDataListener(Listener: TModuleId; const SourcePort,
+  TargetPort: Integer);
 var
   P: PDataListener;
 begin
@@ -1998,13 +2025,13 @@ begin
   end;
 end;
 
-procedure TRadioModule.AddFeatureListener(Listener: TRadioModule);
+procedure TRadioModule.AddFeatureListener(Listener: TModuleId);
 begin
   with FFeatureListeners do
-    if IndexOf(Listener) < 0 then Add(Listener);
+    if IndexOf(Pointer(Listener)) < 0 then Add(Pointer(Listener));
 end;
 
-procedure TRadioModule.RemoveDataListener(Listener: TRadioModule);
+procedure TRadioModule.RemoveDataListener(Listener: TModuleId);
 var
   I: Integer;
   P: PDataListener;
@@ -2018,9 +2045,9 @@ begin
   end;
 end;
 
-procedure TRadioModule.RemoveFeatureListener(Listener: TRadioModule);
+procedure TRadioModule.RemoveFeatureListener(Listener: TModuleId);
 begin
-  FFeatureListeners.Remove(Listener);
+  FFeatureListeners.Remove(Pointer(Listener));
 end;
 
 procedure TRadioModule.ClearDataListeners;
