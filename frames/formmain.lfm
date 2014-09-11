@@ -1,11 +1,11 @@
 object MainForm: TMainForm
-  Left = 434
+  Left = 373
   Height = 700
-  Top = 243
-  Width = 1065
+  Top = 470
+  Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
-  ClientWidth = 1065
+  ClientWidth = 1008
   Font.Name = 'Tahoma'
   Menu = MainMenu1
   OnClose = FormClose
@@ -17,11 +17,11 @@ object MainForm: TMainForm
     Left = 0
     Height = 518
     Top = 26
-    Width = 1065
+    Width = 1008
     Align = alClient
     Caption = 'Panel1'
     ClientHeight = 518
-    ClientWidth = 1065
+    ClientWidth = 1008
     TabOrder = 0
     object Button1: TButton
       Left = 440
@@ -36,7 +36,7 @@ object MainForm: TMainForm
       Left = 1
       Height = 516
       Top = 1
-      Width = 843
+      Width = 786
       ActivePage = SheetGraph
       Align = alClient
       TabIndex = 1
@@ -558,12 +558,12 @@ object MainForm: TMainForm
       object SheetGraph: TTabSheet
         Caption = 'Graph'
         ClientHeight = 484
-        ClientWidth = 835
+        ClientWidth = 778
         object ScrollBox1: TScrollBox
           Left = 0
           Height = 484
           Top = 0
-          Width = 835
+          Width = 778
           HorzScrollBar.Increment = 80
           HorzScrollBar.Page = 600
           HorzScrollBar.Tracking = True
@@ -572,7 +572,7 @@ object MainForm: TMainForm
           VertScrollBar.Tracking = True
           Align = alClient
           ClientHeight = 480
-          ClientWidth = 831
+          ClientWidth = 774
           TabOrder = 0
           TabStop = True
           object PaintBox1: TPaintBox
@@ -587,7 +587,7 @@ object MainForm: TMainForm
       end
     end
     object Panel2: TPanel
-      Left = 849
+      Left = 792
       Height = 516
       Top = 1
       Width = 215
@@ -639,7 +639,7 @@ object MainForm: TMainForm
       end
     end
     object Splitter2: TSplitter
-      Left = 844
+      Left = 787
       Height = 516
       Top = 1
       Width = 5
@@ -652,7 +652,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 5
     Top = 544
-    Width = 1065
+    Width = 1008
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -660,7 +660,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 22
     Top = 658
-    Width = 1065
+    Width = 1008
     Panels = <>
   end
   object Button3: TButton
@@ -694,7 +694,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 26
     Top = 0
-    Width = 1065
+    Width = 1008
     Caption = 'ToolBar1'
     TabOrder = 6
     object ToolButton1: TToolButton
@@ -708,17 +708,17 @@ object MainForm: TMainForm
     Left = 0
     Height = 109
     Top = 549
-    Width = 1065
+    Width = 1008
     Align = alBottom
     Caption = 'Panel4'
     ClientHeight = 109
-    ClientWidth = 1065
+    ClientWidth = 1008
     TabOrder = 7
     object TreeView1: TTreeView
       Left = 1
       Height = 78
       Top = 1
-      Width = 1063
+      Width = 1006
       Align = alClient
       DefaultItemHeight = 16
       Font.Height = -12
@@ -730,11 +730,11 @@ object MainForm: TMainForm
       Left = 1
       Height = 29
       Top = 79
-      Width = 1063
+      Width = 1006
       Align = alBottom
       Caption = 'Panel5'
       ClientHeight = 29
-      ClientWidth = 1063
+      ClientWidth = 1006
       TabOrder = 1
       object Label1: TLabel
         Left = 1
@@ -750,7 +750,7 @@ object MainForm: TMainForm
         Left = 135
         Height = 27
         Top = 1
-        Width = 927
+        Width = 870
         Align = alClient
         Font.Name = 'Consolas'
         ParentFont = False

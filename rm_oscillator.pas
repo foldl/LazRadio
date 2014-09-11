@@ -365,7 +365,7 @@ var
 begin
   if FSampleRate = 0 then goto Wait;
 
-  if Assigned(DefOutput.TryAlloc(I)) do
+  if Assigned(DefOutput.TryAlloc(I)) then
   begin
     C := DefOutput.BufferSize;
     D := D + C / FSampleRate;

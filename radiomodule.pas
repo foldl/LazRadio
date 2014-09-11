@@ -143,10 +143,10 @@ type
     FFirstJob: TMessageQueueNode;
     FIdleNode: TRadioThreadNode;
     FWorkers: array of TRadioThread;
+    FDestroying: Boolean;
   private
     procedure Schedule;
     procedure Lock;
-
     procedure UnLock;
     procedure WorkerIdle(Worker: TRadioThread);
   public
@@ -154,7 +154,6 @@ type
     destructor Destroy; override;
     function  PickJob: TRadioMessageQueue;
     procedure Request(Job: TRadioMessageQueue);
-    procedure Terminate;
   end;
 
   { TRadioMessageQueue }
@@ -1068,6 +1067,7 @@ constructor TGenericRadioThread.Create(Module: TBackgroundRadioModule);
 begin
   inherited Create(True);
   FModule := Module;
+  Start;
 end;
 
 { TRadioRunQueue }
@@ -1079,6 +1079,8 @@ var
   T: PRadioThreadNode;
   P: PMessageQueueNode;
 begin
+  if FDestroying then Exit;
+
 again:
   Lock;
   if Assigned(FFirstJob.Next) and Assigned(FIdleNode.Next) then
@@ -1110,6 +1112,7 @@ end;
 
 procedure TRadioRunQueue.WorkerIdle(Worker: TRadioThread);
 begin
+  if FDestroying then Exit;
   Lock;
   Worker.Node^.Next := FIdleNode.Next;
   FIdleNode.Next := Worker.Node;
@@ -1141,6 +1144,10 @@ destructor TRadioRunQueue.Destroy;
 var
   T: TRadioThread;
 begin
+  FDestroying := True;
+  Lock;
+  FIdleNode.Next := nil;
+  Unlock;
   for T in FWorkers do T.Free;
   inherited;
 end;
@@ -1150,6 +1157,8 @@ var
   P: PMessageQueueNode;
 begin
   Result := nil;
+  if FDestroying then Exit;
+
   if not Assigned(FFirstJob.Next) then Exit;
 
   Lock;
@@ -1206,13 +1215,6 @@ begin
   Unlock;
 
   Schedule;
-end;
-
-procedure TRadioRunQueue.Terminate;
-var
-  T: TRadioThread;
-begin
-  for T in FWorkers do T.Terminate;
 end;
 
 { TRadioThread }
@@ -1589,7 +1591,7 @@ var
   P: Pointer;
 begin
   for P in FFeatureListeners do
-    TRadioModule(P).PostMessage(Msg);
+    RadioPostMessage(Msg, TModuleId(P));
 end;
 
 procedure TRadioModule.Broadcast(const AId: Integer; const AParamH,
@@ -1842,10 +1844,19 @@ begin
         FDestroying := True;
         DoBeforeDestroy;
       end;
-    RM_ADD_FEATURE_LISTENER: AddFeatureListener(Msg.ParamL);
-    RM_REMOVE_FEATURE_LISTENER: RemoveFeatureListener(Msg.ParamL);
+    RM_ADD_FEATURE_LISTENER:
+      AddFeatureListener(Msg.ParamL);
+    RM_REMOVE_FEATURE_LISTENER:
+      if Msg.ParamL <> INVALID_MODULE_ID then
+        RemoveFeatureListener(Msg.ParamL)
+      else
+        ClearFeatureListeners;
     RM_ADD_DATA_LISTENER: AddDataListener(Msg.ParamL, Msg.ParamH shr 16, Msg.ParamH and $FFFF);
-    RM_REMOVE_DATA_LISTENER: RemoveDataListener(Msg.ParamL)
+    RM_REMOVE_DATA_LISTENER:
+      if Msg.ParamL <> INVALID_MODULE_ID then
+        RemoveDataListener(Msg.ParamL)
+      else
+        ClearDataListeners
   else
   end;
 end;
@@ -1956,7 +1967,7 @@ begin
   begin
     M := TRadioSystem.Instance.ModuleFromId[TModuleId(P)];
     if not Assigned(M) then Continue;
-    Graph.AddConnection(GraphNode, TRadioModule(P).GraphNode,
+    Graph.AddConnection(GraphNode, M.GraphNode,
                         PORT_FEATURE, PORT_FEATURE).PenStyle := psDash;
   end;
 end;

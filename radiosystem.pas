@@ -27,6 +27,7 @@ type
     FInstance: TRadioSystem; static;
     FGraph: TGenGraph;
     FIdCounter: TModuleId;
+    FCS: TRTLCriticalSection;
     function GetModule(const Name: string): TRadioModule;
     function GetModuleFromId(const Id: TModuleId): TRadioModule;
   protected
@@ -107,12 +108,14 @@ function RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId
 var
   R: TRadioModule;
 begin
+  Result := False;
+  if not Assigned(TRadioSystem.Instance) then Exit;
   R := TRadioSystem.Instance.ModuleFromId[Receiver];
   Result := Assigned(R);
   if Result then
     RadioPostMessage(M, R)
   else
-    TRadioLogger.Report(llError, 'module "%s" not found', [Receiver]);
+    TRadioLogger.Report(llError, 'module "%d" not found', [Receiver]);
 end;
 
 function RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
@@ -145,17 +148,18 @@ end;
 
 procedure TRadioSystem.Lock;
 begin
-  RadioGlobalLock;
+  EnterCriticalsection(FCS);
 end;
 
 procedure TRadioSystem.Unlock;
 begin
-  RadioGlobalUnlock;
+  LeaveCriticalsection(FCS);
 end;
 
 constructor TRadioSystem.Create;
 begin
   if Assigned(FInstance) then raise Exception.Create('TRadioSystem is singleton');
+  InitCriticalSection(FCS);
   FRunQueue   := TRadioRunQueue.Create(4);
   FModuleDict := TSuperTableString.Create;
   FId2ModuleDict := TSuperTableString.Create;
@@ -166,11 +170,14 @@ end;
 destructor TRadioSystem.Destroy;
 begin
   FGraph.Free;
-  FInstance := nil;
+
   Reset;
+  FRunQueue.Free;
+
+  FInstance := nil;
   FId2ModuleDict.Free;
   FModuleDict.Free;
-  FRunQueue.Free;
+  DoneCriticalsection(FCS);
   inherited;
 end;
 
@@ -179,7 +186,9 @@ var
   A: TSuperAvlEntry;
   M: TRadioModule;
 begin
+  Lock;
   FId2ModuleDict.Clear(True);
+  Unlock;
   for A in FModuleDict do
   begin
     M := TRadioModule(PtrUInt(A.Value.AsInteger));

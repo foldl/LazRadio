@@ -125,7 +125,7 @@ end;
 
 procedure TMainForm.Button4Click(Sender: TObject);
 begin
-  FSystem.Graph.FullRender;
+  FSystem.ShowSystem;
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -349,7 +349,7 @@ begin
   FSystem.AddModule('mixer2', 'FreqMixer');
   FSystem.AddModule('f1', 'Filter');
   FSystem.AddModule('f2', 'Filter');
-  FSystem.AddModule('f3', 'Filter');
+  // FSystem.AddModule('f3', 'Filter');
   FSystem.AddModule('fd1', 'FreqDiscriminator');
   FSystem.AddModule('fm1', 'FMReceiver');
   FSystem.AddModule('re1', 'Resampling');
@@ -365,11 +365,11 @@ begin
   FSystem.ConnectBoth('fd1', 'f2');
   FSystem.ConnectBoth('f2', 'mixer2');
   FSystem.ConnectBoth('mixer2', 're2');
-  FSystem.ConnectBoth('re2', 'f3');
-  FSystem.ConnectBoth('f3', 'rds');
+  FSystem.ConnectBoth('re2', 'rds');
 
   FSystem.ConnectBoth('mixer1', 's');
-  FSystem.ConnectBoth('f2', 's2');
+  FSystem.ConnectBoth('re2', 's2');
+  FSystem.ConnectBoth('re2', 'scope');
 
   // set-up channel 1
   RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
@@ -377,16 +377,18 @@ begin
 
   RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 2048000, 'f1');
-  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, -9000, 9000, 'f1');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 200, 'f1');
+  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, -90000, 90000, 'f1');
+  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f2');
+  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 200, 'f2');
   RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 2500, 57000 + 2500, 'f2');
-
+  {
   RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f3');
   RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftBPF), 'f3');
   RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f3');
   RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f3');
   RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f3');
-
+  }
   //FSystem.ConnectBoth('src', 'dump');
 
  // FSystem.ConnectBoth('f', 's2');

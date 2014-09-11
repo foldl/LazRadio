@@ -194,8 +194,8 @@ const
                  OSCILLOSCOPE_SET_Y_AUTO     = 4; // enable Y auto; ParamL: 1-enable, 0-disable
                  OSCILLOSCOPE_SET_SWEEP_SPEED= 5; // sweep speed in second; ParamL: float as Integer
                  OSCILLOSCOPE_SET_RUN_MODE   = 6; // set run mode
-                                            OSCILLOSCOPE_RUN_SINGLE    = 0;
-                                            OSCILLOSCOPE_RUN_CONTINOUS = 1;
+                                            OSCILLOSCOPE_RUN_SINGLE    = 1;
+                                            OSCILLOSCOPE_RUN_CONTINOUS = 0;
                  OSCILLOSCOPE_SET_DRAW_MIN_INTERVAL = 7; // minimal interval between updates in milli-second
                  OSCILLOSCOPE_SET_SAMPLE_GRID= 8; // grid lines based on samples; ParamL: sample number (0 to disable)
                  OSCILLOSCOPE_GUI_RESET      = 9; // gui resized; ParamL: ignore

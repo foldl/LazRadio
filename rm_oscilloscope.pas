@@ -68,8 +68,8 @@ const
   FRAME_MARGIN_TOP    = 1;
   FRAME_MARGIN_BOTTOM = 16;
 
-  THEME: array [0..6] of TColor =   // 482559, 654847,
-    (505739, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712);
+  THEME: array [0..8] of TColor =
+    (505739, 482559, 654847, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712);
 
 { TRadioOscilloscope }
 
@@ -428,7 +428,7 @@ begin
   end;
   with FGraphBox.DrawBuffer.Canvas do
   begin
-    Pen.Width := 2;
+    Pen.Width := 1;
     Pen.Style := psSolid;
     Pen.Color := THEME[0];
     Polyline(FPts);

@@ -262,9 +262,8 @@ procedure TRtlModule.ThreadFun(Thread: TGenericRadioThread);
 begin
   RTLeventWaitFor(FEvent);
   RTLeventResetEvent(FEvent);
-  if not Assigned(FDev) then
-    Continue;
-  RtlSdrReadASync(FDev, TRtlSdrReadAsyncCB(@SDRCallback), Self, 0, DefOutput.BufferSize * 2);
+  if Assigned(FDev) then
+    RtlSdrReadASync(FDev, TRtlSdrReadAsyncCB(@SDRCallback), Self, 0, DefOutput.BufferSize * 2);
 end;
 
 procedure TRtlModule.Describe(Strs: TStrings);
