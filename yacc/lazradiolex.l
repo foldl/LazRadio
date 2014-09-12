@@ -7,23 +7,11 @@
 
 %{
 
-procedure commenteof;
-  begin
-    writeln('unexpected EOF inside comment at line ', yylineno);
-  end(*commenteof*);
-
-function upper(str : String) : String;
-  (* converts str to uppercase *)
-  var i : integer;
-  begin
-    for i := 1 to length(str) do
-      str[i] := upCase(str[i]);
-    upper := str
-  end(*upper*);
 
 function is_keyword(id : string; var token : integer) : boolean;
   (* checks whether id is Pascal keyword; if so, returns corresponding
      token number in token *)
+  (* built-in functions/procedures are treated as keywords too *)
   const
     id_len = 20;
   type
@@ -31,28 +19,34 @@ function is_keyword(id : string; var token : integer) : boolean;
   const
     no_of_keywords = 13;
     keyword : array [1..no_of_keywords] of Ident = (
-      'AND',       'BEGIN', 
-      'CONST',     'DIV',    
-      'ELSE',      'END',        
+      'AND',       'ARCCOS',    'ARCSIN',   'BEGIN', 
+      'CONST',     'COS',       'DIV',    
+      'ELSE',      'END',       'EXP', 
       'FILE',   
-      'LAZRADIO',
-      'MOD',       'NOT',   
-      'OR',   
-      'VAR',
+      'ID',
+      'LAZRADIO',   'LOG',
+      'MOD',        'NOT',   
+      'OR',         'ORD',
+      'PRED',
+      'SIN',        'SUCC',    'STR',    'VAL',
+      'VAR',        'WRITE',    'WRITELN',
       'XOR');
     keyword_token : array [1..no_of_keywords] of integer = (
-      _AND,        _BEGIN, 
-      _CONST,      _DIV,
-      _ELSE,       _END,   
+      _AND,        _ARCCOS,     _ARCSIN,    _BEGIN, 
+      _CONST,      _COS,        _DIV,
+      _ELSE,       _END,        _EXP,
       _FILE,  
-      _LAZRADIO,
-      _MOD,        _NOT,
-      _OR, 
-      _VAR,
+      _ID,
+      _LAZRADIO,    _LOG,
+      _MOD,         _NOT,
+      _OR,          _ORD,
+      _PRED,
+      _SIN,         _SUCC,      _STR,     _VAL,
+      _VAR,         _WRITELN,   _WRITELN,
       _XOR);
   var m, n, k : integer;
   begin
-    id := upper(id);
+    id := UpperCase(id);
     (* binary search: *)
     m := 1; n := no_of_keywords;
     while m<=n do
@@ -116,7 +110,6 @@ var c  : char;
 "*"			return(STAR);
 "**"		return(STARSTAR);
 "->"        return(CONNDATA);
-"^"			return(UPARROW);
 "!"			return(SEND);
 "//"        begin
                 repeat
