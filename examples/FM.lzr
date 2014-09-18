@@ -1,0 +1,18 @@
+lazradio FM-receiver;
+
+var
+  t, b, c: Integer;
+  src: Rtl;
+  s: Spectrum;
+  fd: FreqDiscriminator;
+  fm: FMReceiver;
+  out: AudioOut;  
+
+begin
+  src => fd => fm => out;
+  src => s;
+  s :> fd;
+  t := 100;
+  src ! {RM_CONFIG};
+end.
+

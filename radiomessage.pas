@@ -17,15 +17,11 @@ const
 
   // RM_DATA_DONE       = 1;  // this is stupid
 
-  // ParamH: Frequency   (0)    ParamL: in Hz
-  // ParamH: Sample rate (1)    ParamL: in samples per second
-  // ParamH: Bandwidth   (2)    ParamL: in Hz
-  // ParamH: Phase ad    (3)    ParamL: in rad (cast from Float)
   RM_SET_FEATURE     = 2;
-                     RM_FEATURE_FREQ        = 0;
-                     RM_FEATURE_SAMPLE_RATE = 1;
-                     RM_FEATURE_BANDWIDTH   = 2;
-                     RM_FEATURE_PHASE_ADJ   = 3;
+                     RM_FEATURE_FREQ        = 0;    // ParamL: in Hz
+                     RM_FEATURE_SAMPLE_RATE = 1;    // ParamL: in samples per second
+                     RM_FEATURE_BANDWIDTH   = 2;    // ParamL: in Hz
+                     RM_FEATURE_PHASE_ADJ   = 3;    // ParamL: in rad (cast from Float)
 
   // ParamH: RESET (0)    ParamL: ignore
   RM_CONTROL         = 3;
@@ -81,7 +77,7 @@ const
   RM_DUMP_PLAYER_START = 130;       // ParamH: TStream
   RM_DUMP_PLAYER_STOP  = 131;       // no param, TStream is closed here
 
-  RM_FILTER_SET      = 140;             // ParamH: Coeff(PComplex); ParamL: Filter taps
+  RM_FILTER_SET      = 140;         // ParamH: Coeff(PComplex); ParamL: Filter taps
   RM_FILTER_REDESIGN = 141;         // Apply RM_FILTER_CONFIG settings
   RM_FILTER_CONFIG   = 142;
                    FILTER_TYPE       = 0;   // ParamL: TFilterType
@@ -91,7 +87,6 @@ const
                    FILTER_WINDOW     = 4;   // ParamL: TWindowFunction
                    FILTER_WINDOW_PARAM = 5; // ParamL: param1 of window function (Single)
                    FILTER_COEFF_DOMAIN = 6;   // ParamL: filter coefficients domain (complex (0 - default) or real (1))
-
                                        FILTER_COEFF_DOMAIN_COMPLEX = 0;
                                        FILTER_COEFF_DOMAIN_REAL    = 1;
   RM_FILTER_USE_BAND_SELECT = 143;  // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
@@ -109,7 +104,6 @@ const
                   SET_WATERFALL_TICK = 9; // draw waterfall tick per ParamL seconds (zero = OFF)
                   SET_DRAW_MIN_INTERVAL = 10; // minimal interval between updates in milli-second
                   SET_DATA_DOMAIN   = 11; // set data domain: complex(0: default), real (1)
-
                                     SPECTRUM_DATA_DOMAIN_COMPLEX = 0;
                                     SPECTRUM_DATA_DOMAIN_REAL    = 1;
 
@@ -141,8 +135,7 @@ const
   RM_OSC_WAVE = 170;
                   SET_WAVE_SIN      = 0;
                   SET_WAVE_RECT     = 1;  // ParamL = DutyRadio (in percentage)
-                  SET_WAVE_TRIANGLE = 2;  // ParamL = VertexPostition
-                                          //          (in percentage: 0 = reverse sawtooth; 50 = triangle; 100 = (almost) sawtooth)
+                  SET_WAVE_TRIANGLE = 2;  // ParamL = VertexPostition (in percentage: 0 = reverse sawtooth; 50 = triangle; 100 = (almost) sawtooth)
 
   // reconfig, ParamH: output rate (Hz); ParamL: LPF cutoff frequency (Hz)
   RM_RESAMPLING_CFG = 180;

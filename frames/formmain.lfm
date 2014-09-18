@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 373
+  Left = 301
   Height = 700
-  Top = 470
+  Top = 276
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -10,17 +10,18 @@ object MainForm: TMainForm
   Menu = MainMenu1
   OnClose = FormClose
   OnCreate = FormCreate
+  OnShow = FormShow
   Position = poScreenCenter
   LCLVersion = '1.2.4.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
-    Height = 518
-    Top = 26
+    Height = 520
+    Top = 24
     Width = 1008
     Align = alClient
     Caption = 'Panel1'
-    ClientHeight = 518
+    ClientHeight = 520
     ClientWidth = 1008
     TabOrder = 0
     object Button1: TButton
@@ -34,22 +35,23 @@ object MainForm: TMainForm
     end
     object PageControl1: TPageControl
       Left = 1
-      Height = 516
+      Height = 518
       Top = 1
       Width = 786
-      ActivePage = SheetGraph
+      ActivePage = SheetCode
       Align = alClient
-      TabIndex = 1
+      ShowTabs = False
+      TabIndex = 0
       TabOrder = 1
       object SheetCode: TTabSheet
         Caption = 'Code'
-        ClientHeight = 484
-        ClientWidth = 835
+        ClientHeight = 510
+        ClientWidth = 778
         inline SynEdit1: TSynEdit
           Left = 0
-          Height = 484
+          Height = 510
           Top = 0
-          Width = 835
+          Width = 778
           Align = alClient
           Font.Height = -13
           Font.Name = 'Courier New'
@@ -515,6 +517,7 @@ object MainForm: TMainForm
           LineHighlightColor.Background = clNone
           LineHighlightColor.Foreground = clNone
           LineHighlightColor.FrameEdges = sfeAround
+          OnChange = SynEdit1Change
           inline SynLeftGutterPartList1: TSynGutterPartList
             object SynGutterMarks1: TSynGutterMarks
               Width = 24
@@ -557,11 +560,11 @@ object MainForm: TMainForm
       end
       object SheetGraph: TTabSheet
         Caption = 'Graph'
-        ClientHeight = 484
+        ClientHeight = 494
         ClientWidth = 778
         object ScrollBox1: TScrollBox
           Left = 0
-          Height = 484
+          Height = 470
           Top = 0
           Width = 778
           HorzScrollBar.Increment = 80
@@ -571,7 +574,7 @@ object MainForm: TMainForm
           VertScrollBar.Page = 432
           VertScrollBar.Tracking = True
           Align = alClient
-          ClientHeight = 480
+          ClientHeight = 466
           ClientWidth = 774
           TabOrder = 0
           TabStop = True
@@ -588,12 +591,12 @@ object MainForm: TMainForm
     end
     object Panel2: TPanel
       Left = 792
-      Height = 516
+      Height = 518
       Top = 1
       Width = 215
       Align = alRight
       Caption = 'Panel2'
-      ClientHeight = 516
+      ClientHeight = 518
       ClientWidth = 215
       TabOrder = 2
       object Panel3: TPanel
@@ -623,7 +626,7 @@ object MainForm: TMainForm
       end
       object ModuleTree: TTreeView
         Left = 1
-        Height = 475
+        Height = 477
         Top = 40
         Width = 213
         Align = alClient
@@ -640,7 +643,7 @@ object MainForm: TMainForm
     end
     object Splitter2: TSplitter
       Left = 787
-      Height = 516
+      Height = 518
       Top = 1
       Width = 5
       Align = alRight
@@ -690,20 +693,6 @@ object MainForm: TMainForm
     OnClick = Button4Click
     TabOrder = 5
   end
-  object ToolBar1: TToolBar
-    Left = 0
-    Height = 26
-    Top = 0
-    Width = 1008
-    Caption = 'ToolBar1'
-    TabOrder = 6
-    object ToolButton1: TToolButton
-      Left = 1
-      Top = 2
-      Caption = 'ToolButton1'
-      Style = tbsCheck
-    end
-  end
   object Panel4: TPanel
     Left = 0
     Height = 109
@@ -713,7 +702,7 @@ object MainForm: TMainForm
     Caption = 'Panel4'
     ClientHeight = 109
     ClientWidth = 1008
-    TabOrder = 7
+    TabOrder = 6
     object TreeView1: TTreeView
       Left = 1
       Height = 78
@@ -759,11 +748,74 @@ object MainForm: TMainForm
       end
     end
   end
+  object ToolBar1: TToolBar
+    Left = 0
+    Height = 24
+    Top = 0
+    Width = 1008
+    Caption = 'ToolBar1'
+    TabOrder = 7
+    object BitBtn3: TBitBtn
+      Left = 1
+      Height = 22
+      Top = 2
+      Width = 55
+      Action = PannelCode
+      Align = alLeft
+      TabOrder = 0
+    end
+    object BitBtn4: TBitBtn
+      Left = 56
+      Height = 22
+      Top = 2
+      Width = 47
+      Action = PannelGraph
+      Align = alLeft
+      TabOrder = 1
+    end
+    object ToolButton1: TToolButton
+      Left = 103
+      Top = 2
+      Width = 5
+      Caption = 'ToolButton1'
+      Style = tbsDivider
+    end
+  end
   object MainMenu1: TMainMenu
     left = 256
     top = 40
     object MenuItem1: TMenuItem
       Caption = '&File'
+      object MenuItem17: TMenuItem
+        Action = FileNew
+      end
+      object MenuItem12: TMenuItem
+        Action = FileOpen
+      end
+      object MenuItem14: TMenuItem
+        Action = FileSave
+      end
+      object MenuItem13: TMenuItem
+        Action = FileSaveAs
+      end
+      object MenuItem18: TMenuItem
+        Action = FileClose
+      end
+      object MenuItem15: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem16: TMenuItem
+        Action = FileExit
+      end
+    end
+    object MenuItem9: TMenuItem
+      Caption = '&System'
+      object MenuItem10: TMenuItem
+        Action = SystemStart
+      end
+      object MenuItem11: TMenuItem
+        Action = SystemStop
+      end
     end
     object MenuItem3: TMenuItem
       Caption = '&View'
@@ -795,37 +847,37 @@ object MainForm: TMainForm
       Caption = '&Help on Help'
       Hint = 'Help on help'
     end
-    object FileOpen1: TFileOpen
+    object FileOpen: TFileOpen
       Category = 'File'
       Caption = '&Open ...'
+      Dialog.DefaultExt = '.lzr'
+      Dialog.Filter = '.LazRadio File (*.lzr) | *.lzr'
       Hint = 'Open'
       ShortCut = 16463
+      OnAccept = FileOpenAccept
     end
-    object FileSaveAs1: TFileSaveAs
+    object FileSaveAs: TFileSaveAs
       Category = 'File'
       Caption = 'Save &As ...'
+      Dialog.DefaultExt = '.lzr'
+      Dialog.Filter = '.LazRadio File (*.lzr) | *.lzr'
       Hint = 'Save As'
+      OnAccept = FileSaveAsAccept
     end
-    object FileExit1: TFileExit
+    object FileExit: TFileExit
       Category = 'File'
       Caption = 'E&xit'
       Hint = 'Exit'
     end
     object SystemStart: TAction
       Category = 'System'
-      Caption = 'SystemStart'
+      Caption = 'Go'
+      OnExecute = SystemStartExecute
     end
     object SystemStop: TAction
       Category = 'System'
-      Caption = 'SystemStop'
-    end
-    object SystemReset: TAction
-      Category = 'System'
-      Caption = 'SystemReset'
-    end
-    object SystemPause: TAction
-      Category = 'System'
-      Caption = 'SystemPause'
+      Caption = 'Stop'
+      OnExecute = SystemStopExecute
     end
     object ViewLogVerbose: TAction
       Category = 'View'
@@ -853,6 +905,32 @@ object MainForm: TMainForm
       Caption = 'Error'
       OnExecute = ViewLogLevelExecute
       OnUpdate = ViewLogLevelUpdate
+    end
+    object FileSave: TAction
+      Category = 'File'
+      Caption = 'Save'
+      OnExecute = FileSaveExecute
+    end
+    object PannelCode: TAction
+      Category = 'GUI'
+      Caption = 'Code'
+      OnExecute = PannelCodeExecute
+      OnUpdate = PannelCodeUpdate
+    end
+    object PannelGraph: TAction
+      Category = 'GUI'
+      Caption = 'Graph'
+      OnExecute = PannelGraphExecute
+      OnUpdate = PannelGraphUpdate
+    end
+    object FileNew: TAction
+      Category = 'File'
+      Caption = 'New'
+    end
+    object FileClose: TAction
+      Category = 'File'
+      Caption = 'Close'
+      OnExecute = FileCloseExecute
     end
   end
   object ModuleImgs: TImageList

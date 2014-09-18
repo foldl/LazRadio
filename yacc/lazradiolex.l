@@ -1,12 +1,16 @@
 
 %{
 
-(* lexical analyzer for LazRadio .lar file *)
+(* lexical analyzer for LazRadio .lzr file *)
 
 %}
 
 %{
 
+function str_escape(s: string): string;
+begin
+  str_escape := StringReplace(s, '''''', '''', [rfReplaceAll]);
+end;
 
 function is_keyword(id : string; var token : integer) : boolean;
   (* checks whether id is Pascal keyword; if so, returns corresponding
@@ -17,32 +21,34 @@ function is_keyword(id : string; var token : integer) : boolean;
   type
     Ident = string[id_len];
   const
-    no_of_keywords = 13;
+    no_of_keywords = 29;
     keyword : array [1..no_of_keywords] of Ident = (
       'AND',       'ARCCOS',    'ARCSIN',   'BEGIN', 
       'CONST',     'COS',       'DIV',    
-      'ELSE',      'END',       'EXP', 
+      'END',       'EXP', 
       'FILE',   
-      'ID',
+      'ID',         'INTEGER',
       'LAZRADIO',   'LOG',
       'MOD',        'NOT',   
       'OR',         'ORD',
       'PRED',
-      'SIN',        'SUCC',    'STR',    'VAL',
-      'VAR',        'WRITE',    'WRITELN',
+      'REAL',
+      'SIN',        'SUCC',    'STR',         'STRING',
+      'VAL',        'VAR',        'WRITE',    'WRITELN',
       'XOR');
     keyword_token : array [1..no_of_keywords] of integer = (
       _AND,        _ARCCOS,     _ARCSIN,    _BEGIN, 
       _CONST,      _COS,        _DIV,
-      _ELSE,       _END,        _EXP,
+      _END,        _EXP,
       _FILE,  
-      _ID,
+      _ID,         _INTEGER,
       _LAZRADIO,    _LOG,
       _MOD,         _NOT,
       _OR,          _ORD,
       _PRED,
-      _SIN,         _SUCC,      _STR,     _VAL,
-      _VAR,         _WRITELN,   _WRITELN,
+      _REAL,
+      _SIN,         _SUCC,      _STR,    _STRING,
+      _VAL,         _VAR,         _WRITELN,   _WRITELN,
       _XOR);
   var m, n, k : integer;
   begin
@@ -76,20 +82,28 @@ NQUOTE    [^']
 
 var c  : char;
     kw : integer;
-
+    result : integer;
 %}
 
-[a-zA-Z]([\-a-zA-Z0-9])*	if is_keyword(yytext, kw) then
+[a-zA-Z]([_\-a-zA-Z0-9])*	if is_keyword(yytext, kw) then
                           return(kw)
-                        else
+                        else begin
+                          yylval.yyString := yytext;
                           return(IDENTIFIER);
+                        end;
 
 ":="			return(ASSIGNMENT);
-'({NQUOTE}|'')+'	return(CHARACTER_STRING);
+'({NQUOTE}|'')+'	begin
+                      yylval.yyString := str_escape(yytext);
+                      return(CHARACTER_STRING);
+                    end;
 ":"			return(COLON);
 ":>"			return(CONNFEATURE);
 ","			return(COMMA);
-[0-9]+			return(DIGSEQ);
+[0-9]+			begin
+                  yylval.yyInteger := StrToInt(yytext);
+                  return(DIGSEQ);
+                end;
 "."			return(DOT);
 "="			return(EQUAL);
 "=>"			return(CONNFEATUREDATA);
@@ -103,7 +117,13 @@ var c  : char;
 "<>"			return(NOTEQUAL);
 "+"			return(PLUS);
 "]"			return(RBRAC);
-[0-9]+"."[0-9]+		return(REALNUMBER);
+[0-9]+"."[0-9]+	 begin
+                   val(yytext, yylval.yyReal, result);
+				   if result=0 then
+				     return(REALNUMBER)
+				   else
+				     return(ILLEGAL)
+                 end;
 ")"			return(RPAREN);
 ";"			return(SEMICOLON);
 "/"			return(SLASH);
@@ -122,5 +142,4 @@ var c  : char;
 "{"		    return(LBRACE);
 "}"		    return(RBRACE);
 [ \n\t\f]		;
-
-.			return(ILLEGAL);
+.			begin return(ILLEGAL); end;
