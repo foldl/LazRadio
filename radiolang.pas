@@ -59,14 +59,7 @@ implementation
 uses
   util_config;
 
-function DefVars(Lst: string; const T: Integer): Boolean;
-var
-  L: TStringList;
-begin
-  L := TStringList.Create;
-  L.Delimiter := ' ';
-  L.StrictDelimiter := True;
-end;
+
 
 { TRadioLangRT }
 

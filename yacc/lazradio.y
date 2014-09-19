@@ -14,7 +14,7 @@ type
 
 var filename : String;
     yywrap: Boolean = True;
-    SymTable: ISuperObject;
+    SymTable: ISuperObject = nil;
     OnCreateModule: TCreateModule = nil;
     OnSendMessage: TSendMessage = nil;
 
@@ -26,8 +26,26 @@ procedure yyerror(msg : string);
 
 function IsDefined(const S: string): Boolean;
 begin
-  Result := Assigned(SymTable.O[S]);
+  IsDefined := Assigned(SymTable.O[S]);
 end;
+
+function DefVars(const S: string; const T: string): Boolean;
+var
+  L: TStringList;
+  V: string;
+begin
+  L := TStringList.Create;
+  L.Delimiter := ' ';
+  L.StrictDelimiter := True;
+  Result := False;
+  for V in L do
+  begin
+    if IsDefined(V) then Exit;
+    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"', [T, S]));
+  end;
+  Result := True;
+end;
+
 
 %}
 
@@ -53,6 +71,8 @@ end;
 
 %type <String>     identifier
 %type <String>     identifier_list
+
+%type <String>     type_denoter
 
 %%
 
@@ -142,8 +162,10 @@ variable_declaration_list :
     | variable_declaration
     ;
 
-variable_declaration : identifier_list COLON _INTEGER { writeln('define Integer var: ', $1); }
-    | identifier_list COLON type_denoter
+variable_declaration : identifier_list COLON _INTEGER { DefVars($1, 'int'); }
+    | identifier_list COLON _REAL { DefVars($1, 'real'); }
+    | identifier_list COLON _STRING { DefVars($1, 'string'); }
+    | identifier_list COLON type_denoter { DefVars($1, $3); }
     ;
 
 formal_parameter_list : LPAREN formal_parameter_section_list RPAREN ;
@@ -246,11 +268,7 @@ actual_parameter_list : actual_parameter_list comma actual_parameter
     | actual_parameter
     ;
 
-type_denoter: _INTEGER
-    | _REAL
-    | _STRING
-    | _BOOLEAN
-    | identifier /* module types */
+type_denoter: identifier /* module types */
     ;
 
 /*
