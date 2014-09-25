@@ -59,8 +59,6 @@ implementation
 uses
   util_config;
 
-
-
 { TRadioLangRT }
 
 procedure TRadioLangRT.LoadMsgConsts;

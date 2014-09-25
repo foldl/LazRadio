@@ -11,10 +11,16 @@ uses SysUtils, Classes, LexLib, YaccLib, superobject;
 type
   TCreateModule = function (const Name: string; const T: string): Boolean of object;
   TSendMessage = function (const Name: string; const V1, V2, V3: PtrUInt): Boolean of object;
+  
+  TRegName = string;
 
 var filename : String;
+    ObjTypes: ISuperObject = nil;
     yywrap: Boolean = True;
+    RtOK: Boolean;
     SymTable: ISuperObject = nil;
+    RegTable: ISuperObject = nil;
+    RegIndex: Integer = 0;
     OnCreateModule: TCreateModule = nil;
     OnSendMessage: TSendMessage = nil;
 
@@ -29,10 +35,54 @@ begin
   IsDefined := Assigned(SymTable.O[S]);
 end;
 
+function AllocReg(const T: string): TRegName;
+begin
+  AllocReg := IntToStr(RegIndex);
+  RegTable.O[AllocReg] := SO(Format('type: "%s"', [T]));
+  Inc(RegIndex);
+end;
+
+function RegWrite(const R: TRegName; const V: Integer): Boolean; overload;
+begin
+  RegWrite := RegTable.S[R + '.type'] = 'int';
+  if RegWrite then 
+    RegTable.I[R + '.value'] := V;
+end;
+
+function RegWrite(const R: TRegName; const V: Boolean): Boolean; 
+begin
+  RegWrite := RegTable.S[R + '.type'] = 'boolean';
+  if RegWrite then 
+    RegTable.B[R + '.value'] := V;
+end;
+
+function RegWrite(const R: TRegName; const V: Real): Boolean; 
+begin
+  RegWrite := RegTable.S[R + '.type'] = 'real';
+  if RegWrite then 
+    RegTable.D[R + '.value'] := V;
+end;
+
+function RegWrite(const R: TRegName; const V: string): Boolean;
+begin
+  RegWrite := RegTable.S[R + '.type'] = 'string';
+  if RegWrite then 
+    RegTable.S[R + '.value'] := V;
+end;
+
+function RegWriteSym(const R: TRegName; const V: string): Boolean;
+begin
+  RegWrite := RegTable.S[R + '.type'] = 'symbol';
+  if RegWrite then 
+    RegTable.S[R + '.name'] := V;
+end;
+
+// for built-in types
 function DefVars(const S: string; const T: string): Boolean;
 var
   L: TStringList;
   V: string;
+  R: string;
 begin
   L := TStringList.Create;
   L.Delimiter := ' ';
@@ -40,10 +90,420 @@ begin
   Result := False;
   for V in L do
   begin
-    if IsDefined(V) then Exit;
-    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"', [T, S]));
+    if IsDefined(V) then 
+    begin
+      yyerror(Format('"%s" is already defined.', [V]));
+      Exit;
+    end;
+    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"; reg: "%s"', [T, S, AllocReg(T)]));
   end;
   Result := True;
+end;
+
+function DefObjs(const S: string; const T: string): Boolean;
+var
+  L: TStringList;
+  V: string;
+  R: string;
+begin
+  L := TStringList.Create;
+  L.Delimiter := ' ';
+  L.StrictDelimiter := True;
+  Result := False;
+  for V in L do
+  begin
+    if IsDefined(V) then 
+    begin
+      yyerror(Format('"%s" is already defined.', [V]));
+      Exit;
+    end;
+    R := UpperCase(T);
+    if not Assigned(ObjTypes.O[R]) then 
+    begin
+      yyerror(Format('type "%s" is unkown.', [T]));
+      Exit;
+    end;
+    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"', [R, S]));
+  end;
+  Result := True;
+end;
+
+function RegPlus(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  case RegTable.S[R1 + '.type'] of
+    'string':
+      begin
+        bOK := RegTable.S[R2 + '.type'] = 'string';
+        if bOK then
+        begin
+          RegPlus := AllocReg('string');
+          RegTable.S[RegPlus + '.value'] := RegTable.S[R1 + '.value'] + RegTable.S[R2 + '.value'];
+        end
+        else
+          yyerror('type error: string type required');
+      end;
+    'int':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegPlus := AllocReg('int');
+          RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] + RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegPlus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] + RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+    'real':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegPlus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] + RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegPlus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] + RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+  else
+    bOK := False;
+    yyerror('type for + error');
+  end;
+end;
+
+function RegMinus(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  case RegTable.S[R1 + '.type'] of
+    'int':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegMinus := AllocReg('int');
+          RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegMinus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+    'real':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegMinus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegMinus := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+  else
+    bOK := False;
+    yyerror('type for - error');
+  end;
+end;
+
+function RegTimes(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  case RegTable.S[R1 + '.type'] of
+    'int':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegTimes := AllocReg('int');
+          RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] * RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegTimes := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] * RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+    'real':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegTimes := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] * RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegTimes := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] * RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+  else
+    bOK := False;
+    yyerror('type for * error');
+  end;
+end;
+
+function RegDivide(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  try
+  case RegTable.S[R1 + '.type'] of
+    'int':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegDivide := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] / RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegDivide := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] / RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+    'real':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegDivide := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] / RegTable.I[R2 + '.value'];
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegDivide := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] / RegTable.D[R2 + '.value'];
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+  else
+    bOK := False;
+    yyerror('type for / error');
+  end;
+  except
+    bOK := False;
+    yyerror('runtime error');
+  end;
+end;
+
+function RegPower(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  case RegTable.S[R1 + '.type'] of
+    'int':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegPower := AllocReg('int');
+          RegTable.I[RegPlus + '.value'] := Round(Pow(RegTable.I[R1 + '.value'], RegTable.I[R2 + '.value']));
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegPower := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := Pow(RegTable.I[R1 + '.value'], RegTable.D[R2 + '.value']);
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+    'real':
+      begin
+        bOK := True;
+        if RegTable.S[R2 + '.type'] = 'int' then
+        begin
+          RegPower := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := Pow(RegTable.D[R1 + '.value'], RegTable.I[R2 + '.value']);
+        end
+        else if RegTable.S[R2 + '.type'] = 'real' then
+        begin
+          RegPower := AllocReg('real');
+          RegTable.D[RegPlus + '.value'] := Pow(RegTable.D[R1 + '.value'], RegTable.D[R2 + '.value']);
+        end
+        else begin
+          bOK := False;
+          yyerror('type error: real or integer type required');
+        end;
+      end;
+  else
+    bOK := False;
+    yyerror('type for ** error');
+  end;
+end;
+
+function RegMod(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  bOK := (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int');
+  bOK := bOK and (RegTable.I[R2 + '.value'] <> 0);
+  if bOK then
+  begin
+    RegMod := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] mod RegTable.I[R2 + '.value'];
+  end
+  else
+    yyerror('type for mod error');
+end;
+
+function RegDiv(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  bOK := (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int');
+  bOK := bOK and (RegTable.I[R2 + '.value'] <> 0);
+  if bOK then
+  begin
+    RegDiv := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] div RegTable.I[R2 + '.value'];
+  end
+  else
+    yyerror('type for mod error');
+end; 
+
+function RegAnd(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  bOK := True;
+  if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
+  begin
+    RegAnd := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] and RegTable.I[R2 + '.value'];
+  end
+  else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
+  begin
+    RegAnd := AllocReg('boolean');
+    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] and RegTable.B[R2 + '.value'];
+  end
+  else begin
+    bOK := False;
+    yyerror('type for AND error');
+  end;
+end;
+
+function RegOr(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  bOK := True;
+  if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
+  begin
+    RegOr := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] or RegTable.I[R2 + '.value'];
+  end
+  else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
+  begin
+    RegOr := AllocReg('boolean');
+    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] or RegTable.B[R2 + '.value'];
+  end
+  else begin
+    bOK := False;
+    yyerror('type for OR error');
+  end;
+end;
+
+function RegXor(const R1, R2: TRegName; out bOK: Boolean): string;
+begin
+  bOK := True;
+  if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
+  begin
+    RegXor := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] xor RegTable.I[R2 + '.value'];
+  end
+  else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
+  begin
+    RegXor := AllocReg('boolean');
+    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] xor RegTable.B[R2 + '.value'];
+  end
+  else begin
+    bOK := False;
+    yyerror('type for XOR error');
+  end;
+end;
+
+function RegNot(const R1; out bOK: Boolean): string;
+begin
+  bOK := True;
+  if RegTable.S[R1 + '.type']  = 'int' then
+  begin
+    RegNot := AllocReg('int');
+    RegTable.I[RegPlus + '.value'] := not RegTable.I[R1 + '.value'];
+  end
+  else if RegTable.S[R1 + '.type']  = 'boolean' then
+  begin
+    RegNot := AllocReg('boolean');
+    RegTable.B[RegPlus + '.value'] := not RegTable.B[R1 + '.value'];
+  end
+  else begin
+    bOK := False;
+    yyerror('type for NOT error');
+  end;
+end;
+
+function RegNeg(const R1; out bOK: Boolean): string;
+begin
+  bOK := True;
+  case RegTable.S[R1 + '.type'] of
+    'int':
+      begin
+        RegNeg := AllocReg('int');
+        RegTable.I[RegNeg + '.value'] := -RegTable.I[R1 + '.value'];
+      end;
+    'real':
+      begin
+        RegNeg := AllocReg('real');
+        RegTable.D[RegNeg + '.value'] := -RegTable.D[R1 + '.value'];
+      end
+  else
+    bOK := False;
+    yyerror('type for - error');
+  end;
+end; 
+
+function ReadValue(const S: string; out bOK: Boolean): string;
+begin
+  bOK := False;
+  if Length(S) < 1 then Exit;
+  bOK := True;
+  if S[1] in ['0'-'9'] then
+    RegValue := S
+  else if Assigned(SymTable.O[S + '.reg']) then
+    RegValue := SymTable.S[S + '.reg']
+  else begin
+    bOK := False;
+    yyerror(Format('"%s" bad variable', [S]));
+  end;
 end;
 
 
@@ -64,10 +524,19 @@ end;
 
 %token ILLEGAL
 
-%token <Real>       REALNUMBER
-%token <Integer>    DIGSEQ
+%token <String>     REALNUMBER
+%token <String>     DIGSEQ
 %token <String>     CHARACTER_STRING
 %token <String>     IDENTIFIER
+
+%type <String>     cexpression
+%type <String>     csimple_expression
+%type <String>     cterm
+%type <String>     cfactor
+%type <String>     cexponentiation
+%type <String>     cprimary
+%type <String>     constant
+%type <String>     non_string
 
 %type <String>     identifier
 %type <String>     identifier_list
@@ -104,54 +573,60 @@ constant_list : constant_list constant_definition
     | constant_definition
     ;
 
-constant_definition : identifier EQUAL cexpression semicolon
+constant_definition : identifier EQUAL cexpression semicolon { if DefVars($1, RegTable.S[$3 + '.type']) then
+                                                                 SymTable.S['$1' + '.reg'] := $3; }
     ;
 
 /*constant : cexpression ;        /* good stuff! */
 
 cexpression : csimple_expression
-    | csimple_expression relop csimple_expression
+    | csimple_expression EQUAL csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpEqu); }
+    | csimple_expression NOTEQUAL csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) <> cpEqu); }
+    | csimple_expression LT csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpLess); }
+    | csimple_expression GT csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpGreat); }
+    | csimple_expression LE csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpLess, cpEqu]); }
+    | csimple_expression GE csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpGreat, cpEqu]); }
     ;
 
 csimple_expression : cterm
-    | csimple_expression addop cterm
+    | csimple_expression PLUS cterm { $$ := RegPlus($1, $3, RtOK); }
+    | csimple_expression MINUS cterm { $$ := RegMinus($1, $3, RtOK); }
+    | csimple_expression _OR cterm { $$ := RegOr($1, $3, RtOK); }
     ;
 
 cterm : cfactor
-    | cterm mulop cfactor
+    | cterm STAR cfactor { $$ := RegTimes($1, $3, RtOK); }
+    | cterm SLASH cfactor { $$ := RegDivide($1, $3, RtOK); }
+    | cterm _DIV cfactor { $$ := RegDiv($1, $3, RtOK); }
+    | cterm _MOD cfactor { $$ := RegMod($1, $3, RtOK); }
+    | cterm _AND cfactor { $$ := RegAnd($1, $3, RtOK); }
     ;
 
-cfactor : sign cfactor
+cfactor : PLUS cfactor { $$ := $2; }
+    | MINUS cfactor { $$ := RegNeg($2, RtOK); }
     | cexponentiation
     ;
 
 cexponentiation : cprimary
-    | cprimary STARSTAR cexponentiation
+    | cprimary STARSTAR cexponentiation { $$ := RegPow($1, $3, RtOK); }
     ;
 
-cprimary : identifier
-    | LPAREN cexpression RPAREN
+cprimary : identifier { $$ := ReadValue($1); }
+    | LPAREN cexpression RPAREN { $$ := $2; }
     | unsigned_constant
-    | _NOT cprimary
+    | _NOT cprimary { $$ := RegNot($2, RtOK); }
     ;
 
 constant : non_string
-    | sign non_string
+    | PLUS non_string   { $$ := $2; }
+    | MINUS non_string  { $$ := RegNeg($2, RtOK); }
     | CHARACTER_STRING
     ;
 
-sign : PLUS
-    | MINUS
-    ;
-
 non_string : DIGSEQ
-    | identifier
+    | identifier  { $$ := ReadValue($1); }
     | REALNUMBER
     ;
-
-base_type : ordinal_type ;
-
-domain_type : identifier ;
 
 variable_declaration_part : _VAR variable_declaration_list semicolon
     |
@@ -195,7 +670,7 @@ function_block : block ;
 
 statement_part : compound_statement ;
 
-compound_statement : _BEGIN statement_sequence _END {writeln('compound_statement');};
+compound_statement : _BEGIN statement_sequence _END;
 
 statement_sequence : statement_sequence semicolon statement
     | statement
@@ -245,8 +720,6 @@ assignment_statement : variable_access ASSIGNMENT expression
     ;
 
 variable_access : identifier
-    | indexed_variable
-    | field_designator
     ;
 
 indexed_variable : variable_access LBRAC index_expression_list RBRAC
@@ -327,26 +800,6 @@ unsigned_integer : DIGSEQ
 unsigned_real : REALNUMBER
     ;
 
-addop: PLUS
-    | MINUS
-    | _OR
-    ;
-
-mulop : STAR
-    | SLASH
-    | _DIV
-    | _MOD
-    | _AND
-    ;
-
-relop : EQUAL
-    | NOTEQUAL
-    | LT
-    | GT
-    | LE
-    | GE
-    ;
-
 identifier : IDENTIFIER 
     ;
 
@@ -362,6 +815,8 @@ comma : COMMA
 
 begin
   if not Assigned(SymTable) then SymTable := SO('{}');
+  if not Assigned(ObjTypes) then ObjTypes := SO('{}');
+  RegTable := SO('{}');
 
   filename := paramStr(1);
   if filename='' then

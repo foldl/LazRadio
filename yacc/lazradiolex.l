@@ -83,6 +83,7 @@ NQUOTE    [^']
 var c  : char;
     kw : integer;
     result : integer;
+    tr: Real;
 %}
 
 [a-zA-Z]([_\-a-zA-Z0-9])*	if is_keyword(yytext, kw) then
@@ -94,14 +95,16 @@ var c  : char;
 
 ":="			return(ASSIGNMENT);
 '({NQUOTE}|'')+'	begin
-                      yylval.yyString := str_escape(yytext);
+                      yylval.yyString := AllocReg('string');
+                      RegWrite(yylval.yyString, str_escape(yytext)); 
                       return(CHARACTER_STRING);
                     end;
 ":"			return(COLON);
 ":>"			return(CONNFEATURE);
 ","			return(COMMA);
 [0-9]+			begin
-                  yylval.yyInteger := StrToInt(yytext);
+                  yylval.yyString := AllocReg('int');
+                  RegWrite(yylval.yyString, StrToInt(yytext)); 
                   return(DIGSEQ);
                 end;
 "."			return(DOT);
@@ -118,9 +121,13 @@ var c  : char;
 "+"			return(PLUS);
 "]"			return(RBRAC);
 [0-9]+"."[0-9]+	 begin
-                   val(yytext, yylval.yyReal, result);
+                   val(yytext, tr, result);
 				   if result=0 then
+                   begin
+                     yylval.yyString := AllocReg('real');
+                     RegWrite(yylval.yyString, tr);
 				     return(REALNUMBER)
+                   end
 				   else
 				     return(ILLEGAL)
                  end;
