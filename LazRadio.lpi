@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="44">
+    <Units Count="45">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -287,6 +287,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioLang"/>
       </Unit43>
+      <Unit44>
+        <Filename Value="lzr_interpreter.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="lzr_interpreter"/>
+      </Unit44>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="70">
+    <Units Count="72">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -81,11 +81,10 @@
         <Filename Value="rm_oscillator.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_oscillator"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="353"/>
-        <CursorPos X="16" Y="376"/>
+        <TopLine Value="1"/>
+        <CursorPos X="33" Y="358"/>
         <UsageCount Value="282"/>
         <Loaded Value="True"/>
       </Unit7>
@@ -296,9 +295,9 @@
         <Filename Value="radiomessage.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioMessage"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="162"/>
+        <TopLine Value="192"/>
         <CursorPos X="54" Y="181"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
@@ -412,7 +411,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="35"/>
         <CursorPos X="34" Y="55"/>
-        <UsageCount Value="178"/>
+        <UsageCount Value="179"/>
       </Unit41>
       <Unit42>
         <Filename Value="frames\formoscilloscope.pas"/>
@@ -424,17 +423,18 @@
         <WindowIndex Value="0"/>
         <TopLine Value="100"/>
         <CursorPos X="75" Y="83"/>
-        <UsageCount Value="178"/>
+        <UsageCount Value="179"/>
       </Unit42>
       <Unit43>
         <Filename Value="radiolang.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioLang"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="25" Y="73"/>
-        <UsageCount Value="122"/>
+        <TopLine Value="47"/>
+        <CursorPos X="31" Y="60"/>
+        <UsageCount Value="123"/>
         <Loaded Value="True"/>
       </Unit43>
       <Unit44>
@@ -629,11 +629,30 @@
         <CursorPos X="3" Y="751"/>
         <UsageCount Value="6"/>
       </Unit69>
+      <Unit70>
+        <Filename Value="lzr_interpreter.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="lzr_interpreter"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="39" Y="8"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit70>
+      <Unit71>
+        <Filename Value="yacc\lazradio.pas"/>
+        <UnitName Value="lazradio"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="14"/>
+        <CursorPos X="42" Y="33"/>
+        <UsageCount Value="10"/>
+      </Unit71>
     </Units>
     <General>
       <ActiveWindowIndexAtStart Value="0"/>
     </General>
-    <JumpHistory Count="23" HistoryIndex="22">
+    <JumpHistory Count="24" HistoryIndex="23">
       <Position1>
         <Filename Value="radiolang.pas"/>
         <Caret Line="87" Column="38" TopLine="67"/>
@@ -726,6 +745,10 @@
         <Filename Value="radiolang.pas"/>
         <Caret Line="54" Column="46" TopLine="34"/>
       </Position23>
+      <Position24>
+        <Filename Value="lzr_interpreter.pas"/>
+        <Caret Line="3" Column="3" TopLine="1"/>
+      </Position24>
     </JumpHistory>
   </ProjectSession>
   <EditorMacros Count="0"/>

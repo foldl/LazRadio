@@ -10,6 +10,7 @@
 function str_escape(s: string): string;
 begin
   str_escape := StringReplace(s, '''''', '''', [rfReplaceAll]);
+  str_escape := Copy(str_escape, 2, Length(str_escape) - 2);
 end;
 
 function is_keyword(id : string; var token : integer) : boolean;

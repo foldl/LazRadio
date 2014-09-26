@@ -3,7 +3,7 @@ unit RadioLang;
 {$mode objfpc}{$H+}
 
 {
-a LazRadio project is defined by a .lar file.
+a LazRadio project is defined by a .lzr file.
 
 lazradio SYS-NAME;
 
@@ -20,13 +20,13 @@ begin
   VAR-NAME -> VAR-NAME [ -> VAR-NAME];
 
   // connect data port, soure port i, target port j
-  VAR-NAME[I] -> VAR-NAME[J];
+  VAR-NAME[I] -> [J]VAR-NAME;
 
   // connect feature and data port 0
   VAR-NAME => VAR-NAME [ => VAR-NAME];
 
   // post a message
-  VAR-NAME ! {M-ID, PRAMH, PRAML};
+  VAR-NAME ! {M-ID, PRAMH, PRAML} [! ... ];
 end.
 }
 
@@ -41,7 +41,7 @@ type
 
   TRadioLangRT = class
   private
-    FTable: ISuperObject;
+    FConstTable: ISuperObject;
     procedure LoadMsgConsts;
   public
     constructor Create;
@@ -57,7 +57,7 @@ type
 implementation
 
 uses
-  util_config;
+  util_config, lzr_interpreter;
 
 { TRadioLangRT }
 
@@ -77,7 +77,7 @@ var
       N := Obj.S['name'];
       TRadioLogger.Report(llError, N);
       if N <> '' then
-        FTable.I[N] := Obj.I['id'];
+        FConstTable.I[N] := Obj.I['id'];
       LoadConsts(Obj.O['paramh.vals']);
       LoadConsts(Obj.O['paraml.vals']);
     end;
@@ -95,7 +95,7 @@ end;
 
 constructor TRadioLangRT.Create;
 begin
-  FTable := TSuperObject.Create(stObject);
+  FConstTable := TSuperObject.Create(stObject);
   Reset;
 end;
 
@@ -106,7 +106,7 @@ end;
 
 procedure TRadioLangRT.Reset;
 begin
-  FTable.Clear(True);
+  FConstTable.Clear(True);
   LoadMsgConsts;
 end;
 

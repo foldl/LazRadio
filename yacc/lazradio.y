@@ -5,36 +5,23 @@
 */
 
 %{
-{$mode objfpc} 
-uses 
-  SysUtils, Classes, Math, LexLib, YaccLib, superobject;
+procedure EmitMsg(const Line: string);
+begin
+  if not Assigned(OnWriteLn) then
+    System.WriteLn(Line)
+  else
+    OnWriteLn(Line);
+end;
 
-type
-  TCreateModules = function (ATable: ISuperObject): Boolean of object;
-  TSendMessage = function (const Name: string; const V1, V2, V3: PtrUInt): Boolean of object;
-  TConnectFeature = function (const Source, Target: string): Boolean of object;
-  TConnectData = function (const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean of object;
-  
-  TRegName = string;
-
-var 
-    filename : String;
-    ObjTypes: ISuperObject = nil;
-    yywrap: Boolean = True;
-    RtOK: Boolean;
-    SymTable: ISuperObject = nil;
-    RegTable: ISuperObject = nil;
-    RegIndex: Integer = 0;
-    OnCreateModules: TCreateModules = nil;
-    OnSendMessage: TSendMessage = nil;
-    OnConnectFeature: TConnectFeature = nil;
-    OnConnectData: TConnectData = nil;
-    TempS: string;
+function yywrap(): Boolean;
+begin
+  yywrap := True;
+end;
 
 procedure yyerror(msg : string);
 begin
-  writeln(filename, ': ', yylineno, ': ', msg, ' at or before `', yytext, '`.');
-  yyabort;
+  EmitMsg(Format('%s: %d: %s at or before `%s`.', [filename, yylineno, msg, yytext]));
+  yychar := 0; // abort 
 end;
 
 function IsDefined(const S: string): Boolean;
@@ -106,7 +93,6 @@ var
   L: TStringList;
   V: string;
 begin
-  writeln('defvars ', S, ' ', T);
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
@@ -131,7 +117,6 @@ var
   V: string;
   R: string;
 begin
-  writeln('DefObjs ', S, ' ', T);
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
@@ -540,7 +525,7 @@ var
   T: string;
 begin
   ReadInt := 0;
-  T := ReadValue(S, bOK); writeln(RegTable.asjson(true));
+  T := ReadValue(S, bOK); 
   if bOK then 
   begin
       bOK := RegTable.S[T + '.type'] = 'int';
@@ -575,7 +560,6 @@ var
   L: TStringList;
 begin
   writeln('send ', S, ' ', M);
-
   if not Assigned(OnSendMessage) then Exit;
   
   L := TStringList.Create;
@@ -588,7 +572,6 @@ end;
 
 function ConnectFeature(const Source, Target: string): Boolean;
 begin
-  writeln('ConnectFeature ', Source, ' ', Target);
   ConnectFeature := False;
   if Assigned(OnConnectFeature) then
     ConnectFeature := OnConnectFeature(Source, Target);
@@ -690,12 +673,12 @@ end;
 
 %%
 
-file : program {writeln('program');}
+file : program {}
     | program error
 	{ yyerror(':Text follows logical end of program.'); }
     ;
 
-program : program_heading semicolon block DOT {writeln('dot!');}
+program : program_heading semicolon block DOT
     ;
 
 program_heading : _LAZRADIO identifier
@@ -707,7 +690,7 @@ identifier_list : identifier_list comma identifier { $$ := $1 + ' ' + $3}
 
 block : constant_definition_part
     variable_declaration_part
-    statement_part {writeln('block!');}
+    statement_part {}
     ;
 
 constant_definition_part : _CONST constant_list
@@ -810,6 +793,7 @@ non_labeled_closed_statement : assignment_statement
     | compound_statement
     | send_statement
     | connection_statement 
+    | write_statement
     ;
 
 non_labeled_open_statement :;
@@ -836,22 +820,23 @@ connection_data_statement: connection_data_statement_0
 connection_data_statement_0: identifier CONNDATA identifier  { ConnectData($1, $3, 0, 0); $$ := $3; }
     | connection_data_statement_0 CONNDATA identifier  { ConnectData($1, $3, 0, 0); $$ := $3; }
 
-send_statement : identifier SEND radio_message { SendMsg($1, $3); }
-    | send_statement SEND radio_message  {SendMsg($1, $3);}
+send_statement : identifier SEND radio_message { SendMsg($1, $3); $$ := $1;}
+    | send_statement SEND radio_message  {SendMsg($1, $3); $$ := $1;}
     ;
 
 radio_message : LBRACE expression COMMA expression COMMA expression RBRACE  { $$ := Format('%d %d %d', [ReadInt($2, RtOK), 
                                                                                        ReadInt($4, RtOK), ReadInt($6, RtOK)]); }
     | LBRACE expression COMMA expression _RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadInt($4, RtOK)]); }
-    | LBRACE expression RBRACE  { writeln($2); $$ := Format('%d 0 0', [ReadInt($2, RtOK)]); }
+    | LBRACE expression RBRACE  { $$ := Format('%d 0 0', [ReadInt($2, RtOK)]); }
     ;
 
-assignment_statement : identifier ASSIGNMENT expression { writeln(UpperCase($1) + '.reg'); writeln(SymTable.asjson(true)); if Assigned(SymTable.O[UpperCase($1) + '.reg']) then
+assignment_statement : identifier ASSIGNMENT expression {if Assigned(SymTable.O[UpperCase($1) + '.reg']) then
                                                             SymTable.S[UpperCase($1) + '.reg'] := $3
                                                           else
                                                             yyerror(Format('"%s" bad variable', [$1])); }
     ;
 
+write_statement : _WRITELN params { EmitMsg(ToStr($2)); } 
 index_expression : expression ;
 
 type_denoter: identifier /* module types */
@@ -904,12 +889,11 @@ function_designator : _ARCCOS params { $$ := RegAlloc('real'); RegWrite($$, arcc
     | _LOG params { $$ := RegAlloc('real'); RegWrite($$, log10(ReadReal($2, RtOK))); }
     | _PRED params { $$ := RegAlloc('int'); RegWrite($$, Pred(ReadInt($2, RtOK))); } 
     | _ROUND params { $$ := RegAlloc('int'); RegWrite($$, Round(ReadReal($2, RtOK))); } 
-    | _SIN params { $$ := RegAlloc('int'); RegWrite($$, sin(ReadReal($2, RtOK))); }
+    | _SIN params { $$ := RegAlloc('real'); RegWrite($$, sin(ReadReal($2, RtOK))); }
     | _SUCC params { $$ := RegAlloc('int'); RegWrite($$, Succ(ReadInt($2, RtOK))); } 
     | _STR params { $$ := RegAlloc('string'); RegWrite($$, ToStr($2)); } 
     | _TRUNC params { $$ := RegAlloc('int'); RegWrite($$, Trunc(ReadReal($2, RtOK))); } 
     | _VAL params { $$ := RegAlloc('real'); // TODO: } 
-    | _WRITE params { $$ := RegAlloc('real'); TempS := ToStr($2); RegWrite($$, TempS); writeln(TempS); } 
     ;
 
 params : LPAREN actual_parameter_list RPAREN   { $$ := $2; }
@@ -947,6 +931,7 @@ comma : COMMA
 
 {$I lazradiolex.pas}
 
+function Interpret(const Fn: string): Boolean;
 begin
   RegTable := SO('{}');
 
@@ -959,14 +944,8 @@ begin
   if not Assigned(ObjTypes) then
     ObjTypes := SO('{"RTL": {}, "SPECTRUM": {}, "FREQDISCRIMINATOR": {}, "FMRECEIVER": {}, "AUDIOOUT": {}}');
   
-
-  filename := paramStr(1);
-  if filename='' then
-    begin
-      write('input file: ');
-      readln(filename);
-    end;
-  assign(yyinput, filename);
+  filename := Fn;
+  assign(yyinput, Fn);
   reset(yyinput);
-  if yyparse=0 then writeln('successful parse!');
-end.
+  Interpret := yyparse=0;
+end;

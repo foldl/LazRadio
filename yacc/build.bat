@@ -1,4 +1,4 @@
-lex lazradiolex.l
-yacc lazradio.y 
+plex lazradiolex.l
+pyacc lazradio.y 
 rem ..\radiolang_parser.pas
-ppc386 lazradio.pas
+ppc386 lzr_test.pas
