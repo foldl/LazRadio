@@ -5,40 +5,47 @@
 */
 
 %{
-
-uses SysUtils, Classes, LexLib, YaccLib, superobject;
+{$mode objfpc} 
+uses 
+  SysUtils, Classes, Math, LexLib, YaccLib, superobject;
 
 type
-  TCreateModule = function (const Name: string; const T: string): Boolean of object;
+  TCreateModules = function (ATable: ISuperObject): Boolean of object;
   TSendMessage = function (const Name: string; const V1, V2, V3: PtrUInt): Boolean of object;
+  TConnectFeature = function (const Source, Target: string): Boolean of object;
+  TConnectData = function (const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean of object;
   
   TRegName = string;
 
-var filename : String;
+var 
+    filename : String;
     ObjTypes: ISuperObject = nil;
     yywrap: Boolean = True;
     RtOK: Boolean;
     SymTable: ISuperObject = nil;
     RegTable: ISuperObject = nil;
     RegIndex: Integer = 0;
-    OnCreateModule: TCreateModule = nil;
+    OnCreateModules: TCreateModules = nil;
     OnSendMessage: TSendMessage = nil;
+    OnConnectFeature: TConnectFeature = nil;
+    OnConnectData: TConnectData = nil;
+    TempS: string;
 
 procedure yyerror(msg : string);
-  begin
-    writeln(filename, ': ', yylineno, ': ',
-            msg, ' at or before `', yytext, '''.')
-  end(*yyerror*);
+begin
+  writeln(filename, ': ', yylineno, ': ', msg, ' at or before `', yytext, '`.');
+  yyabort;
+end;
 
 function IsDefined(const S: string): Boolean;
 begin
-  IsDefined := Assigned(SymTable.O[S]);
+  IsDefined := Assigned(SymTable.O[UpperCase(S)]);
 end;
 
-function AllocReg(const T: string): TRegName;
+function RegAlloc(const T: string): TRegName;
 begin
-  AllocReg := IntToStr(RegIndex);
-  RegTable.O[AllocReg] := SO(Format('type: "%s"', [T]));
+  RegAlloc := IntToStr(RegIndex);
+  RegTable.O[RegAlloc] := SO(Format('{type: "%s"}', [T]));
   Inc(RegIndex);
 end;
 
@@ -72,9 +79,25 @@ end;
 
 function RegWriteSym(const R: TRegName; const V: string): Boolean;
 begin
-  RegWrite := RegTable.S[R + '.type'] = 'symbol';
-  if RegWrite then 
+  RegWriteSym := RegTable.S[R + '.type'] = 'symbol';
+  if RegWriteSym then 
     RegTable.S[R + '.name'] := V;
+end;
+
+procedure PredefineInt(const S: string; const V: Integer);
+var
+  T: string;
+begin
+  if IsDefined(S) then 
+  begin
+    yyerror(Format('"%s" already defined', [S]));
+    Exit;
+  end;
+
+  T := RegAlloc('int');
+  RegWrite(T, V);
+  SymTable.O[UpperCase(S)] := SO(Format('{type: "int", disp: "%s", reg: "%s"}', [S, T]));
+  writeln(SymTable.asjson(true));
 end;
 
 // for built-in types
@@ -82,22 +105,24 @@ function DefVars(const S: string; const T: string): Boolean;
 var
   L: TStringList;
   V: string;
-  R: string;
 begin
+  writeln('defvars ', S, ' ', T);
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
-  Result := False;
+  L.DelimitedText := S;
+  DefVars := True;
   for V in L do
   begin
     if IsDefined(V) then 
     begin
+      DefVars := False;
       yyerror(Format('"%s" is already defined.', [V]));
-      Exit;
+      Break;
     end;
-    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"; reg: "%s"', [T, S, AllocReg(T)]));
+    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s", reg: "%s"}', [T, V, RegAlloc(T)]));
   end;
-  Result := True;
+  L.Free;
 end;
 
 function DefObjs(const S: string; const T: string): Boolean;
@@ -106,29 +131,33 @@ var
   V: string;
   R: string;
 begin
+  writeln('DefObjs ', S, ' ', T);
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
-  Result := False;
+  L.DelimitedText := S;
+  DefObjs := True;
   for V in L do
   begin
     if IsDefined(V) then 
     begin
+      DefObjs := False;  
       yyerror(Format('"%s" is already defined.', [V]));
-      Exit;
-    end;
+      Break;
+    end;  
     R := UpperCase(T);
     if not Assigned(ObjTypes.O[R]) then 
     begin
-      yyerror(Format('type "%s" is unkown.', [T]));
-      Exit;
-    end;
-    SymTable.O[UpperCase(S)] := SO(Format('type: "%s"; disp: "%s"', [R, S]));
+      DefObjs := False;
+      yyerror(Format('type "%s" is unknown.', [T]));
+      Break;
+    end; 
+    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s"}', [R, V]));
   end;
-  Result := True;
+  L.Free;
 end;
 
-function RegPlus(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegPlus(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   case RegTable.S[R1 + '.type'] of
     'string':
@@ -136,7 +165,7 @@ begin
         bOK := RegTable.S[R2 + '.type'] = 'string';
         if bOK then
         begin
-          RegPlus := AllocReg('string');
+          RegPlus := RegAlloc('string');
           RegTable.S[RegPlus + '.value'] := RegTable.S[R1 + '.value'] + RegTable.S[R2 + '.value'];
         end
         else
@@ -147,12 +176,12 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegPlus := AllocReg('int');
+          RegPlus := RegAlloc('int');
           RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] + RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegPlus := AllocReg('real');
+          RegPlus := RegAlloc('real');
           RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] + RegTable.D[R2 + '.value'];
         end
         else begin
@@ -165,12 +194,12 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegPlus := AllocReg('real');
+          RegPlus := RegAlloc('real');
           RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] + RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegPlus := AllocReg('real');
+          RegPlus := RegAlloc('real');
           RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] + RegTable.D[R2 + '.value'];
         end
         else begin
@@ -184,7 +213,7 @@ begin
   end;
 end;
 
-function RegMinus(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegMinus(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   case RegTable.S[R1 + '.type'] of
     'int':
@@ -192,13 +221,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegMinus := AllocReg('int');
-          RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.I[R2 + '.value'];
+          RegMinus := RegAlloc('int');
+          RegTable.I[RegMinus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegMinus := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.D[R2 + '.value'];
+          RegMinus := RegAlloc('real');
+          RegTable.D[RegMinus + '.value'] := RegTable.I[R1 + '.value'] - RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -210,13 +239,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegMinus := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.I[R2 + '.value'];
+          RegMinus := RegAlloc('real');
+          RegTable.D[RegMinus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegMinus := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.D[R2 + '.value'];
+          RegMinus := RegAlloc('real');
+          RegTable.D[RegMinus + '.value'] := RegTable.D[R1 + '.value'] - RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -229,7 +258,7 @@ begin
   end;
 end;
 
-function RegTimes(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegTimes(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   case RegTable.S[R1 + '.type'] of
     'int':
@@ -237,13 +266,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegTimes := AllocReg('int');
-          RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] * RegTable.I[R2 + '.value'];
+          RegTimes := RegAlloc('int');
+          RegTable.I[RegTimes + '.value'] := RegTable.I[R1 + '.value'] * RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegTimes := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] * RegTable.D[R2 + '.value'];
+          RegTimes := RegAlloc('real');
+          RegTable.D[RegTimes + '.value'] := RegTable.I[R1 + '.value'] * RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -255,13 +284,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegTimes := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] * RegTable.I[R2 + '.value'];
+          RegTimes := RegAlloc('real');
+          RegTable.D[RegTimes + '.value'] := RegTable.D[R1 + '.value'] * RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegTimes := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] * RegTable.D[R2 + '.value'];
+          RegTimes := RegAlloc('real');
+          RegTable.D[RegTimes + '.value'] := RegTable.D[R1 + '.value'] * RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -274,7 +303,7 @@ begin
   end;
 end;
 
-function RegDivide(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegDivide(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   try
   case RegTable.S[R1 + '.type'] of
@@ -283,13 +312,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegDivide := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] / RegTable.I[R2 + '.value'];
+          RegDivide := RegAlloc('real');
+          RegTable.D[RegDivide + '.value'] := RegTable.I[R1 + '.value'] / RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegDivide := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.I[R1 + '.value'] / RegTable.D[R2 + '.value'];
+          RegDivide := RegAlloc('real');
+          RegTable.D[RegDivide + '.value'] := RegTable.I[R1 + '.value'] / RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -301,13 +330,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegDivide := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] / RegTable.I[R2 + '.value'];
+          RegDivide := RegAlloc('real');
+          RegTable.D[RegDivide + '.value'] := RegTable.D[R1 + '.value'] / RegTable.I[R2 + '.value'];
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegDivide := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := RegTable.D[R1 + '.value'] / RegTable.D[R2 + '.value'];
+          RegDivide := RegAlloc('real');
+          RegTable.D[RegDivide + '.value'] := RegTable.D[R1 + '.value'] / RegTable.D[R2 + '.value'];
         end
         else begin
           bOK := False;
@@ -324,7 +353,7 @@ begin
   end;
 end;
 
-function RegPower(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegPower(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   case RegTable.S[R1 + '.type'] of
     'int':
@@ -332,13 +361,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegPower := AllocReg('int');
-          RegTable.I[RegPlus + '.value'] := Round(Pow(RegTable.I[R1 + '.value'], RegTable.I[R2 + '.value']));
+          RegPower := RegAlloc('int');
+          RegTable.I[RegPower + '.value'] := Round(Power(RegTable.I[R1 + '.value'], RegTable.I[R2 + '.value']));
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegPower := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := Pow(RegTable.I[R1 + '.value'], RegTable.D[R2 + '.value']);
+          RegPower := RegAlloc('real');
+          RegTable.D[RegPower + '.value'] := Power(RegTable.I[R1 + '.value'], RegTable.D[R2 + '.value']);
         end
         else begin
           bOK := False;
@@ -350,13 +379,13 @@ begin
         bOK := True;
         if RegTable.S[R2 + '.type'] = 'int' then
         begin
-          RegPower := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := Pow(RegTable.D[R1 + '.value'], RegTable.I[R2 + '.value']);
+          RegPower := RegAlloc('real');
+          RegTable.D[RegPower + '.value'] := Power(RegTable.D[R1 + '.value'], RegTable.I[R2 + '.value']);
         end
         else if RegTable.S[R2 + '.type'] = 'real' then
         begin
-          RegPower := AllocReg('real');
-          RegTable.D[RegPlus + '.value'] := Pow(RegTable.D[R1 + '.value'], RegTable.D[R2 + '.value']);
+          RegPower := RegAlloc('real');
+          RegTable.D[RegPower + '.value'] := Power(RegTable.D[R1 + '.value'], RegTable.D[R2 + '.value']);
         end
         else begin
           bOK := False;
@@ -369,14 +398,14 @@ begin
   end;
 end;
 
-function RegMod(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegMod(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   bOK := (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int');
   bOK := bOK and (RegTable.I[R2 + '.value'] <> 0);
   if bOK then
   begin
-    RegMod := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] mod RegTable.I[R2 + '.value'];
+    RegMod := RegAlloc('int');
+    RegTable.I[RegMod + '.value'] := RegTable.I[R1 + '.value'] mod RegTable.I[R2 + '.value'];
   end
   else
     yyerror('type for mod error');
@@ -388,8 +417,8 @@ begin
   bOK := bOK and (RegTable.I[R2 + '.value'] <> 0);
   if bOK then
   begin
-    RegDiv := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] div RegTable.I[R2 + '.value'];
+    RegDiv := RegAlloc('int');
+    RegTable.I[RegDiv + '.value'] := RegTable.I[R1 + '.value'] div RegTable.I[R2 + '.value'];
   end
   else
     yyerror('type for mod error');
@@ -400,13 +429,13 @@ begin
   bOK := True;
   if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
   begin
-    RegAnd := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] and RegTable.I[R2 + '.value'];
+    RegAnd := RegAlloc('int');
+    RegTable.I[RegAnd + '.value'] := RegTable.I[R1 + '.value'] and RegTable.I[R2 + '.value'];
   end
   else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
   begin
-    RegAnd := AllocReg('boolean');
-    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] and RegTable.B[R2 + '.value'];
+    RegAnd := RegAlloc('boolean');
+    RegTable.B[RegAnd + '.value'] := RegTable.B[R1 + '.value'] and RegTable.B[R2 + '.value'];
   end
   else begin
     bOK := False;
@@ -414,18 +443,18 @@ begin
   end;
 end;
 
-function RegOr(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegOr(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   bOK := True;
   if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
   begin
-    RegOr := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] or RegTable.I[R2 + '.value'];
+    RegOr := RegAlloc('int');
+    RegTable.I[RegOr + '.value'] := RegTable.I[R1 + '.value'] or RegTable.I[R2 + '.value'];
   end
   else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
   begin
-    RegOr := AllocReg('boolean');
-    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] or RegTable.B[R2 + '.value'];
+    RegOr := RegAlloc('boolean');
+    RegTable.B[RegOr + '.value'] := RegTable.B[R1 + '.value'] or RegTable.B[R2 + '.value'];
   end
   else begin
     bOK := False;
@@ -433,18 +462,18 @@ begin
   end;
 end;
 
-function RegXor(const R1, R2: TRegName; out bOK: Boolean): string;
+function RegXor(const R1, R2: TRegName; var bOK: Boolean): string;
 begin
   bOK := True;
   if (RegTable.S[R1 + '.type']  = 'int') and (RegTable.S[R2 + '.type'] = 'int') then
   begin
-    RegXor := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := RegTable.I[R1 + '.value'] xor RegTable.I[R2 + '.value'];
+    RegXor := RegAlloc('int');
+    RegTable.I[RegXor + '.value'] := RegTable.I[R1 + '.value'] xor RegTable.I[R2 + '.value'];
   end
   else if (RegTable.S[R1 + '.type']  = 'boolean') and (RegTable.S[R2 + '.type'] = 'boolean') then
   begin
-    RegXor := AllocReg('boolean');
-    RegTable.B[RegPlus + '.value'] := RegTable.B[R1 + '.value'] xor RegTable.B[R2 + '.value'];
+    RegXor := RegAlloc('boolean');
+    RegTable.B[RegXor + '.value'] := RegTable.B[R1 + '.value'] xor RegTable.B[R2 + '.value'];
   end
   else begin
     bOK := False;
@@ -452,18 +481,18 @@ begin
   end;
 end;
 
-function RegNot(const R1; out bOK: Boolean): string;
+function RegNot(const R1: TRegName; var bOK: Boolean): string;
 begin
   bOK := True;
   if RegTable.S[R1 + '.type']  = 'int' then
   begin
-    RegNot := AllocReg('int');
-    RegTable.I[RegPlus + '.value'] := not RegTable.I[R1 + '.value'];
+    RegNot := RegAlloc('int');
+    RegTable.I[RegNot + '.value'] := not RegTable.I[R1 + '.value'];
   end
   else if RegTable.S[R1 + '.type']  = 'boolean' then
   begin
-    RegNot := AllocReg('boolean');
-    RegTable.B[RegPlus + '.value'] := not RegTable.B[R1 + '.value'];
+    RegNot := RegAlloc('boolean');
+    RegTable.B[RegNot + '.value'] := not RegTable.B[R1 + '.value'];
   end
   else begin
     bOK := False;
@@ -471,18 +500,18 @@ begin
   end;
 end;
 
-function RegNeg(const R1; out bOK: Boolean): string;
+function RegNeg(const R1: TRegName; var bOK: Boolean): string;
 begin
   bOK := True;
   case RegTable.S[R1 + '.type'] of
     'int':
       begin
-        RegNeg := AllocReg('int');
+        RegNeg := RegAlloc('int');
         RegTable.I[RegNeg + '.value'] := -RegTable.I[R1 + '.value'];
       end;
     'real':
       begin
-        RegNeg := AllocReg('real');
+        RegNeg := RegAlloc('real');
         RegTable.D[RegNeg + '.value'] := -RegTable.D[R1 + '.value'];
       end
   else
@@ -491,21 +520,115 @@ begin
   end;
 end; 
 
-function ReadValue(const S: string; out bOK: Boolean): string;
+function ReadValue(const S: string; var bOK: Boolean): string;
 begin
   bOK := False;
   if Length(S) < 1 then Exit;
   bOK := True;
-  if S[1] in ['0'-'9'] then
-    RegValue := S
-  else if Assigned(SymTable.O[S + '.reg']) then
-    RegValue := SymTable.S[S + '.reg']
+  if S[1] in ['0'..'9'] then
+    ReadValue := S
+  else if Assigned(SymTable.O[UpperCase(S) + '.reg']) then
+    ReadValue := SymTable.S[UpperCase(S) + '.reg']
   else begin
     bOK := False;
     yyerror(Format('"%s" bad variable', [S]));
   end;
 end;
 
+function ReadInt(const S: string; var bOK: Boolean): Integer;
+var
+  T: string;
+begin
+  ReadInt := 0;
+  T := ReadValue(S, bOK); writeln(RegTable.asjson(true));
+  if bOK then 
+  begin
+      bOK := RegTable.S[T + '.type'] = 'int';
+      if bOK then
+        ReadInt := RegTable.I[T + '.value']
+      else 
+        yyerror('INTEGER required');
+  end;
+end;
+
+function ReadReal(const S: string; var bOK: Boolean): Real;
+var
+  T: string;
+begin
+  ReadReal := 0;
+  T := ReadValue(S, bOK);
+  if bOK then 
+  begin    
+      if RegTable.S[T + '.type'] = 'int' then
+        ReadReal := RegTable.I[T + '.value']
+      else if RegTable.S[T + '.type'] = 'real' then
+        ReadReal := RegTable.D[T + '.value']      
+      else  begin
+        bOK := False;
+        yyerror('INTEGER required');
+      end;
+  end;
+end;
+
+procedure SendMsg(const S: string; const M: string);
+var
+  L: TStringList;
+begin
+  writeln('send ', S, ' ', M);
+
+  if not Assigned(OnSendMessage) then Exit;
+  
+  L := TStringList.Create;
+  L.Delimiter := ' ';
+  L.StrictDelimiter := True;
+  L.DelimitedText := M;
+  OnSendMessage(S, StrToInt(L[0]), StrToInt(L[1]), StrToInt(L[2]));
+  L.Free;
+end;
+
+function ConnectFeature(const Source, Target: string): Boolean;
+begin
+  writeln('ConnectFeature ', Source, ' ', Target);
+  ConnectFeature := False;
+  if Assigned(OnConnectFeature) then
+    ConnectFeature := OnConnectFeature(Source, Target);
+end;
+
+function ConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
+begin
+  writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
+  ConnectData := False;
+  if Assigned(OnConnectData) then
+    ConnectData := OnConnectData(Source, Target, SourcePort, TargetPort);
+end;
+
+function ToStr(const S: string): string;
+var
+  L: TStringList;
+  R: string;
+begin
+  ToStr := '';
+  L := TStringList.Create;
+  L.Delimiter := ' ';
+  L.StrictDelimiter := True;
+  L.DelimitedText := S;
+  for R in L do
+  begin
+    case RegTable.S[R + '.type'] of
+      'int':   ToStr := ToStr + IntToStr(RegTable.I[R + '.value']);
+      'real':  ToStr := ToStr + FloatToStr(RegTable.D[R + '.value']);
+      'string':ToStr := ToStr + RegTable.S[R + '.value'];
+      'boolean':ToStr := ToStr + BoolToStr(RegTable.B[R + '.value'], True);
+    end;
+  end;
+  L.Free;
+end;
+
+procedure CreateModules;
+begin
+  if Assigned(OnCreateModules) then 
+    OnCreateModules(nil);
+end;
 
 %}
 
@@ -518,8 +641,8 @@ end;
 %token COLON COMMA CONNFEATURE CONNFEATUREDATA CONNDATA _CONST _COS
 %token _DIV DOT DOTDOT _ELSE _END EQUAL _EXP _FILE
 %token GE GT _ID _INTEGER  _LAZRADIO LBRAC LBRACE LE _LOG LPAREN LT MINUS _MOD _NIL _NOT
-%token NOTEQUAL _ORD _OR PLUS _PRED _REAL RBRAC RBRACE
-%token RPAREN SEND SEMICOLON _SIN SLASH STAR STARSTAR _SUCC _STR _STRING _VAL
+%token NOTEQUAL _ORD _OR PLUS _PRED _REAL _ROUND RBRAC RBRACE
+%token RPAREN SEND SEMICOLON _SIN SLASH STAR STARSTAR _SUCC _STR _STRING _TRUNC _VAL
 %token UPARROW _VAR _WRITELN _XOR
 
 %token ILLEGAL
@@ -540,6 +663,28 @@ end;
 
 %type <String>     identifier
 %type <String>     identifier_list
+
+%type <String>     index_expression
+%type <String>     expression
+%type <String>     simple_expression
+%type <String>     term
+%type <String>     factor
+%type <String>     exponentiation
+%type <String>     primary
+%type <String>     unsigned_constant
+%type <String>     unsigned_number
+%type <String>     unsigned_integer
+%type <String>     unsigned_real
+%type <String>     function_designator
+%type <String>     params
+%type <String>     actual_parameter_list
+%type <String>     actual_parameter
+
+%type <String>     send_statement
+%type <String>     radio_message
+%type <String>     connection_feature_statement
+%type <String>     connection_feature_data_statement
+%type <String>     connection_data_statement_0
 
 %type <String>     type_denoter
 
@@ -580,12 +725,12 @@ constant_definition : identifier EQUAL cexpression semicolon { if DefVars($1, Re
 /*constant : cexpression ;        /* good stuff! */
 
 cexpression : csimple_expression
-    | csimple_expression EQUAL csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpEqu); }
-    | csimple_expression NOTEQUAL csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) <> cpEqu); }
-    | csimple_expression LT csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpLess); }
-    | csimple_expression GT csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpGreat); }
-    | csimple_expression LE csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpLess, cpEqu]); }
-    | csimple_expression GE csimple_expression { RegWrite(AllocReg('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpGreat, cpEqu]); }
+    | csimple_expression EQUAL csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpEqu); }
+    | csimple_expression NOTEQUAL csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) <> cpEqu); }
+    | csimple_expression LT csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpLess); }
+    | csimple_expression GT csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpGreat); }
+    | csimple_expression LE csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpLess, cpEqu]); }
+    | csimple_expression GE csimple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpGreat, cpEqu]); }
     ;
 
 csimple_expression : cterm
@@ -608,10 +753,10 @@ cfactor : PLUS cfactor { $$ := $2; }
     ;
 
 cexponentiation : cprimary
-    | cprimary STARSTAR cexponentiation { $$ := RegPow($1, $3, RtOK); }
+    | cprimary STARSTAR cexponentiation { $$ := RegPower($1, $3, RtOK); }
     ;
 
-cprimary : identifier { $$ := ReadValue($1); }
+cprimary : identifier { $$ := ReadValue($1, RtOK); }
     | LPAREN cexpression RPAREN { $$ := $2; }
     | unsigned_constant
     | _NOT cprimary { $$ := RegNot($2, RtOK); }
@@ -624,11 +769,11 @@ constant : non_string
     ;
 
 non_string : DIGSEQ
-    | identifier  { $$ := ReadValue($1); }
+    | identifier  { $$ := ReadValue($1, RtOK); }
     | REALNUMBER
     ;
 
-variable_declaration_part : _VAR variable_declaration_list semicolon
+variable_declaration_part : _VAR variable_declaration_list semicolon { CreateModules; }
     |
     ;
 
@@ -640,33 +785,8 @@ variable_declaration_list :
 variable_declaration : identifier_list COLON _INTEGER { DefVars($1, 'int'); }
     | identifier_list COLON _REAL { DefVars($1, 'real'); }
     | identifier_list COLON _STRING { DefVars($1, 'string'); }
-    | identifier_list COLON type_denoter { DefVars($1, $3); }
+    | identifier_list COLON type_denoter { DefObjs($1, $3); }
     ;
-
-formal_parameter_list : LPAREN formal_parameter_section_list RPAREN ;
-
-formal_parameter_section_list : formal_parameter_section_list semicolon
- formal_parameter_section
-    | formal_parameter_section
-    ;
-
-formal_parameter_section : value_parameter_specification
-    | variable_parameter_specification
-    | procedural_parameter_specification
-    | functional_parameter_specification
-    ;
-
-value_parameter_specification : identifier_list COLON identifier
-    ;
-
-variable_parameter_specification : _VAR identifier_list COLON identifier
-    ;
-
-result_type : identifier ;
-
-function_identification : _FUNCTION identifier ;
-
-function_block : block ;
 
 statement_part : compound_statement ;
 
@@ -699,97 +819,111 @@ connection_statement: connection_feature_statement
     | connection_data_statement
     ;
 
-connection_feature_statement: identifier CONNFEATURE identifier
-    | identifier CONNFEATURE connection_feature_statement
+connection_feature_statement: identifier CONNFEATURE identifier { ConnectFeature($1, $3); $$ := $3; }
+    | connection_feature_statement CONNFEATURE identifier { ConnectFeature($1, $3); $$ := $3; }
     ;
 
-connection_feature_data_statement: identifier CONNFEATUREDATA identifier
-    | identifier CONNFEATUREDATA connection_feature_data_statement
+connection_feature_data_statement: identifier CONNFEATUREDATA identifier { ConnectFeature($1, $3); ConnectData($1, $3, 0, 0); $$ := $3; }
+    | connection_feature_data_statement CONNFEATUREDATA identifier { ConnectFeature($1, $3); ConnectData($1, $3, 0, 0); $$ := $3; }
     ;
 
-connection_data_statement: identifier CONNDATA identifier
-    | identifier CONNDATA connection_data_statement
-    | indexed_variable CONNDATA indexed_variable
+connection_data_statement: connection_data_statement_0
+    | identifier LBRAC index_expression RBRAC CONNDATA LBRAC index_expression RBRAC identifier  { ConnectData($1, $9, ReadInt($3, RtOK), ReadInt($7, RtOK)); }
+    | identifier LBRAC index_expression RBRAC CONNDATA identifier   { ConnectData($1, $6, ReadInt($3, RtOK), 0); }
+    | identifier CONNDATA  LBRAC index_expression RBRAC identifier   { ConnectData($1, $6, 0, ReadInt($4, RtOK)); }
     ;
 
-send_statement : identifier SEND LBRACE expression COMMA expression COMMA expression RBRACE 
-    | identifier SEND LBRACE expression COMMA expression _RBRACE        
-    | identifier SEND LBRACE expression RBRACE     {writeln('send!!!!');}  
+connection_data_statement_0: identifier CONNDATA identifier  { ConnectData($1, $3, 0, 0); $$ := $3; }
+    | connection_data_statement_0 CONNDATA identifier  { ConnectData($1, $3, 0, 0); $$ := $3; }
 
-assignment_statement : variable_access ASSIGNMENT expression
+send_statement : identifier SEND radio_message { SendMsg($1, $3); }
+    | send_statement SEND radio_message  {SendMsg($1, $3);}
     ;
 
-variable_access : identifier
+radio_message : LBRACE expression COMMA expression COMMA expression RBRACE  { $$ := Format('%d %d %d', [ReadInt($2, RtOK), 
+                                                                                       ReadInt($4, RtOK), ReadInt($6, RtOK)]); }
+    | LBRACE expression COMMA expression _RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadInt($4, RtOK)]); }
+    | LBRACE expression RBRACE  { writeln($2); $$ := Format('%d 0 0', [ReadInt($2, RtOK)]); }
     ;
 
-indexed_variable : variable_access LBRAC index_expression_list RBRAC
-    ;
-
-index_expression_list : index_expression_list comma index_expression
-    | index_expression
+assignment_statement : identifier ASSIGNMENT expression { writeln(UpperCase($1) + '.reg'); writeln(SymTable.asjson(true)); if Assigned(SymTable.O[UpperCase($1) + '.reg']) then
+                                                            SymTable.S[UpperCase($1) + '.reg'] := $3
+                                                          else
+                                                            yyerror(Format('"%s" bad variable', [$1])); }
     ;
 
 index_expression : expression ;
 
-procedure_statement : identifier params
-    | identifier
-    ;
-
-params : LPAREN actual_parameter_list RPAREN ;
-
-actual_parameter_list : actual_parameter_list comma actual_parameter
-    | actual_parameter
-    ;
-
 type_denoter: identifier /* module types */
     ;
 
-/*
- * this forces you to check all this to be sure that only write and
- * writeln use the 2nd and 3rd forms, you really can't do it easily in
- * the grammar, especially since write and writeln aren't reserved
- */
-actual_parameter : expression
-    | expression COLON expression
-    | expression COLON expression COLON expression
-    ;
-
-control_variable : identifier ;
-
-boolean_expression : expression ;
-
 expression : simple_expression
-    | simple_expression relop simple_expression
+    | simple_expression EQUAL simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpEqu); }
+    | simple_expression NOTEQUAL simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) <> cpEqu); }
+    | simple_expression LT simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpLess); }
+    | simple_expression GT simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) = cpGreat); }
+    | simple_expression LE simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpLess, cpEqu]); }
+    | simple_expression GE simple_expression { RegWrite(RegAlloc('boolean'), RegTable.O[$1 + '.value'].Compare(RegTable.O[$3 + '.value']) in [cpGreat, cpEqu]); }
     | error
     ;
 
 simple_expression : term
-    | simple_expression addop term
+    | simple_expression PLUS term { $$ := RegPlus($1, $3, RtOK); }
+    | simple_expression MINUS term { $$ := RegMinus($1, $3, RtOK); }
+    | simple_expression _OR term { $$ := RegOr($1, $3, RtOK); }
     ;
 
 term : factor
-    | term mulop factor
+    | term STAR factor { $$ := RegTimes($1, $3, RtOK); }
+    | term SLASH factor { $$ := RegDivide($1, $3, RtOK); }
+    | term _DIV factor { $$ := RegDiv($1, $3, RtOK); }
+    | term _MOD factor { $$ := RegMod($1, $3, RtOK); }
+    | term _AND factor { $$ := RegAnd($1, $3, RtOK); }
     ;
 
-factor : sign factor
+factor : PLUS factor { $$ := $2; }
+    | MINUS factor { $$ := RegNeg($2, RtOK); }
     | exponentiation
     ;
 
 exponentiation : primary
-    | primary STARSTAR exponentiation
+    | primary STARSTAR exponentiation { $$ := RegPower($1, $3, RtOK); }
     ;
 
-primary : variable_access
+primary : identifier           {  $$ := ReadValue($1, RtOK); }
     | unsigned_constant
     | function_designator
-    | set_constructor
-    | LPAREN expression RPAREN
-    | _NOT primary
+    | LPAREN expression RPAREN { $$ := $2; }
+    | _NOT primary        { $$ := RegNot($2, RtOK); }      
+    ;
+
+function_designator : _ARCCOS params { $$ := RegAlloc('real'); RegWrite($$, arccos(ReadReal($2, RtOK))); }
+    | _ARCSIN params { $$ := RegAlloc('real'); RegWrite($$, arcsin(ReadReal($2, RtOK))); }
+    | _COS params { $$ := RegAlloc('real'); RegWrite($$, cos(ReadReal($2, RtOK))); }
+    | _EXP params { $$ := RegAlloc('real'); RegWrite($$, exp(ReadReal($2, RtOK))); }
+    | _LOG params { $$ := RegAlloc('real'); RegWrite($$, log10(ReadReal($2, RtOK))); }
+    | _PRED params { $$ := RegAlloc('int'); RegWrite($$, Pred(ReadInt($2, RtOK))); } 
+    | _ROUND params { $$ := RegAlloc('int'); RegWrite($$, Round(ReadReal($2, RtOK))); } 
+    | _SIN params { $$ := RegAlloc('int'); RegWrite($$, sin(ReadReal($2, RtOK))); }
+    | _SUCC params { $$ := RegAlloc('int'); RegWrite($$, Succ(ReadInt($2, RtOK))); } 
+    | _STR params { $$ := RegAlloc('string'); RegWrite($$, ToStr($2)); } 
+    | _TRUNC params { $$ := RegAlloc('int'); RegWrite($$, Trunc(ReadReal($2, RtOK))); } 
+    | _VAL params { $$ := RegAlloc('real'); // TODO: } 
+    | _WRITE params { $$ := RegAlloc('real'); TempS := ToStr($2); RegWrite($$, TempS); writeln(TempS); } 
+    ;
+
+params : LPAREN actual_parameter_list RPAREN   { $$ := $2; }
+    ;
+
+actual_parameter_list : actual_parameter_list comma actual_parameter  { $$ := $1 + ' ' + $3; }
+    | actual_parameter
+    ;
+
+actual_parameter : expression
     ;
 
 unsigned_constant : unsigned_number
     | CHARACTER_STRING
-    | _NIL
     ;
 
 unsigned_number : unsigned_integer | unsigned_real ;
@@ -814,9 +948,17 @@ comma : COMMA
 {$I lazradiolex.pas}
 
 begin
-  if not Assigned(SymTable) then SymTable := SO('{}');
-  if not Assigned(ObjTypes) then ObjTypes := SO('{}');
   RegTable := SO('{}');
+
+  if not Assigned(SymTable) then 
+  begin
+    SymTable := SO('{}');
+    PredefineInt('RM_CONFIG', 200);
+  end;
+
+  if not Assigned(ObjTypes) then
+    ObjTypes := SO('{"RTL": {}, "SPECTRUM": {}, "FREQDISCRIMINATOR": {}, "FMRECEIVER": {}, "AUDIOOUT": {}}');
+  
 
   filename := paramStr(1);
   if filename='' then

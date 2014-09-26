@@ -13,6 +13,6 @@ begin
   src => s;
   s :> fd;
   t := 100;
-  src ! {RM_CONFIG};
+  src ! {RM_CONFIG, 3 * 8, round(4 / 3)};
 end.
 

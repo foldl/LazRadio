@@ -21,7 +21,7 @@ function is_keyword(id : string; var token : integer) : boolean;
   type
     Ident = string[id_len];
   const
-    no_of_keywords = 29;
+    no_of_keywords = 31;
     keyword : array [1..no_of_keywords] of Ident = (
       'AND',       'ARCCOS',    'ARCSIN',   'BEGIN', 
       'CONST',     'COS',       'DIV',    
@@ -32,8 +32,9 @@ function is_keyword(id : string; var token : integer) : boolean;
       'MOD',        'NOT',   
       'OR',         'ORD',
       'PRED',
-      'REAL',
+      'REAL',       'ROUND',
       'SIN',        'SUCC',    'STR',         'STRING',
+      'TRUNC',
       'VAL',        'VAR',        'WRITE',    'WRITELN',
       'XOR');
     keyword_token : array [1..no_of_keywords] of integer = (
@@ -46,8 +47,9 @@ function is_keyword(id : string; var token : integer) : boolean;
       _MOD,         _NOT,
       _OR,          _ORD,
       _PRED,
-      _REAL,
+      _REAL,        _ROUND,
       _SIN,         _SUCC,      _STR,    _STRING,
+      _TRUNC,
       _VAL,         _VAR,         _WRITELN,   _WRITELN,
       _XOR);
   var m, n, k : integer;
@@ -95,7 +97,7 @@ var c  : char;
 
 ":="			return(ASSIGNMENT);
 '({NQUOTE}|'')+'	begin
-                      yylval.yyString := AllocReg('string');
+                      yylval.yyString := RegAlloc('string');
                       RegWrite(yylval.yyString, str_escape(yytext)); 
                       return(CHARACTER_STRING);
                     end;
@@ -103,7 +105,7 @@ var c  : char;
 ":>"			return(CONNFEATURE);
 ","			return(COMMA);
 [0-9]+			begin
-                  yylval.yyString := AllocReg('int');
+                  yylval.yyString := RegAlloc('int');
                   RegWrite(yylval.yyString, StrToInt(yytext)); 
                   return(DIGSEQ);
                 end;
@@ -124,7 +126,7 @@ var c  : char;
                    val(yytext, tr, result);
 				   if result=0 then
                    begin
-                     yylval.yyString := AllocReg('real');
+                     yylval.yyString := RegAlloc('real');
                      RegWrite(yylval.yyString, tr);
 				     return(REALNUMBER)
                    end

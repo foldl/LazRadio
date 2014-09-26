@@ -22,7 +22,7 @@ function is_keyword(id : string; var token : integer) : boolean;
   type
     Ident = string[id_len];
   const
-    no_of_keywords = 29;
+    no_of_keywords = 31;
     keyword : array [1..no_of_keywords] of Ident = (
       'AND',       'ARCCOS',    'ARCSIN',   'BEGIN', 
       'CONST',     'COS',       'DIV',    
@@ -33,8 +33,9 @@ function is_keyword(id : string; var token : integer) : boolean;
       'MOD',        'NOT',   
       'OR',         'ORD',
       'PRED',
-      'REAL',
+      'REAL',       'ROUND',
       'SIN',        'SUCC',    'STR',         'STRING',
+      'TRUNC',
       'VAL',        'VAR',        'WRITE',    'WRITELN',
       'XOR');
     keyword_token : array [1..no_of_keywords] of integer = (
@@ -47,8 +48,9 @@ function is_keyword(id : string; var token : integer) : boolean;
       _MOD,         _NOT,
       _OR,          _ORD,
       _PRED,
-      _REAL,
+      _REAL,        _ROUND,
       _SIN,         _SUCC,      _STR,    _STRING,
+      _TRUNC,
       _VAL,         _VAR,         _WRITELN,   _WRITELN,
       _XOR);
   var m, n, k : integer;
@@ -85,6 +87,7 @@ procedure yyaction ( yyruleno : Integer );
 var c  : char;
     kw : integer;
     result : integer;
+    tr: Real;
 
 begin
   (* actions: *)
@@ -101,7 +104,8 @@ begin
     			return(ASSIGNMENT);
   3:
                 	begin
-                      yylval.yyString := str_escape(yytext);
+                      yylval.yyString := RegAlloc('string');
+                      RegWrite(yylval.yyString, str_escape(yytext)); 
                       return(CHARACTER_STRING);
                     end;
   4:
@@ -112,7 +116,8 @@ begin
    			return(COMMA);
   7:
       			begin
-                  yylval.yyInteger := StrToInt(yytext);
+                  yylval.yyString := RegAlloc('int');
+                  RegWrite(yylval.yyString, StrToInt(yytext)); 
                   return(DIGSEQ);
                 end;
   8:
@@ -143,9 +148,13 @@ begin
    			return(RBRAC);
   21:
                	 begin
-                   val(yytext, yylval.yyReal, result);
+                   val(yytext, tr, result);
 				   if result=0 then
+                   begin
+                     yylval.yyString := RegAlloc('real');
+                     RegWrite(yylval.yyString, tr);
 				     return(REALNUMBER)
+                   end
 				   else
 				     return(ILLEGAL)
                  end;
