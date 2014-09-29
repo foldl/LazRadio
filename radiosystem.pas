@@ -53,7 +53,7 @@ type
 
     function MakeId: TModuleId;
 
-    procedure ShowModules(Tree: TTreeView);
+    procedure ShowModules(Tree: TTreeView; ModList: TStrings);
     property Graph: TGenGraph read FGraph write FGraph;
   end;
 
@@ -328,7 +328,7 @@ begin
   Result := FIdCounter;
 end;
 
-procedure TRadioSystem.ShowModules(Tree: TTreeView);
+procedure TRadioSystem.ShowModules(Tree: TTreeView; ModList: TStrings);
 const
   ICON_SIZE = 44;
   ICON_MARGIN = 4;
@@ -342,6 +342,8 @@ var
 begin
   Tree.BeginUpdate;
   Tree.Items.Clear;
+  ModList.Clear;
+
   B := TBitmap.Create;
   B.Width := ICON_SIZE;
   B.Height := ICON_SIZE;
@@ -369,6 +371,8 @@ begin
     N.ImageIndex := Tree.Images.Count - 1;
     N.SelectedIndex := N.ImageIndex;
     N.Data := K;
+
+    ModList.Add(UpperCase(ClassNameToModuleName(K.ClassName)));
   end;
   Tree.EndUpdate;
 end;

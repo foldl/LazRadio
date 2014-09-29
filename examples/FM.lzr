@@ -13,7 +13,7 @@ begin
   src => s;
   s :> fd;
   t := 100;
-  src ! {RM_CONFIG, 3 * 8, round(4 / 3)}
+  src ! {RM_CONFIG, 3 * round(4 / 3)}
       ! {1, 2, 3} 
       ! {5, 6, 6, 8};
   write('t = ',   sin(2));

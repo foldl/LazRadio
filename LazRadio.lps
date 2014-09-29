@@ -4,15 +4,12 @@
     <PathDelim Value="\"/>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="72">
+    <Units Count="52">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="LazRadio"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="64" Y="20"/>
-        <UsageCount Value="228"/>
+        <UsageCount Value="36"/>
       </Unit0>
       <Unit1>
         <Filename Value="frames\formmain.pas"/>
@@ -21,11 +18,12 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formmain"/>
-        <EditorIndex Value="2"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="565"/>
-        <CursorPos X="26" Y="602"/>
-        <UsageCount Value="228"/>
+        <TopLine Value="652"/>
+        <CursorPos X="34" Y="670"/>
+        <UsageCount Value="36"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -34,18 +32,15 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioModule"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1075"/>
-        <CursorPos X="24" Y="1083"/>
-        <UsageCount Value="228"/>
+        <TopLine Value="1242"/>
+        <CursorPos X="40" Y="1273"/>
+        <UsageCount Value="36"/>
       </Unit2>
       <Unit3>
         <Filename Value="rtlsdr.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RtlSdr"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="216"/>
-        <CursorPos X="10" Y="228"/>
-        <UsageCount Value="224"/>
+        <UsageCount Value="36"/>
       </Unit3>
       <Unit4>
         <Filename Value="frames\formrtl.pas"/>
@@ -54,95 +49,66 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formrtl"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="133"/>
-        <CursorPos X="69" Y="136"/>
-        <UsageCount Value="219"/>
+        <UsageCount Value="36"/>
       </Unit4>
       <Unit5>
         <Filename Value="rm_rtl.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_rtl"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="251"/>
-        <CursorPos X="38" Y="257"/>
-        <UsageCount Value="270"/>
+        <UsageCount Value="36"/>
       </Unit5>
       <Unit6>
         <Filename Value="async.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Async"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="146"/>
-        <CursorPos X="5" Y="156"/>
-        <UsageCount Value="283"/>
+        <UsageCount Value="36"/>
       </Unit6>
       <Unit7>
         <Filename Value="rm_oscillator.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_oscillator"/>
-        <EditorIndex Value="1"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="33" Y="358"/>
-        <UsageCount Value="282"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="36"/>
       </Unit7>
       <Unit8>
         <Filename Value="radiosystem.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioSystem"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="52" Y="26"/>
-        <UsageCount Value="282"/>
+        <CursorPos X="56" Y="44"/>
+        <UsageCount Value="36"/>
         <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\superobject\superobject.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="superobject"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="6775"/>
-        <CursorPos X="34" Y="6780"/>
-        <UsageCount Value="270"/>
+        <UsageCount Value="36"/>
       </Unit9>
       <Unit10>
         <Filename Value="rm_spectrum.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_spectrum"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="22" Y="59"/>
-        <UsageCount Value="268"/>
+        <UsageCount Value="36"/>
       </Unit10>
       <Unit11>
         <Filename Value="rm_timer.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_timer"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="14"/>
-        <CursorPos X="43" Y="34"/>
-        <UsageCount Value="214"/>
+        <UsageCount Value="36"/>
       </Unit11>
       <Unit12>
         <Filename Value="rm_audio.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_audio"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="56"/>
-        <CursorPos X="57" Y="73"/>
-        <UsageCount Value="206"/>
+        <UsageCount Value="36"/>
       </Unit12>
       <Unit13>
         <Filename Value="rm_filter.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_filter"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="319"/>
-        <CursorPos X="45" Y="320"/>
-        <UsageCount Value="206"/>
+        <UsageCount Value="36"/>
       </Unit13>
       <Unit14>
         <Filename Value="frames\formspectrum.pas"/>
@@ -151,28 +117,19 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formspectrum"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="119"/>
-        <CursorPos X="73" Y="129"/>
-        <UsageCount Value="228"/>
+        <UsageCount Value="36"/>
       </Unit14>
       <Unit15>
         <Filename Value="dsp\kissfft.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="KissFFT"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="13" Y="5"/>
-        <UsageCount Value="221"/>
+        <UsageCount Value="36"/>
       </Unit15>
       <Unit16>
         <Filename Value="dsp\signalbasic.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SignalBasic"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="415"/>
-        <CursorPos X="16" Y="424"/>
-        <UsageCount Value="231"/>
+        <UsageCount Value="36"/>
       </Unit16>
       <Unit17>
         <Filename Value="frames\formoscillator.pas"/>
@@ -181,10 +138,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formoscillator"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="68" Y="9"/>
-        <UsageCount Value="205"/>
+        <UsageCount Value="36"/>
       </Unit17>
       <Unit18>
         <Filename Value="frames\formauin.pas"/>
@@ -193,37 +147,25 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formauin"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="19"/>
-        <CursorPos X="12" Y="42"/>
-        <UsageCount Value="203"/>
+        <UsageCount Value="36"/>
       </Unit18>
       <Unit19>
         <Filename Value="utils.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="utils"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="460"/>
-        <CursorPos X="25" Y="472"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit19>
       <Unit20>
         <Filename Value="rm_dump.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_dump"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="141"/>
-        <CursorPos X="34" Y="153"/>
-        <UsageCount Value="213"/>
+        <UsageCount Value="36"/>
       </Unit20>
       <Unit21>
         <Filename Value="logger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="logger"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="32"/>
-        <CursorPos X="15" Y="43"/>
-        <UsageCount Value="203"/>
+        <UsageCount Value="36"/>
       </Unit21>
       <Unit22>
         <Filename Value="frames\formfilter.pas"/>
@@ -232,120 +174,84 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formfilter"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="94"/>
-        <CursorPos X="45" Y="101"/>
-        <UsageCount Value="201"/>
+        <UsageCount Value="36"/>
       </Unit22>
       <Unit23>
         <Filename Value="rm_fm.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_fm"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="299"/>
-        <CursorPos X="3" Y="310"/>
-        <UsageCount Value="201"/>
+        <UsageCount Value="36"/>
       </Unit23>
       <Unit24>
         <Filename Value="rm_pll.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_pll"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="34"/>
-        <CursorPos X="50" Y="62"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit24>
       <Unit25>
         <Filename Value="dsp\fft2.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="FFT2"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="170"/>
-        <CursorPos X="7" Y="188"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit25>
       <Unit26>
         <Filename Value="dsp\genfft.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GenFFT"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="38"/>
-        <CursorPos X="5" Y="53"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit26>
       <Unit27>
         <Filename Value="dsp\fftw.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="FFTW"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="80"/>
-        <CursorPos X="51" Y="102"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit27>
       <Unit28>
         <Filename Value="graph\gen_graph.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="gen_graph"/>
+        <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1742"/>
-        <CursorPos X="40" Y="1758"/>
-        <UsageCount Value="202"/>
+        <TopLine Value="1234"/>
+        <CursorPos X="13" Y="1243"/>
+        <UsageCount Value="36"/>
+        <Loaded Value="True"/>
       </Unit28>
       <Unit29>
         <Filename Value="radiomessage.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioMessage"/>
-        <EditorIndex Value="5"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="192"/>
-        <CursorPos X="54" Y="181"/>
-        <UsageCount Value="201"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="36"/>
       </Unit29>
       <Unit30>
         <Filename Value="minij.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="MiniJ"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="25" Y="21"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit30>
       <Unit31>
         <Filename Value="util_config.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="util_config"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="24" Y="10"/>
-        <UsageCount Value="204"/>
+        <UsageCount Value="36"/>
       </Unit31>
       <Unit32>
         <Filename Value="rm_resampling.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_resampling"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="130"/>
-        <CursorPos X="1" Y="149"/>
-        <UsageCount Value="226"/>
+        <UsageCount Value="36"/>
       </Unit32>
       <Unit33>
         <Filename Value="dsp\mathlut.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="MathLUT"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="50" Y="16"/>
-        <UsageCount Value="202"/>
+        <UsageCount Value="36"/>
       </Unit33>
       <Unit34>
         <Filename Value="rm_audiomixer.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_audiomixer"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="325"/>
-        <CursorPos X="38" Y="327"/>
-        <UsageCount Value="200"/>
+        <UsageCount Value="36"/>
       </Unit34>
       <Unit35>
         <Filename Value="frames\formaudiomixer.pas"/>
@@ -354,64 +260,46 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formaudiomixer"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="157"/>
-        <CursorPos X="6" Y="156"/>
-        <UsageCount Value="226"/>
+        <UsageCount Value="36"/>
       </Unit35>
       <Unit36>
         <Filename Value="util_math.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="util_math"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="161"/>
-        <CursorPos X="42" Y="193"/>
-        <UsageCount Value="217"/>
+        <TopLine Value="34"/>
+        <CursorPos X="27" Y="51"/>
+        <UsageCount Value="36"/>
       </Unit36>
       <Unit37>
         <Filename Value="logger_treeview.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="logger_treeview"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="51" Y="8"/>
-        <UsageCount Value="222"/>
+        <UsageCount Value="36"/>
       </Unit37>
       <Unit38>
         <Filename Value="rm_am.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_am"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="26"/>
-        <CursorPos X="42" Y="78"/>
-        <UsageCount Value="204"/>
+        <UsageCount Value="36"/>
       </Unit38>
       <Unit39>
         <Filename Value="rm_soundfx.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_soundfx"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="23" Y="12"/>
-        <UsageCount Value="204"/>
+        <UsageCount Value="36"/>
       </Unit39>
       <Unit40>
         <Filename Value="rm_iqcorrection.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_iqcorrection"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="20" Y="11"/>
-        <UsageCount Value="202"/>
+        <UsageCount Value="36"/>
       </Unit40>
       <Unit41>
         <Filename Value="rm_oscilloscope.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_oscilloscope"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="35"/>
-        <CursorPos X="34" Y="55"/>
-        <UsageCount Value="179"/>
+        <UsageCount Value="36"/>
       </Unit41>
       <Unit42>
         <Filename Value="frames\formoscilloscope.pas"/>
@@ -420,335 +308,199 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formoscilloscope"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="100"/>
-        <CursorPos X="75" Y="83"/>
-        <UsageCount Value="179"/>
+        <UsageCount Value="36"/>
       </Unit42>
       <Unit43>
         <Filename Value="radiolang.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="RadioLang"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="47"/>
-        <CursorPos X="31" Y="60"/>
-        <UsageCount Value="123"/>
-        <Loaded Value="True"/>
+        <TopLine Value="8"/>
+        <CursorPos X="28" Y="20"/>
+        <UsageCount Value="36"/>
       </Unit43>
       <Unit44>
-        <Filename Value="frames\formgui.pas"/>
-        <ComponentName Value="GUIForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formgui"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="7"/>
-        <CursorPos X="33" Y="20"/>
-        <UsageCount Value="118"/>
-      </Unit44>
-      <Unit45>
-        <Filename Value="rm_audio_out.pas"/>
-        <UnitName Value="rm_audio_out"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="20" Y="15"/>
-        <UsageCount Value="63"/>
-      </Unit45>
-      <Unit46>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.2\source\rtl\objpas\math.pp"/>
-        <UnitName Value="math"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="2507"/>
-        <CursorPos X="41" Y="79"/>
-        <UsageCount Value="6"/>
-      </Unit46>
-      <Unit47>
-        <Filename Value="D:\lazarus1.2\lcl\graphics.pp"/>
-        <UnitName Value="Graphics"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1203"/>
-        <CursorPos X="40" Y="1184"/>
-        <UsageCount Value="5"/>
-      </Unit47>
-      <Unit48>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\classesh.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1796"/>
-        <CursorPos X="14" Y="1809"/>
-        <UsageCount Value="28"/>
-      </Unit48>
-      <Unit49>
-        <Filename Value="unit1.pas"/>
-        <UnitName Value="Unit1"/>
-        <UsageCount Value="113"/>
-        <Loaded Value="True"/>
-      </Unit49>
-      <Unit50>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\systemh.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="11"/>
-      </Unit50>
-      <Unit51>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\datih.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="85"/>
-        <CursorPos X="29" Y="104"/>
-        <UsageCount Value="3"/>
-      </Unit51>
-      <Unit52>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\dati.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="117"/>
-        <CursorPos X="3" Y="120"/>
-        <UsageCount Value="1"/>
-      </Unit52>
-      <Unit53>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\math.pp"/>
-        <UnitName Value="math"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="59"/>
-        <CursorPos X="10" Y="71"/>
-        <UsageCount Value="4"/>
-      </Unit53>
-      <Unit54>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpas.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="77" Y="28"/>
-        <UsageCount Value="9"/>
-      </Unit54>
-      <Unit55>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\win\systhrd.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
-        <UsageCount Value="2"/>
-      </Unit55>
-      <Unit56>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\sysstrh.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="204"/>
-        <CursorPos X="62" Y="218"/>
-        <UsageCount Value="25"/>
-      </Unit56>
-      <Unit57>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\sysutils\sysstr.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="730"/>
-        <CursorPos X="10" Y="732"/>
-        <UsageCount Value="9"/>
-      </Unit57>
-      <Unit58>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\win\tthread.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="20"/>
-        <CursorPos X="21" Y="36"/>
-        <UsageCount Value="9"/>
-      </Unit58>
-      <Unit59>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\win\wininc\func.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="131"/>
-        <CursorPos X="10" Y="145"/>
-        <UsageCount Value="9"/>
-      </Unit59>
-      <Unit60>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\classes.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="113"/>
-        <CursorPos X="20" Y="118"/>
-        <UsageCount Value="9"/>
-      </Unit60>
-      <Unit61>
-        <Filename Value="D:\lazarus1.2\lcl\include\control.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="3959"/>
-        <CursorPos X="1" Y="3973"/>
-        <UsageCount Value="1"/>
-      </Unit61>
-      <Unit62>
-        <Filename Value="D:\lazarus1.2\lcl\interfaces\win32\win32callback.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1397"/>
-        <CursorPos X="1" Y="1411"/>
-        <UsageCount Value="9"/>
-      </Unit62>
-      <Unit63>
-        <Filename Value="D:\lazarus1.2\lcl\actnlist.pas"/>
-        <UnitName Value="ActnList"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="21"/>
-        <CursorPos X="3" Y="32"/>
-        <UsageCount Value="28"/>
-      </Unit63>
-      <Unit64>
-        <Filename Value="D:\lazarus1.2\lcl\include\customaction.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="234"/>
-        <CursorPos X="3" Y="241"/>
-        <UsageCount Value="28"/>
-      </Unit64>
-      <Unit65>
-        <Filename Value="D:\lazarus1.2\lcl\include\containedaction.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="70"/>
-        <CursorPos X="3" Y="95"/>
-        <UsageCount Value="28"/>
-      </Unit65>
-      <Unit66>
-        <Filename Value="D:\lazarus1.2\lcl\include\customactionlist.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="152"/>
-        <CursorPos X="57" Y="155"/>
-        <UsageCount Value="28"/>
-      </Unit66>
-      <Unit67>
-        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\action.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="120"/>
-        <CursorPos X="3" Y="122"/>
-        <UsageCount Value="28"/>
-      </Unit67>
-      <Unit68>
-        <Filename Value="D:\lazarus1.2\lcl\dialogs.pp"/>
-        <UnitName Value="Dialogs"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="480"/>
-        <CursorPos X="77" Y="495"/>
-        <UsageCount Value="28"/>
-      </Unit68>
-      <Unit69>
-        <Filename Value="D:\lazarus1.2\lcl\stdactns.pas"/>
-        <UnitName Value="StdActns"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="749"/>
-        <CursorPos X="3" Y="751"/>
-        <UsageCount Value="6"/>
-      </Unit69>
-      <Unit70>
         <Filename Value="lzr_interpreter.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="lzr_interpreter"/>
-        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="39" Y="8"/>
-        <UsageCount Value="21"/>
-        <Loaded Value="True"/>
-      </Unit70>
-      <Unit71>
-        <Filename Value="yacc\lazradio.pas"/>
-        <UnitName Value="lazradio"/>
+        <CursorPos X="40" Y="23"/>
+        <UsageCount Value="36"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\math.pp"/>
+        <UnitName Value="math"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="14"/>
-        <CursorPos X="42" Y="33"/>
+        <TopLine Value="158"/>
+        <CursorPos X="3" Y="179"/>
+        <UsageCount Value="16"/>
+      </Unit45>
+      <Unit46>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\classesh.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="243"/>
+        <CursorPos X="15" Y="265"/>
+        <UsageCount Value="11"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\objpas\classes\lists.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="294"/>
+        <CursorPos X="32" Y="331"/>
+        <UsageCount Value="11"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="D:\lazarus1.2\lcl\include\control.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="3952"/>
+        <CursorPos X="45" Y="3966"/>
         <UsageCount Value="10"/>
-      </Unit71>
+      </Unit48>
+      <Unit49>
+        <Filename Value="D:\lazarus1.2\components\synedit\synhighlighterpas.pp"/>
+        <UnitName Value="SynHighlighterPas"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="52"/>
+        <CursorPos X="38" Y="60"/>
+        <UsageCount Value="10"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="D:\lazarus1.2\lcl\dialogs.pp"/>
+        <UnitName Value="Dialogs"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="18"/>
+        <CursorPos X="16" Y="38"/>
+        <UsageCount Value="10"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="D:\lazarus1.2\fpc\2.6.4\source\rtl\inc\objpash.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="181"/>
+        <CursorPos X="4" Y="181"/>
+        <UsageCount Value="10"/>
+      </Unit51>
     </Units>
     <General>
       <ActiveWindowIndexAtStart Value="0"/>
     </General>
-    <JumpHistory Count="24" HistoryIndex="23">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="87" Column="38" TopLine="67"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="633" Column="3" TopLine="593"/>
       </Position1>
       <Position2>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="76" Column="5" TopLine="62"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="121" Column="21" TopLine="100"/>
       </Position2>
       <Position3>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="88" Column="30" TopLine="68"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="244" Column="20" TopLine="241"/>
       </Position3>
       <Position4>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="94" Column="25" TopLine="70"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="209" Column="24" TopLine="171"/>
       </Position4>
       <Position5>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="81" Column="21" TopLine="70"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="638" Column="27" TopLine="621"/>
       </Position5>
       <Position6>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="103" Column="33" TopLine="86"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="632" Column="1" TopLine="624"/>
       </Position6>
       <Position7>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="86" Column="37" TopLine="70"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="269" Column="16" TopLine="240"/>
       </Position7>
       <Position8>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="77" Column="16" TopLine="77"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="263" Column="17" TopLine="244"/>
       </Position8>
       <Position9>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="112" Column="37" TopLine="52"/>
+        <Filename Value="radiosystem.pas"/>
+        <Caret Line="175" Column="9" TopLine="155"/>
       </Position9>
       <Position10>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="78" Column="5" TopLine="71"/>
+        <Filename Value="radiosystem.pas"/>
+        <Caret Line="24" Column="5" TopLine="3"/>
       </Position10>
       <Position11>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="104" Column="44" TopLine="75"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="599" Column="40" TopLine="577"/>
       </Position11>
       <Position12>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="88" Column="13" TopLine="71"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="600" Column="40" TopLine="578"/>
       </Position12>
       <Position13>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="570" Column="14" TopLine="528"/>
+        <Caret Line="195" Column="15" TopLine="170"/>
       </Position13>
       <Position14>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="193" Column="1" TopLine="172"/>
+        <Caret Line="34" Column="13" TopLine="13"/>
       </Position14>
       <Position15>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="277" Column="3" TopLine="275"/>
+        <Caret Line="71" Column="26" TopLine="38"/>
       </Position15>
       <Position16>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="114" Column="24" TopLine="104"/>
+        <Caret Line="619" Column="34" TopLine="601"/>
       </Position16>
       <Position17>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="593" Column="3" TopLine="569"/>
+        <Caret Line="119" Column="28" TopLine="99"/>
       </Position17>
       <Position18>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="601" Column="17" TopLine="573"/>
+        <Caret Line="281" Column="16" TopLine="247"/>
       </Position18>
       <Position19>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="327" Column="10" TopLine="311"/>
+        <Caret Line="609" Column="16" TopLine="584"/>
       </Position19>
       <Position20>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="595" Column="1" TopLine="570"/>
+        <Caret Line="616" Column="16" TopLine="596"/>
       </Position20>
       <Position21>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="601" Column="19" TopLine="577"/>
+        <Caret Line="632" Column="34" TopLine="598"/>
       </Position21>
       <Position22>
         <Filename Value="frames\formmain.pas"/>
-        <Caret Line="104" Column="5" TopLine="91"/>
+        <Caret Line="633" Column="34" TopLine="599"/>
       </Position22>
       <Position23>
-        <Filename Value="radiolang.pas"/>
-        <Caret Line="54" Column="46" TopLine="34"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="634" Column="34" TopLine="600"/>
       </Position23>
       <Position24>
-        <Filename Value="lzr_interpreter.pas"/>
-        <Caret Line="3" Column="3" TopLine="1"/>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="635" Column="34" TopLine="601"/>
       </Position24>
+      <Position25>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="636" Column="34" TopLine="602"/>
+      </Position25>
+      <Position26>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="637" Column="34" TopLine="603"/>
+      </Position26>
+      <Position27>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="638" Column="34" TopLine="604"/>
+      </Position27>
+      <Position28>
+        <Filename Value="frames\formmain.pas"/>
+        <Caret Line="639" Column="34" TopLine="605"/>
+      </Position28>
+      <Position29>
+        <Filename Value="radiosystem.pas"/>
+        <Caret Line="113" Column="12" TopLine="106"/>
+      </Position29>
     </JumpHistory>
   </ProjectSession>
   <EditorMacros Count="0"/>

@@ -1079,9 +1079,9 @@ var
   T: PRadioThreadNode;
   P: PMessageQueueNode;
 begin
+again:
   if FDestroying then Exit;
 
-again:
   Lock;
   if Assigned(FFirstJob.Next) and Assigned(FIdleNode.Next) then
   begin

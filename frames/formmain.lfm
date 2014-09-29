@@ -1,14 +1,14 @@
 object MainForm: TMainForm
-  Left = 537
+  Left = 233
   Height = 700
-  Top = 121
+  Top = 198
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
   ClientWidth = 1008
   Font.Name = 'Tahoma'
   Menu = MainMenu1
-  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
@@ -16,13 +16,14 @@ object MainForm: TMainForm
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
-    Height = 520
+    Height = 634
     Top = 24
-    Width = 1008
+    Width = 788
     Align = alClient
+    BevelOuter = bvNone
     Caption = 'Panel1'
-    ClientHeight = 520
-    ClientWidth = 1008
+    ClientHeight = 634
+    ClientWidth = 788
     TabOrder = 0
     object Button1: TButton
       Left = 440
@@ -34,10 +35,10 @@ object MainForm: TMainForm
       TabOrder = 0
     end
     object PageControl1: TPageControl
-      Left = 1
-      Height = 518
-      Top = 1
-      Width = 786
+      Left = 0
+      Height = 544
+      Top = 0
+      Width = 788
       ActivePage = SheetCode
       Align = alClient
       ShowTabs = False
@@ -45,13 +46,13 @@ object MainForm: TMainForm
       TabOrder = 1
       object SheetCode: TTabSheet
         Caption = 'Code'
-        ClientHeight = 510
-        ClientWidth = 778
-        inline SynEdit1: TSynEdit
+        ClientHeight = 536
+        ClientWidth = 780
+        inline SynEdit: TSynEdit
           Left = 0
-          Height = 510
+          Height = 536
           Top = 0
-          Width = 778
+          Width = 780
           Align = alClient
           Font.Height = -13
           Font.Name = 'Courier New'
@@ -60,10 +61,13 @@ object MainForm: TMainForm
           ParentColor = False
           ParentFont = False
           TabOrder = 0
+          OnMouseWheel = SynEditMouseWheel
+          BorderStyle = bsNone
           Gutter.Width = 57
           Gutter.MouseActions = <>
           RightGutter.Width = 0
           RightGutter.MouseActions = <>
+          Highlighter = SynAnySyn
           Keystrokes = <          
             item
               Command = ecUp
@@ -489,7 +493,7 @@ object MainForm: TMainForm
           MouseTextActions = <>
           MouseSelActions = <>
           Lines.Strings = (
-            'SynEdit1'
+            'SynEdit'
           )
           VisibleSpecialChars = [vscSpace, vscTabAtLast]
           SelectedColor.FrameEdges = sfeAround
@@ -517,7 +521,7 @@ object MainForm: TMainForm
           LineHighlightColor.Background = clNone
           LineHighlightColor.Foreground = clNone
           LineHighlightColor.FrameEdges = sfeAround
-          OnChange = SynEdit1Change
+          OnChange = SynEditChange
           inline SynLeftGutterPartList1: TSynGutterPartList
             object SynGutterMarks1: TSynGutterMarks
               Width = 24
@@ -589,75 +593,70 @@ object MainForm: TMainForm
         end
       end
     end
-    object Panel2: TPanel
-      Left = 792
-      Height = 518
-      Top = 1
-      Width = 215
-      Align = alRight
-      Caption = 'Panel2'
-      ClientHeight = 518
-      ClientWidth = 215
+    object Panel4: TPanel
+      Left = 0
+      Height = 85
+      Top = 549
+      Width = 788
+      Align = alBottom
+      Caption = 'Panel4'
+      ClientHeight = 85
+      ClientWidth = 788
       TabOrder = 2
-      object Panel3: TPanel
+      object Panel5: TPanel
         Left = 1
-        Height = 39
-        Top = 1
-        Width = 213
-        Align = alTop
-        BevelOuter = bvNone
-        ClientHeight = 39
-        ClientWidth = 213
+        Height = 29
+        Top = 55
+        Width = 786
+        Align = alBottom
+        Caption = 'Panel5'
+        ClientHeight = 29
+        ClientWidth = 786
         TabOrder = 0
-        object TreeFilterEdit1: TTreeFilterEdit
-          Left = 0
+        object Label1: TLabel
+          Left = 1
+          Height = 25
+          Top = 3
+          Width = 134
+          Align = alLeft
+          BorderSpacing.Top = 2
+          Caption = 'Quick Command : '
+          ParentColor = False
+        end
+        object Edit2: TEdit
+          Left = 135
           Height = 27
-          Top = 5
-          Width = 184
-          ButtonWidth = 23
-          NumGlyphs = 1
-          Align = alCustom
-          Anchors = [akTop, akLeft, akRight]
-          AutoSize = False
-          MaxLength = 0
+          Top = 1
+          Width = 650
+          Align = alClient
+          Font.Name = 'Consolas'
+          ParentFont = False
           TabOrder = 0
-          FilteredTreeview = ModuleTree
+          Text = 'Edit2'
         end
       end
-      object ModuleTree: TTreeView
+      object TreeView1: TTreeView
         Left = 1
-        Height = 477
-        Top = 40
-        Width = 213
+        Height = 54
+        Top = 1
+        Width = 786
         Align = alClient
-        DefaultItemHeight = 22
-        ExpandSignType = tvestArrow
-        Images = ModuleImgs
-        ReadOnly = True
-        RowSelect = True
-        ShowLines = False
-        StateImages = ModuleImgs
+        DefaultItemHeight = 16
+        Font.Height = -12
+        Font.Name = 'Consolas'
+        ParentFont = False
         TabOrder = 1
-        Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowRoot, tvoToolTips, tvoThemedDraw]
       end
     end
-    object Splitter2: TSplitter
-      Left = 787
-      Height = 518
-      Top = 1
-      Width = 5
-      Align = alRight
-      ResizeAnchor = akRight
+    object Splitter1: TSplitter
+      Cursor = crVSplit
+      Left = 0
+      Height = 5
+      Top = 544
+      Width = 788
+      Align = alBottom
+      ResizeAnchor = akBottom
     end
-  end
-  object Splitter1: TSplitter
-    Cursor = crVSplit
-    Left = 0
-    Height = 5
-    Top = 544
-    Width = 1008
-    Align = alBottom
-    ResizeAnchor = akBottom
   end
   object StatusBar1: TStatusBar
     Left = 0
@@ -673,7 +672,7 @@ object MainForm: TMainForm
     Width = 75
     Caption = 'Button3'
     OnClick = Button3Click
-    TabOrder = 3
+    TabOrder = 2
   end
   object Button2: TButton
     Left = 120
@@ -682,7 +681,7 @@ object MainForm: TMainForm
     Width = 75
     Caption = 'Button2'
     OnClick = Button2Click
-    TabOrder = 4
+    TabOrder = 3
   end
   object Button4: TButton
     Left = 120
@@ -691,62 +690,7 @@ object MainForm: TMainForm
     Width = 75
     Caption = 'Button4'
     OnClick = Button4Click
-    TabOrder = 5
-  end
-  object Panel4: TPanel
-    Left = 0
-    Height = 109
-    Top = 549
-    Width = 1008
-    Align = alBottom
-    Caption = 'Panel4'
-    ClientHeight = 109
-    ClientWidth = 1008
-    TabOrder = 6
-    object TreeView1: TTreeView
-      Left = 1
-      Height = 78
-      Top = 1
-      Width = 1006
-      Align = alClient
-      DefaultItemHeight = 16
-      Font.Height = -12
-      Font.Name = 'Consolas'
-      ParentFont = False
-      TabOrder = 0
-    end
-    object Panel5: TPanel
-      Left = 1
-      Height = 29
-      Top = 79
-      Width = 1006
-      Align = alBottom
-      Caption = 'Panel5'
-      ClientHeight = 29
-      ClientWidth = 1006
-      TabOrder = 1
-      object Label1: TLabel
-        Left = 1
-        Height = 25
-        Top = 3
-        Width = 134
-        Align = alLeft
-        BorderSpacing.Top = 2
-        Caption = 'Quick Command : '
-        ParentColor = False
-      end
-      object Edit2: TEdit
-        Left = 135
-        Height = 27
-        Top = 1
-        Width = 870
-        Align = alClient
-        Font.Name = 'Consolas'
-        ParentFont = False
-        TabOrder = 0
-        Text = 'Edit2'
-      end
-    end
+    TabOrder = 4
   end
   object ToolBar1: TToolBar
     Left = 0
@@ -754,7 +698,7 @@ object MainForm: TMainForm
     Top = 0
     Width = 1008
     Caption = 'ToolBar1'
-    TabOrder = 7
+    TabOrder = 5
     object BitBtn3: TBitBtn
       Left = 1
       Height = 22
@@ -780,6 +724,84 @@ object MainForm: TMainForm
       Caption = 'ToolButton1'
       Style = tbsDivider
     end
+  end
+  object Panel2: TPanel
+    Left = 793
+    Height = 634
+    Top = 24
+    Width = 215
+    Align = alRight
+    Caption = 'Panel2'
+    ClientHeight = 634
+    ClientWidth = 215
+    TabOrder = 6
+    object Panel3: TPanel
+      Left = 1
+      Height = 39
+      Top = 1
+      Width = 213
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 39
+      ClientWidth = 213
+      TabOrder = 0
+      object TreeFilterEdit1: TTreeFilterEdit
+        Left = 0
+        Height = 27
+        Top = 5
+        Width = 184
+        ButtonWidth = 23
+        NumGlyphs = 1
+        Align = alCustom
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = False
+        MaxLength = 0
+        TabOrder = 0
+        FilteredTreeview = ModuleTree
+      end
+    end
+    object ModuleTree: TTreeView
+      Left = 1
+      Height = 498
+      Top = 40
+      Width = 213
+      Align = alClient
+      DefaultItemHeight = 22
+      ExpandSignType = tvestArrow
+      Images = ModuleImgs
+      ReadOnly = True
+      RowSelect = True
+      ShowLines = False
+      StateImages = ModuleImgs
+      TabOrder = 1
+      Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoRowSelect, tvoShowButtons, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+    end
+    object ModuleIntro: TMemo
+      Left = 1
+      Height = 90
+      Top = 543
+      Width = 213
+      Align = alBottom
+      ScrollBars = ssAutoBoth
+      TabOrder = 2
+    end
+    object Splitter3: TSplitter
+      Cursor = crVSplit
+      Left = 1
+      Height = 5
+      Top = 538
+      Width = 213
+      Align = alBottom
+      ResizeAnchor = akBottom
+    end
+  end
+  object Splitter2: TSplitter
+    Left = 788
+    Height = 634
+    Top = 24
+    Width = 5
+    Align = alRight
+    ResizeAnchor = akRight
   end
   object MainMenu1: TMainMenu
     left = 256
@@ -815,6 +837,21 @@ object MainForm: TMainForm
       end
       object MenuItem11: TMenuItem
         Action = SystemStop
+      end
+      object MenuItem19: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem20: TMenuItem
+        Action = SystemReset
+      end
+      object MenuItem21: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem22: TMenuItem
+        Action = SystemRedraw
+      end
+      object MenuItem23: TMenuItem
+        Action = SystemFullRedraw
       end
     end
     object MenuItem3: TMenuItem
@@ -910,6 +947,7 @@ object MainForm: TMainForm
       Category = 'File'
       Caption = 'Save'
       OnExecute = FileSaveExecute
+      ShortCut = 16467
     end
     object PannelCode: TAction
       Category = 'GUI'
@@ -932,9 +970,95 @@ object MainForm: TMainForm
       Caption = 'Close'
       OnExecute = FileCloseExecute
     end
+    object SystemFullRedraw: TAction
+      Category = 'System'
+      Caption = 'Full Redraw'
+    end
+    object SystemRedraw: TAction
+      Category = 'System'
+      Caption = 'Redraw'
+    end
+    object SystemReset: TAction
+      Category = 'System'
+      Caption = 'Reset'
+    end
   end
   object ModuleImgs: TImageList
     left = 864
     top = 96
+  end
+  object SynAnySyn: TSynAnySyn
+    CommentAttri.Foreground = clGreen
+    CommentAttri.FrameEdges = sfeAround
+    CommentAttri.Style = [fsBold, fsItalic]
+    Comments = [csCStyle]
+    DetectPreprocessor = False
+    IdentifierAttri.FrameEdges = sfeAround
+    IdentifierChars = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz'
+    KeyAttri.FrameEdges = sfeAround
+    ConstantAttri.FrameEdges = sfeAround
+    ObjectAttri.Background = clSilver
+    ObjectAttri.FrameStyle = slsDotted
+    EntityAttri.FrameEdges = sfeAround
+    VariableAttri.FrameEdges = sfeAround
+    DotAttri.FrameEdges = sfeAround
+    KeyWords.Strings = (
+      'AND'
+      'ARCCOS'
+      'ARCSIN'
+      'BEGIN'
+      'CONST'
+      'COS'
+      'DIV'
+      'END'
+      'EXP'
+      'FILE'
+      'ID'
+      'INTEGER'
+      'LAZRADIO'
+      'LOG'
+      'MOD'
+      'NOT'
+      'OR'
+      'ORD'
+      'PRED'
+      'REAL'
+      'ROUND'
+      'SIN'
+      'STR'
+      'STRING'
+      'SUCC'
+      'TRUNC'
+      'VAL'
+      'VAR'
+      'WRITE'
+      'WRITELN'
+      'XOR'
+    )
+    Objects.Strings = (
+      'RTL'
+    )
+    NumberAttri.Foreground = clRed
+    NumberAttri.FrameEdges = sfeAround
+    PreprocessorAttri.FrameEdges = sfeAround
+    SpaceAttri.FrameEdges = sfeAround
+    StringAttri.Foreground = clBlue
+    StringAttri.FrameEdges = sfeAround
+    SymbolAttri.Foreground = clFuchsia
+    SymbolAttri.FrameEdges = sfeAround
+    Markup = False
+    Entity = True
+    DollarVariables = False
+    ActiveDot = False
+    left = 256
+    top = 120
+  end
+  object SynAutoComplete: TSynAutoComplete
+    EndOfTokenChr = '()[].'
+    ShortCut = 8224
+    ExecCommandID = ecSynAutoCompletionExecute
+    Editor = SynEdit
+    left = 256
+    top = 192
   end
 end

@@ -23,7 +23,56 @@ function  DBtoMultiplier(const Db: Double): Integer;
 function FloatAsInt(const F: Single): Integer;
 function IntAsFloat(const N: Integer): Float;
 
+procedure QuickSort(AList: PPointer; const N: Integer; Compare: TListSortCompare);
+
 implementation
+
+procedure QuickSort0(FList: PPointer; L, R : Longint;
+                     Compare: TListSortCompare);
+var
+  I, J : Longint;
+  P, Q : Pointer;
+begin
+ repeat
+   I := L;
+   J := R;
+   P := FList[ (L + R) div 2 ];
+   repeat
+     while Compare(P, FList[i]) > 0 do
+       I := I + 1;
+     while Compare(P, FList[J]) < 0 do
+       J := J - 1;
+     If I <= J then
+     begin
+       Q := FList[I];
+       Flist[I] := FList[J];
+       FList[J] := Q;
+       I := I + 1;
+       J := J - 1;
+     end;
+   until I > J;
+   // sort the smaller range recursively
+   // sort the bigger range via the loop
+   // Reasons: memory usage is O(log(n)) instead of O(n) and loop is faster than recursion
+   if J - L < R - I then
+   begin
+     if L < J then
+       QuickSort0(FList, L, J, Compare);
+     L := I;
+   end
+   else
+   begin
+     if I < R then
+       QuickSort0(FList, I, R, Compare);
+     R := J;
+   end;
+ until L >= R;
+end;
+
+procedure QuickSort(AList: PPointer; const N: Integer; Compare: TListSortCompare);
+begin
+  QuickSort0(AList, 0, N - 1, Compare);
+end;
 
 procedure HSL2RGB(Hue, Saturation, Lightness: Double; out R, G, B: Byte);
 var

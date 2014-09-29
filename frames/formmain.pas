@@ -5,21 +5,38 @@ unit formmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, SynEdit, TreeFilterEdit, ListFilterEdit, Forms,
+  Classes, SysUtils, FileUtil, SynEdit, SynHighlighterPas, SynMemo,
+  SynHighlighterAny, SynCompletion, TreeFilterEdit, ListFilterEdit, Forms,
   Controls, Graphics, Dialogs, Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls,
-  Buttons, StdActns, RadioSystem, RadioModule, RadioLang;
+  Buttons, StdActns, RadioSystem, RadioModule, RadioLang, types, Math;
 
 type
 
   { TMainForm }
 
   TMainForm = class(TForm)
+    MenuItem19: TMenuItem;
+    MenuItem20: TMenuItem;
+    MenuItem21: TMenuItem;
+    MenuItem22: TMenuItem;
+    MenuItem23: TMenuItem;
+    SystemReset: TAction;
+    SystemRedraw: TAction;
+    SystemFullRedraw: TAction;
+    Edit2: TEdit;
     FileClose: TAction;
     FileNew: TAction;
     BitBtn3: TBitBtn;
     BitBtn4: TBitBtn;
+    Label1: TLabel;
+    ModuleIntro: TMemo;
     MenuItem17: TMenuItem;
     MenuItem18: TMenuItem;
+    ModuleTree: TTreeView;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
+    Panel5: TPanel;
     PannelGraph: TAction;
     PannelCode: TAction;
     FileSave: TAction;
@@ -37,8 +54,15 @@ type
     MenuItem6: TMenuItem;
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
+    Splitter1: TSplitter;
+    Splitter2: TSplitter;
+    Splitter3: TSplitter;
+    SynAnySyn: TSynAnySyn;
+    SynAutoComplete: TSynAutoComplete;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
+    TreeFilterEdit1: TTreeFilterEdit;
+    TreeView1: TTreeView;
     ViewLogError: TAction;
     ViewLogWarn: TAction;
     ViewLogInfo: TAction;
@@ -50,12 +74,10 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
-    Edit2: TEdit;
     FileExit: TFileExit;
     FileOpen: TFileOpen;
     FileSaveAs: TFileSaveAs;
     HelpOnHelp1: THelpOnHelp;
-    Label1: TLabel;
     MainMenu1: TMainMenu;
     MenuItem1: TMenuItem;
     MenuItem3: TMenuItem;
@@ -63,20 +85,11 @@ type
     PageControl1: TPageControl;
     PaintBox1: TPaintBox;
     Panel1: TPanel;
-    Panel2: TPanel;
-    Panel3: TPanel;
-    Panel4: TPanel;
-    Panel5: TPanel;
     ScrollBox1: TScrollBox;
-    Splitter1: TSplitter;
-    Splitter2: TSplitter;
     StatusBar1: TStatusBar;
-    SynEdit1: TSynEdit;
+    SynEdit: TSynEdit;
     SheetCode: TTabSheet;
     SheetGraph: TTabSheet;
-    TreeFilterEdit1: TTreeFilterEdit;
-    TreeView1: TTreeView;
-    ModuleTree: TTreeView;
     procedure BitBtn1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -86,14 +99,16 @@ type
     procedure FileOpenAccept(Sender: TObject);
     procedure FileSaveAsAccept(Sender: TObject);
     procedure FileSaveExecute(Sender: TObject);
-    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure PannelCodeExecute(Sender: TObject);
     procedure PannelCodeUpdate(Sender: TObject);
     procedure PannelGraphExecute(Sender: TObject);
     procedure PannelGraphUpdate(Sender: TObject);
-    procedure SynEdit1Change(Sender: TObject);
+    procedure SynEditChange(Sender: TObject);
+    procedure SynEditMouseWheel(Sender: TObject; Shift: TShiftState;
+      WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
     procedure SystemStartExecute(Sender: TObject);
     procedure SystemStopExecute(Sender: TObject);
     procedure ViewLogLevelExecute(Sender: TObject);
@@ -113,6 +128,7 @@ type
     procedure OpenProject(const Fn: string);
     procedure CloseProject;
     procedure SystemGo;
+    function  SafeSaved: Boolean;
   public
     property Modified: Boolean read FModified write SetModified;
     property SystemName: string read FSystemName write SetSystemName;
@@ -196,7 +212,7 @@ SAVE:
 NOT_SAVE:
 
   FSystem.Reset;
-  SynEdit1.ClearAll;
+  SynEdit.ClearAll;
   Modified := False;
   FFileName := '';
   SystemName := '';
@@ -211,7 +227,7 @@ end;
 procedure TMainForm.FileSaveAsAccept(Sender: TObject);
 begin
   FFileName := FileSaveAs.Dialog.FileName;
-  SynEdit1.Lines.SaveToFile(FFileName);
+  SynEdit.Lines.SaveToFile(FFileName);
   Modified := False;
 end;
 
@@ -222,12 +238,36 @@ begin
     FileSaveAs.Execute;
     Exit;
   end;
-  SynEdit1.Lines.SaveToFile(FFileName);
+  SynEdit.Lines.SaveToFile(FFileName);
   Modified := False;
 end;
 
-procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+label
+  SAVE, NOT_SAVE;
 begin
+  CanClose := False;
+  if Modified then
+  begin
+    case MessageDlg('Modified', 'File modified. Save [Yes] or not [No] or Cancel?',
+     mtConfirmation, mbYesNoCancel, '') of
+      mrNo: goto NOT_SAVE;
+      mrCancel: Exit;
+    end;
+  end;
+
+SAVE:
+  FileSave.Execute;
+
+  if Modified then
+  begin
+    if MessageDlg('Disard?', 'File not saved. Are you sure you want to discard it?',
+     mtWarning, mbYesNo, '') = mrNo then
+     goto SAVE;
+  end;
+
+NOT_SAVE:
+  CanClose := True;
   FSystem.Free;
 end;
 
@@ -243,7 +283,7 @@ begin
     end;
 
   FSystem := TRadioSystem.Create;
-  FSystem.ShowModules(ModuleTree);
+  FSystem.ShowModules(ModuleTree, SynAnySyn.Objects);
   FRuntime := TRadioLangRT.Create;
 
   UpdateCaption;
@@ -274,9 +314,22 @@ begin
   PannelGraph.Checked := PageControl1.TabIndex = 1;
 end;
 
-procedure TMainForm.SynEdit1Change(Sender: TObject);
+procedure TMainForm.SynEditChange(Sender: TObject);
 begin
   Modified := True;
+end;
+
+procedure TMainForm.SynEditMouseWheel(Sender: TObject; Shift: TShiftState;
+  WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
+var
+  S: Integer;
+begin
+  if ssCtrl in Shift then
+  begin
+    S := SynEdit.Font.Size + Sign(WheelDelta);
+    S := Min(90, Max(7, S));
+    SynEdit.Font.Size := S;
+  end;
 end;
 
 procedure TMainForm.SystemStartExecute(Sender: TObject);
@@ -578,17 +631,18 @@ begin
   S := '(unnamed)';
   if FSystemName <> '' then S := FSystemName;
   if FModified then
-    Caption := Format('%s* - LazRadio', [S])
+    Caption := Format('%s [%s]* - LazRadio', [S, FFileName])
   else
-    Caption := Format('%s - LazRadio', [S]);
+    Caption := Format('%s [%s] - LazRadio',  [S, FFileName]);
 end;
 
 procedure TMainForm.OpenProject(const Fn: string);
 begin
   FSystem.Reset;
   FFileName := Fn;
-  SynEdit1.Lines.LoadFromFile(FFileName);
+  SynEdit.Lines.LoadFromFile(FFileName);
   SystemName := '';
+  UpdateCaption;
 end;
 
 procedure TMainForm.CloseProject;
@@ -600,6 +654,39 @@ procedure TMainForm.SystemGo;
 begin
   FRuntime.Reset;
   FRuntime.Exec(FFileName);
+end;
+
+function TMainForm.SafeSaved: Boolean;
+label
+  SAVE, NOT_SAVE;
+begin
+  Result := False;
+  if Modified then
+  begin
+    case MessageDlg('Modified', 'File modified. Save [Yes] or not [No] or Cancel?',
+     mtConfirmation, mbYesNoCancel, '') of
+      mrNo: goto NOT_SAVE;
+      mrCancel: Exit;
+    end;
+  end;
+
+SAVE:
+  FileSave.Execute;
+
+  if Modified then
+  begin
+    if MessageDlg('Disard?', 'File not saved. Are you sure you want to discard it?',
+     mtWarning, mbYesNo, '') = mrNo then
+     goto SAVE;
+  end;
+
+NOT_SAVE:
+
+  FSystem.Reset;
+  SynEdit.ClearAll;
+  Modified := False;
+  FFileName := '';
+  SystemName := '';
 end;
 
 end.

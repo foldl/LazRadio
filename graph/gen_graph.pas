@@ -170,6 +170,7 @@ type
   TGenLayout = class
   const
     V_MARGIN = 60;
+    V_MARGIN2=  5;
     H_MARGIN = 80;
   public
     procedure Layout(Entities, Conns: TList); virtual; abstract;
@@ -247,6 +248,9 @@ type
   end;
 
 implementation
+
+uses
+  util_math;
 
 const
   PORT_MARK_SIZE   = 15;
@@ -665,7 +669,7 @@ procedure TGenRoute.PtoXY(N: PGenRouteNodeRec; out X, Y: Integer);
 var
   T: Integer;
 begin
-  T := (Cardinal(N) - Cardinal(@FWorking[0])) div SizeOf(FWorking[0]);
+  T := (PtrUInt(N) - PtrUInt(@FWorking[0])) div SizeOf(FWorking[0]);
   Y := T div FSize1.x;
   X := T mod FSize1.x;
 end;
@@ -1065,6 +1069,17 @@ begin
   Result := Item1.Tag - Item2.Tag;
   if Result = 0 then
     Result := (Item1.DegIn + Item1.DegOut) - (Item2.DegIn + Item2.DegOut);
+  if Result = 0 then
+    Result := Item1.DegIn - Item2.DegIn;
+  if Result = 0 then
+    Result := CompareValue(PtrUInt(Item1), PtrUInt(Item2));
+end;
+
+function EntityPosCompare(Item1, Item2: TGenEntityNode): Integer;
+begin
+  Result := Item1.Pos.y - Item2.Pos.y;
+  if Result = 0 then
+    Result := CompareValue(PtrUInt(Item1), PtrUInt(Item2));
 end;
 
 { TGenLevelLayout }
@@ -1079,7 +1094,34 @@ var
   K: Integer;
   V: Integer = 0;
   S: array of TRect;
-  A: array of Pointer;
+  A: array of TGenEntityNode;
+
+  procedure LayoutConnected(const This: TGenEntityNode);
+  var
+    C: Pointer;
+  begin
+    for C in Conns do
+      with TGenEntityConnection(C) do
+      begin
+        if ToPort.Entity = This then
+        begin
+          if (FromPort.Entity.Pos.y < 0) and (FromPort.Entity.Tag = This.Tag - 1) then
+          begin
+            FromPort.Entity.Pos.y := This.Pos.y;
+            LayoutConnected(FromPort.Entity);
+          end;
+        end
+        else if FromPort.Entity = This then
+        begin
+          if (ToPort.Entity.Pos.y < 0) and (ToPort.Entity.Tag = This.Tag + 1) then
+          begin
+            ToPort.Entity.Pos.y := This.Pos.y;
+            LayoutConnected(ToPort.Entity);
+          end;
+        end;
+      end;
+  end;
+
 begin
   if Entities.Count < 1 then Exit;
 
@@ -1088,6 +1130,7 @@ begin
   for P in Entities do
   begin
     TGenEntityNode(P).Pos.x := -1;
+    TGenEntityNode(P).Pos.y := -1;
     TGenEntityNode(P).DegIn := 0;
     TGenEntityNode(P).DegOut := 0;
   end;
@@ -1139,33 +1182,6 @@ begin
     V := TGenEntityNode(Entities[I]).Tag;
   end;
 
-  // sort Entities that have the same Level: maximum is at center, sides follows
-  I := 0;
-  while I < Entities.Count do
-  begin
-    J := I + 1;
-    while J < Entities.Count do
-    begin
-      if TGenEntityNode(Entities[J]).Tag = TGenEntityNode(Entities[I]).Tag then
-        Inc(J)
-      else
-        Break;
-    end;
-    SetLength(A, J - I);
-    for K := 0 to J - I - 1 do
-    begin
-      if Odd(K) then
-        A[J - I - 1 - (K - 1) div 2] := Entities[K + I]
-      else
-        A[K div 2] := Entities[K + I]
-    end;
-
-    for K := 0 to J - I - 1 do
-      Entities[K + I] := A[K];
-
-    I := J;
-  end;
-
   // size of each level
   SetLength(S, TGenEntityNode(Entities[Entities.Count - 1]).Tag + 1);
   for P in Entities do
@@ -1194,26 +1210,131 @@ begin
     end;
   end;
 
-  // layout
-  for P in Entities do
+  // use the level that has the most entities as reference
+  // this Level is sorted: maximum is at center, sides follows
+
+  I := 0;
+  V := 0;
+  while I < Entities.Count do
   begin
-    with TGenEntityNode(P) do
+    J := I + 1;
+    while J < Entities.Count do
     begin
-      Pos.x := S[Tag].Left + (S[Tag].Right - Extent.cx) div 2;
+      if TGenEntityNode(Entities[J]).Tag = TGenEntityNode(Entities[I]).Tag then
+        Inc(J)
+      else
+        Break;
+    end;
+    if J - I <= V then
+    begin
+      I := J;
+      Continue;
+    end;
+
+    V := J - I;
+    SetLength(A, V);
+    for K := 0 to High(A) do
+      A[K] := TGenEntityNode(Entities[K + I]);
+    K := I;
+
+    I := J;
+  end;
+
+  // sort the reference Level and layout: maximum is at center, sides follows
+  I := K;
+  for K := 0 to High(A) do
+  begin
+    if Odd(K) then
+      Entities[I + High(A) - (K - 1) div 2] := A[K]
+    else
+      Entities[I + K div 2] := A[K];
+  end;
+  for K := 0 to High(A) do
+  begin
+    with TGenEntityNode(Entities[K + I]) do
+    begin
       Pos.y := S[Tag].Top;
       S[Tag].Top := S[Tag].Top + Extent.cy + V_MARGIN;
     end;
   end;
+  for K := High(A) downto 0 do
+  begin
+    LayoutConnected(A[K]);
+  end;
+
+  // layout remaining components
+  I := 0;
+  while I < Entities.Count do
+  begin
+    J := I + 1;
+    while J < Entities.Count do
+    begin
+      if TGenEntityNode(Entities[J]).Tag = TGenEntityNode(Entities[I]).Tag then
+        Inc(J)
+      else
+        Break;
+    end;
+
+    SetLength(A, J - I);
+    for K := 0 to High(A) do
+      A[K] := TGenEntityNode(Entities[K + I]);
+    I := J;
+
+    // now layout A[]
+    QuickSort(@A[0], Length(A), TListSortCompare(@EntityPosCompare));
+
+    if A[High(A)].Pos.y < 0 then
+       A[High(A)].Pos.y := S[A[High(A)].Tag].Bottom - A[High(A)].Extent.cy;
+
+    for K := High(A) - 1 downto 0 do
+    begin
+      if A[K].Pos.y < 0 then
+      begin
+        A[K].Pos.y := A[K + 1].Pos.y - A[K].Extent.cy - V_MARGIN;
+        for J := K - 1 downto 0 do
+          A[K].Pos.y := A[K + 1].Pos.y - A[K].Extent.cy - V_MARGIN;
+        if A[0].Pos.y < V_MARGIN then
+        begin
+          V := V_MARGIN - A[0].Pos.y;
+          for J := 0 to High(A) do
+            A[J].Pos.y := A[J].Pos.y + V;
+        end;
+        Break;
+      end
+      else begin
+        V := A[K].Pos.y + A[K].Extent.cy + V_MARGIN2 - A[K + 1].Pos.y;
+        if V > 0 then
+        begin
+          V := A[K].Pos.y + A[K].Extent.cy + V_MARGIN - A[K + 1].Pos.y;
+          for J := K + 1 to High(A) do
+            A[J].Pos.y := A[J].Pos.y + V;
+        end;
+      end;
+    end;
+  end;
+
+  for P in Entities do
+    with TGenEntityNode(P) do
+    begin
+      Pos.x := S[Tag].Left + (S[Tag].Right - Extent.cx) div 2;
+    end;
 end;
 
 { TGenEntityNode }
 
+{
 function TGenEntityNode.CalcFirstPortY(const N: Integer): Integer;
 begin
   Result := 0;
   if N > 0 then
    Result := Box.Bottom - Box.Top - (N - 1) * (PORT_MARK_MARGIN + PORT_MARK_SIZE) - PORT_MARK_SIZE;
   Result := Box.Top + Result div 2;
+end;
+}
+
+function TGenEntityNode.CalcFirstPortY(const N: Integer): Integer;
+begin
+  Result := Box.Top + PORT_MARK_MARGIN div 2;
 end;
 
 procedure TGenEntityNode.DrawPorts(ACanvas: TCanvas);
