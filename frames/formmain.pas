@@ -15,11 +15,12 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    MenuItem19: TMenuItem;
+    Image1: TImage;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
     MenuItem23: TMenuItem;
+    SynCompletion: TSynCompletion;
     SystemReset: TAction;
     SystemRedraw: TAction;
     SystemFullRedraw: TAction;
@@ -41,7 +42,6 @@ type
     PannelCode: TAction;
     FileSave: TAction;
     MenuItem10: TMenuItem;
-    MenuItem11: TMenuItem;
     MenuItem12: TMenuItem;
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
@@ -58,7 +58,6 @@ type
     Splitter2: TSplitter;
     Splitter3: TSplitter;
     SynAnySyn: TSynAnySyn;
-    SynAutoComplete: TSynAutoComplete;
     ToolBar1: TToolBar;
     ToolButton1: TToolButton;
     TreeFilterEdit1: TTreeFilterEdit;
@@ -67,7 +66,6 @@ type
     ViewLogWarn: TAction;
     ViewLogInfo: TAction;
     ViewLogVerbose: TAction;
-    SystemStop: TAction;
     SystemStart: TAction;
     ActionList1: TActionList;
     Button1: TButton;
@@ -96,6 +94,7 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure FileCloseExecute(Sender: TObject);
+    procedure FileNewExecute(Sender: TObject);
     procedure FileOpenAccept(Sender: TObject);
     procedure FileSaveAsAccept(Sender: TObject);
     procedure FileSaveExecute(Sender: TObject);
@@ -128,7 +127,7 @@ type
     procedure OpenProject(const Fn: string);
     procedure CloseProject;
     procedure SystemGo;
-    function  SafeSaved: Boolean;
+    function  AskForClose: Boolean;
   public
     property Modified: Boolean read FModified write SetModified;
     property SystemName: string read FSystemName write SetSystemName;
@@ -189,33 +188,13 @@ begin
 end;
 
 procedure TMainForm.FileCloseExecute(Sender: TObject);
-label
-  SAVE, NOT_SAVE;
 begin
-  if Modified then
-  begin
-    if MessageDlg('Modified', 'File modified. Save [Yes] or not [No]?',
-     mtConfirmation, mbYesNo, '') = mrNo then
-     goto NOT_SAVE;
-  end;
+  AskForClose;
+end;
 
-SAVE:
-  FileSave.Execute;
-
-  if Modified then
-  begin
-    if MessageDlg('Disard?', 'File not saved. Are you sure you want to discard it?',
-     mtWarning, mbYesNo, '') = mrNo then
-     goto SAVE;
-  end;
-
-NOT_SAVE:
-
-  FSystem.Reset;
-  SynEdit.ClearAll;
-  Modified := False;
-  FFileName := '';
-  SystemName := '';
+procedure TMainForm.FileNewExecute(Sender: TObject);
+begin
+  AskForClose;
 end;
 
 procedure TMainForm.FileOpenAccept(Sender: TObject);
@@ -243,32 +222,10 @@ begin
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
-label
-  SAVE, NOT_SAVE;
 begin
-  CanClose := False;
-  if Modified then
-  begin
-    case MessageDlg('Modified', 'File modified. Save [Yes] or not [No] or Cancel?',
-     mtConfirmation, mbYesNoCancel, '') of
-      mrNo: goto NOT_SAVE;
-      mrCancel: Exit;
-    end;
-  end;
-
-SAVE:
-  FileSave.Execute;
-
-  if Modified then
-  begin
-    if MessageDlg('Disard?', 'File not saved. Are you sure you want to discard it?',
-     mtWarning, mbYesNo, '') = mrNo then
-     goto SAVE;
-  end;
-
-NOT_SAVE:
-  CanClose := True;
-  FSystem.Free;
+  CanClose := AskForClose;
+  if CanClose then
+    FSystem.Free;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
@@ -283,7 +240,10 @@ begin
     end;
 
   FSystem := TRadioSystem.Create;
-  FSystem.ShowModules(ModuleTree, SynAnySyn.Objects);
+  FSystem.ShowModules(ModuleTree);
+  FSystem.GetModList(SynAnySyn.Objects);
+  FSystem.GetModList(SynCompletion.ItemList);
+
   FRuntime := TRadioLangRT.Create;
 
   UpdateCaption;
@@ -631,9 +591,10 @@ begin
   S := '(unnamed)';
   if FSystemName <> '' then S := FSystemName;
   if FModified then
-    Caption := Format('%s [%s]* - LazRadio', [S, FFileName])
+    Caption := Format('%s - %s* - LazRadio', [S, FFileName])
   else
-    Caption := Format('%s [%s] - LazRadio',  [S, FFileName]);
+    Caption := Format('%s - %s - LazRadio',  [S, FFileName]);
+  Application.Title := Caption;
 end;
 
 procedure TMainForm.OpenProject(const Fn: string);
@@ -656,7 +617,7 @@ begin
   FRuntime.Exec(FFileName);
 end;
 
-function TMainForm.SafeSaved: Boolean;
+function TMainForm.AskForClose: Boolean;
 label
   SAVE, NOT_SAVE;
 begin
@@ -668,7 +629,9 @@ begin
       mrNo: goto NOT_SAVE;
       mrCancel: Exit;
     end;
-  end;
+  end
+  else
+    goto NOT_SAVE;
 
 SAVE:
   FileSave.Execute;
@@ -684,9 +647,10 @@ NOT_SAVE:
 
   FSystem.Reset;
   SynEdit.ClearAll;
-  Modified := False;
   FFileName := '';
   SystemName := '';
+  Modified := False;
+  Result := True;
 end;
 
 end.

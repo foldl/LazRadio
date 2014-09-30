@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 233
+  Left = 269
   Height = 700
-  Top = 198
+  Top = 199
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -666,7 +666,7 @@ object MainForm: TMainForm
     Panels = <>
   end
   object Button3: TButton
-    Left = 120
+    Left = 544
     Height = 25
     Top = 120
     Width = 75
@@ -675,7 +675,7 @@ object MainForm: TMainForm
     TabOrder = 2
   end
   object Button2: TButton
-    Left = 120
+    Left = 544
     Height = 25
     Top = 64
     Width = 75
@@ -684,7 +684,7 @@ object MainForm: TMainForm
     TabOrder = 3
   end
   object Button4: TButton
-    Left = 120
+    Left = 544
     Height = 25
     Top = 168
     Width = 75
@@ -723,6 +723,12 @@ object MainForm: TMainForm
       Width = 5
       Caption = 'ToolButton1'
       Style = tbsDivider
+    end
+    object Image1: TImage
+      Left = 108
+      Height = 22
+      Top = 2
+      Width = 90
     end
   end
   object Panel2: TPanel
@@ -835,12 +841,6 @@ object MainForm: TMainForm
       object MenuItem10: TMenuItem
         Action = SystemStart
       end
-      object MenuItem11: TMenuItem
-        Action = SystemStop
-      end
-      object MenuItem19: TMenuItem
-        Caption = '-'
-      end
       object MenuItem20: TMenuItem
         Action = SystemReset
       end
@@ -911,11 +911,6 @@ object MainForm: TMainForm
       Caption = 'Go'
       OnExecute = SystemStartExecute
     end
-    object SystemStop: TAction
-      Category = 'System'
-      Caption = 'Stop'
-      OnExecute = SystemStopExecute
-    end
     object ViewLogVerbose: TAction
       Category = 'View'
       Caption = 'Verbose+'
@@ -964,6 +959,7 @@ object MainForm: TMainForm
     object FileNew: TAction
       Category = 'File'
       Caption = 'New'
+      OnExecute = FileNewExecute
     end
     object FileClose: TAction
       Category = 'File'
@@ -988,6 +984,7 @@ object MainForm: TMainForm
     top = 96
   end
   object SynAnySyn: TSynAnySyn
+    Enabled = False
     CommentAttri.Foreground = clGreen
     CommentAttri.FrameEdges = sfeAround
     CommentAttri.Style = [fsBold, fsItalic]
@@ -999,6 +996,7 @@ object MainForm: TMainForm
     ConstantAttri.FrameEdges = sfeAround
     ObjectAttri.Background = clSilver
     ObjectAttri.FrameStyle = slsDotted
+    ObjectAttri.FrameEdges = sfeAround
     EntityAttri.FrameEdges = sfeAround
     VariableAttri.FrameEdges = sfeAround
     DotAttri.FrameEdges = sfeAround
@@ -1051,14 +1049,25 @@ object MainForm: TMainForm
     DollarVariables = False
     ActiveDot = False
     left = 256
-    top = 120
+    top = 112
   end
-  object SynAutoComplete: TSynAutoComplete
+  object SynCompletion: TSynCompletion
+    ItemList.Strings = (
+      'sdfsf'
+      'aa'
+      'ccc'
+    )
+    Position = 0
+    LinesInWindow = 6
+    SelectedColor = clHighlight
+    CaseSensitive = False
+    Width = 262
+    ShowSizeDrag = True
+    ShortCut = 16416
     EndOfTokenChr = '()[].'
-    ShortCut = 8224
-    ExecCommandID = ecSynAutoCompletionExecute
+    ExecCommandID = ecSynCompletionExecute
     Editor = SynEdit
     left = 256
-    top = 192
+    top = 184
   end
 end

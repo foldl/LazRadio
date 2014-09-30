@@ -48,9 +48,6 @@ type
     destructor Destroy; override;
 
     procedure Reset;
-
-    function DefVar(Identifier: string; const T: string): Boolean;
-
     function Exec(const Fn: string): Boolean;
   end;
 
@@ -108,11 +105,6 @@ procedure TRadioLangRT.Reset;
 begin
   FConstTable.Clear(True);
   LoadMsgConsts;
-end;
-
-function TRadioLangRT.DefVar(Identifier: string; const T: string): Boolean;
-begin
-
 end;
 
 function TRadioLangRT.Exec(const Fn: string): Boolean;
