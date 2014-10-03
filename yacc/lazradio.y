@@ -5,6 +5,13 @@
 */
 
 %{
+
+procedure ReportProjName(const Name: string);
+begin
+  if Assigned(OnProjName) then
+    OnProjName(Name);
+end;
+
 procedure EmitMsg(const Line: string);
 begin
   if not Assigned(OnWriteLn) then
@@ -84,7 +91,7 @@ begin
   T := RegAlloc('int');
   RegWrite(T, V);
   SymTable.O[UpperCase(S)] := SO(Format('{type: "int", disp: "%s", reg: "%s"}', [S, T]));
-  writeln(SymTable.asjson(true));
+  // writeln(SymTable.asjson(true));
 end;
 
 // for built-in types
@@ -137,7 +144,7 @@ begin
       yyerror(Format('type "%s" is unknown.', [T]));
       Break;
     end; 
-    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s"}', [R, V]));
+    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s", obj: true}', [R, V]));
   end;
   L.Free;
 end;
@@ -559,7 +566,7 @@ procedure SendMsg(const S: string; const M: string);
 var
   L: TStringList;
 begin
-  writeln('send ', S, ' ', M);
+  // writeln('send ', S, ' ', M);
   if not Assigned(OnSendMessage) then Exit;
   
   L := TStringList.Create;
@@ -579,7 +586,7 @@ end;
 
 function ConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
 begin
-  writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
+  // writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
   ConnectData := False;
   if Assigned(OnConnectData) then
     ConnectData := OnConnectData(Source, Target, SourcePort, TargetPort);
@@ -681,7 +688,7 @@ file : program {}
 program : program_heading semicolon block DOT
     ;
 
-program_heading : _LAZRADIO identifier
+program_heading : _LAZRADIO identifier { ReportProjName($2); }
     ;
 
 identifier_list : identifier_list comma identifier { $$ := $1 + ' ' + $3}
@@ -826,7 +833,7 @@ send_statement : identifier SEND radio_message { SendMsg($1, $3); $$ := $1;}
 
 radio_message : LBRACE expression COMMA expression COMMA expression RBRACE  { $$ := Format('%d %d %d', [ReadInt($2, RtOK), 
                                                                                        ReadInt($4, RtOK), ReadInt($6, RtOK)]); }
-    | LBRACE expression COMMA expression _RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadInt($4, RtOK)]); }
+    | LBRACE expression COMMA expression RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadInt($4, RtOK)]); }
     | LBRACE expression RBRACE  { $$ := Format('%d 0 0', [ReadInt($2, RtOK)]); }
     ;
 
@@ -933,12 +940,12 @@ comma : COMMA
 
 function Interpret(const Fn: string): Boolean;
 begin
-  RegTable := SO('{}');
+  if not Assigned(RegTable) then
+    RegTable := SO('{}');
 
   if not Assigned(SymTable) then 
   begin
     SymTable := SO('{}');
-    PredefineInt('RM_CONFIG', 200);
   end;
 
   if not Assigned(ObjTypes) then

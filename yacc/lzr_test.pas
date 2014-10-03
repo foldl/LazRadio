@@ -24,6 +24,7 @@ var
     OnConnectFeature: TConnectFeature = nil;
     OnConnectData: TConnectData = nil;
     OnWriteLn: TEmitMessage = nil;
+    OnProjName: TEmitMessage = nil;
 
 {$I lazradio.pas}
 

@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 269
+  Left = 394
   Height = 700
-  Top = 199
+  Top = 88
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.2.2.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -572,10 +572,10 @@ object MainForm: TMainForm
           Top = 0
           Width = 778
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 600
+          HorzScrollBar.Page = 774
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 432
+          VertScrollBar.Page = 466
           VertScrollBar.Tracking = True
           Align = alClient
           ClientHeight = 466
@@ -665,40 +665,13 @@ object MainForm: TMainForm
     Width = 1008
     Panels = <>
   end
-  object Button3: TButton
-    Left = 544
-    Height = 25
-    Top = 120
-    Width = 75
-    Caption = 'Button3'
-    OnClick = Button3Click
-    TabOrder = 2
-  end
-  object Button2: TButton
-    Left = 544
-    Height = 25
-    Top = 64
-    Width = 75
-    Caption = 'Button2'
-    OnClick = Button2Click
-    TabOrder = 3
-  end
-  object Button4: TButton
-    Left = 544
-    Height = 25
-    Top = 168
-    Width = 75
-    Caption = 'Button4'
-    OnClick = Button4Click
-    TabOrder = 4
-  end
   object ToolBar1: TToolBar
     Left = 0
     Height = 24
     Top = 0
     Width = 1008
     Caption = 'ToolBar1'
-    TabOrder = 5
+    TabOrder = 2
     object BitBtn3: TBitBtn
       Left = 1
       Height = 22
@@ -740,7 +713,7 @@ object MainForm: TMainForm
     Caption = 'Panel2'
     ClientHeight = 634
     ClientWidth = 215
-    TabOrder = 6
+    TabOrder = 3
     object Panel3: TPanel
       Left = 1
       Height = 39
@@ -838,8 +811,11 @@ object MainForm: TMainForm
     end
     object MenuItem9: TMenuItem
       Caption = '&System'
+      object MenuItem11: TMenuItem
+        Action = SystemCheck
+      end
       object MenuItem10: TMenuItem
-        Action = SystemStart
+        Action = SystemGo
       end
       object MenuItem20: TMenuItem
         Action = SystemReset
@@ -906,10 +882,11 @@ object MainForm: TMainForm
       Caption = 'E&xit'
       Hint = 'Exit'
     end
-    object SystemStart: TAction
+    object SystemGo: TAction
       Category = 'System'
       Caption = 'Go'
-      OnExecute = SystemStartExecute
+      OnExecute = SystemGoExecute
+      ShortCut = 120
     end
     object ViewLogVerbose: TAction
       Category = 'View'
@@ -969,14 +946,24 @@ object MainForm: TMainForm
     object SystemFullRedraw: TAction
       Category = 'System'
       Caption = 'Full Redraw'
+      OnExecute = SystemFullRedrawExecute
+      ShortCut = 116
     end
     object SystemRedraw: TAction
       Category = 'System'
       Caption = 'Redraw'
+      OnExecute = SystemRedrawExecute
     end
     object SystemReset: TAction
       Category = 'System'
       Caption = 'Reset'
+      OnExecute = SystemResetExecute
+    end
+    object SystemCheck: TAction
+      Category = 'System'
+      Caption = 'Check'
+      OnExecute = SystemCheckExecute
+      ShortCut = 16504
     end
   end
   object ModuleImgs: TImageList

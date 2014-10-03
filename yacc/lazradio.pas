@@ -3,6 +3,13 @@
 
 (* global definitions: *)
 
+
+procedure ReportProjName(const Name: string);
+begin
+  if Assigned(OnProjName) then
+    OnProjName(Name);
+end;
+
 procedure EmitMsg(const Line: string);
 begin
   if not Assigned(OnWriteLn) then
@@ -82,7 +89,7 @@ begin
   T := RegAlloc('int');
   RegWrite(T, V);
   SymTable.O[UpperCase(S)] := SO(Format('{type: "int", disp: "%s", reg: "%s"}', [S, T]));
-  writeln(SymTable.asjson(true));
+  // writeln(SymTable.asjson(true));
 end;
 
 // for built-in types
@@ -135,7 +142,7 @@ begin
       yyerror(Format('type "%s" is unknown.', [T]));
       Break;
     end; 
-    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s"}', [R, V]));
+    SymTable.O[UpperCase(V)] := SO(Format('{type: "%s", disp: "%s", obj: true}', [R, V]));
   end;
   L.Free;
 end;
@@ -557,7 +564,7 @@ procedure SendMsg(const S: string; const M: string);
 var
   L: TStringList;
 begin
-  writeln('send ', S, ' ', M);
+  // writeln('send ', S, ' ', M);
   if not Assigned(OnSendMessage) then Exit;
   
   L := TStringList.Create;
@@ -577,7 +584,7 @@ end;
 
 function ConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
 begin
-  writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
+  // writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
   ConnectData := False;
   if Assigned(OnConnectData) then
     ConnectData := OnConnectData(Source, Target, SourcePort, TargetPort);
@@ -707,7 +714,7 @@ begin
          yyval := yyv[yysp-3];
        end;
    4 : begin
-         yyval := yyv[yysp-1];
+         ReportProjName(yyv[yysp-0].yyString); 
        end;
    5 : begin
          yyval.yyString := yyv[yysp-2].yyString + ' ' + yyv[yysp-0].yyString
@@ -1139,8 +1146,8 @@ type YYARec = record
 
 const
 
-yynacts   = 1112;
-yyngotos  = 564;
+yynacts   = 1113;
+yyngotos  = 563;
 yynstates = 234;
 yynrules  = 142;
 
@@ -2435,7 +2442,8 @@ yya : array [1..yynacts] of YYARec = (
   ( sym: 321; act: 9 ),
 { 222: }
 { 223: }
-  ( sym: 263; act: 228 ),
+  ( sym: 263; act: 227 ),
+  ( sym: 300; act: 228 ),
 { 224: }
 { 225: }
 { 226: }
@@ -2461,7 +2469,6 @@ yya : array [1..yynacts] of YYARec = (
   ( sym: 320; act: 66 ),
   ( sym: 321; act: 9 ),
 { 227: }
-{ 228: }
   ( sym: 256; act: 123 ),
   ( sym: 258; act: 124 ),
   ( sym: 259; act: 125 ),
@@ -2483,6 +2490,7 @@ yya : array [1..yynacts] of YYARec = (
   ( sym: 319; act: 65 ),
   ( sym: 320; act: 66 ),
   ( sym: 321; act: 9 ),
+{ 228: }
 { 229: }
   ( sym: 299; act: 231 ),
 { 230: }
@@ -3255,7 +3263,6 @@ yyg : array [1..yyngotos] of YYARec = (
   ( sym: -10; act: 225 ),
 { 222: }
 { 223: }
-  ( sym: -57; act: 227 ),
 { 224: }
 { 225: }
 { 226: }
@@ -3273,7 +3280,6 @@ yyg : array [1..yyngotos] of YYARec = (
   ( sym: -12; act: 229 ),
   ( sym: -10; act: 122 ),
 { 227: }
-{ 228: }
   ( sym: -23; act: 114 ),
   ( sym: -22; act: 49 ),
   ( sym: -21; act: 50 ),
@@ -3286,6 +3292,7 @@ yyg : array [1..yyngotos] of YYARec = (
   ( sym: -14; act: 120 ),
   ( sym: -13; act: 230 ),
   ( sym: -10; act: 122 ),
+{ 228: }
 { 229: }
 { 230: }
 { 231: }
@@ -3522,8 +3529,8 @@ yyd : array [0..yynstates-1] of Integer = (
 { 224: } -78,
 { 225: } -77,
 { 226: } 0,
-{ 227: } -84,
-{ 228: } 0,
+{ 227: } 0,
+{ 228: } -84,
 { 229: } 0,
 { 230: } 0,
 { 231: } 0,
@@ -3756,16 +3763,16 @@ yyal : array [0..yynstates-1] of Integer = (
 { 221: } 1065,
 { 222: } 1067,
 { 223: } 1067,
-{ 224: } 1068,
-{ 225: } 1068,
-{ 226: } 1068,
-{ 227: } 1089,
-{ 228: } 1089,
-{ 229: } 1110,
-{ 230: } 1111,
-{ 231: } 1112,
-{ 232: } 1113,
-{ 233: } 1113
+{ 224: } 1069,
+{ 225: } 1069,
+{ 226: } 1069,
+{ 227: } 1090,
+{ 228: } 1111,
+{ 229: } 1111,
+{ 230: } 1112,
+{ 231: } 1113,
+{ 232: } 1114,
+{ 233: } 1114
 );
 
 yyah : array [0..yynstates-1] of Integer = (
@@ -3992,17 +3999,17 @@ yyah : array [0..yynstates-1] of Integer = (
 { 220: } 1064,
 { 221: } 1066,
 { 222: } 1066,
-{ 223: } 1067,
-{ 224: } 1067,
-{ 225: } 1067,
-{ 226: } 1088,
-{ 227: } 1088,
-{ 228: } 1109,
-{ 229: } 1110,
-{ 230: } 1111,
-{ 231: } 1112,
-{ 232: } 1112,
-{ 233: } 1112
+{ 223: } 1068,
+{ 224: } 1068,
+{ 225: } 1068,
+{ 226: } 1089,
+{ 227: } 1110,
+{ 228: } 1110,
+{ 229: } 1111,
+{ 230: } 1112,
+{ 231: } 1113,
+{ 232: } 1113,
+{ 233: } 1113
 );
 
 yygl : array [0..yynstates-1] of Integer = (
@@ -4230,16 +4237,16 @@ yygl : array [0..yynstates-1] of Integer = (
 { 221: } 537,
 { 222: } 538,
 { 223: } 538,
-{ 224: } 539,
-{ 225: } 539,
-{ 226: } 539,
-{ 227: } 552,
-{ 228: } 552,
-{ 229: } 564,
-{ 230: } 564,
-{ 231: } 564,
-{ 232: } 565,
-{ 233: } 565
+{ 224: } 538,
+{ 225: } 538,
+{ 226: } 538,
+{ 227: } 551,
+{ 228: } 563,
+{ 229: } 563,
+{ 230: } 563,
+{ 231: } 563,
+{ 232: } 564,
+{ 233: } 564
 );
 
 yygh : array [0..yynstates-1] of Integer = (
@@ -4466,17 +4473,17 @@ yygh : array [0..yynstates-1] of Integer = (
 { 220: } 536,
 { 221: } 537,
 { 222: } 537,
-{ 223: } 538,
-{ 224: } 538,
-{ 225: } 538,
-{ 226: } 551,
-{ 227: } 551,
-{ 228: } 563,
-{ 229: } 563,
-{ 230: } 563,
-{ 231: } 564,
-{ 232: } 564,
-{ 233: } 564
+{ 223: } 537,
+{ 224: } 537,
+{ 225: } 537,
+{ 226: } 550,
+{ 227: } 562,
+{ 228: } 562,
+{ 229: } 562,
+{ 230: } 562,
+{ 231: } 563,
+{ 232: } 563,
+{ 233: } 563
 );
 
 yyr : array [1..yynrules] of YYRRec = (
@@ -4785,12 +4792,12 @@ end(*yyparse*);
 
 function Interpret(const Fn: string): Boolean;
 begin
-  RegTable := SO('{}');
+  if not Assigned(RegTable) then
+    RegTable := SO('{}');
 
   if not Assigned(SymTable) then 
   begin
     SymTable := SO('{}');
-    PredefineInt('RM_CONFIG', 200);
   end;
 
   if not Assigned(ObjTypes) then

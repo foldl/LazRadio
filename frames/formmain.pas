@@ -15,6 +15,8 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    MenuItem11: TMenuItem;
+    SystemCheck: TAction;
     Image1: TImage;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
@@ -66,12 +68,9 @@ type
     ViewLogWarn: TAction;
     ViewLogInfo: TAction;
     ViewLogVerbose: TAction;
-    SystemStart: TAction;
+    SystemGo: TAction;
     ActionList1: TActionList;
     Button1: TButton;
-    Button2: TButton;
-    Button3: TButton;
-    Button4: TButton;
     FileExit: TFileExit;
     FileOpen: TFileOpen;
     FileSaveAs: TFileSaveAs;
@@ -108,8 +107,11 @@ type
     procedure SynEditChange(Sender: TObject);
     procedure SynEditMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
-    procedure SystemStartExecute(Sender: TObject);
-    procedure SystemStopExecute(Sender: TObject);
+    procedure SystemCheckExecute(Sender: TObject);
+    procedure SystemFullRedrawExecute(Sender: TObject);
+    procedure SystemGoExecute(Sender: TObject);
+    procedure SystemRedrawExecute(Sender: TObject);
+    procedure SystemResetExecute(Sender: TObject);
     procedure ViewLogLevelExecute(Sender: TObject);
     procedure ViewLogLevelUpdate(Sender: TObject);
   private
@@ -126,7 +128,6 @@ type
     procedure UpdateCaption;
     procedure OpenProject(const Fn: string);
     procedure CloseProject;
-    procedure SystemGo;
     function  AskForClose: Boolean;
   public
     property Modified: Boolean read FModified write SetModified;
@@ -147,8 +148,6 @@ uses
 
 procedure TMainForm.Button1Click(Sender: TObject);
 begin
-  FSystem.Graph.PaintBox := PaintBox1;
-
   RDSSys;
 end;
 
@@ -245,6 +244,8 @@ begin
   FSystem.GetModList(SynCompletion.ItemList);
 
   FRuntime := TRadioLangRT.Create;
+  FSystem.GetModList(FRuntime.ModuleTypes);
+  FSystem.Graph.PaintBox := PaintBox1;
 
   UpdateCaption;
 end;
@@ -292,16 +293,35 @@ begin
   end;
 end;
 
-procedure TMainForm.SystemStartExecute(Sender: TObject);
+procedure TMainForm.SystemCheckExecute(Sender: TObject);
 begin
   if Modified then FileSave.Execute;
   if Modified then Exit;
-  SystemGo;
+  FRuntime.Check(FFileName);
 end;
 
-procedure TMainForm.SystemStopExecute(Sender: TObject);
+procedure TMainForm.SystemFullRedrawExecute(Sender: TObject);
 begin
+  FSystem.ShowSystem;
+end;
 
+procedure TMainForm.SystemGoExecute(Sender: TObject);
+begin
+  if Modified then FileSave.Execute;
+  if Modified then Exit;
+  FSystem.Reset;
+  FRuntime.Exec(FFileName);
+  FSystem.ShowSystem;
+end;
+
+procedure TMainForm.SystemRedrawExecute(Sender: TObject);
+begin
+  FSystem.Graph.FullRender;
+end;
+
+procedure TMainForm.SystemResetExecute(Sender: TObject);
+begin
+  FSystem.Reset;
 end;
 
 procedure TMainForm.ViewLogLevelExecute(Sender: TObject);
@@ -566,7 +586,7 @@ begin
 
   FSystem.ShowSystem;
 
-  RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
+ // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
 end;
 
@@ -609,12 +629,6 @@ end;
 procedure TMainForm.CloseProject;
 begin
   FSystem.Reset;
-end;
-
-procedure TMainForm.SystemGo;
-begin
-  FRuntime.Reset;
-  FRuntime.Exec(FFileName);
 end;
 
 function TMainForm.AskForClose: Boolean;
