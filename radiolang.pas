@@ -43,6 +43,8 @@ type
   private
     FConstTable: ISuperObject;
     FModuleTypes: TStringList;
+    FOnProjNameChanged: TNotifyEvent;
+    FProjName: string;
     procedure LoadMsgConsts;
     function CBSendMessage(const Name: string; const V1, V2, V3: PtrUInt): Boolean;
     function CBConnectFeature(const Source, Target: string): Boolean;
@@ -50,6 +52,7 @@ type
     procedure CBEmitMessage(const Line: string);
     procedure CBProjName(const Line: string);
     procedure CBCreateModules(Sender: TObject);
+    procedure SetOnProjNameChanged(AValue: TNotifyEvent);
   public
     constructor Create;
     destructor Destroy; override;
@@ -58,7 +61,10 @@ type
     function Exec(const Fn: string): Boolean;
     function Check(const Fn: string): Boolean;
 
+    procedure GetRTSymbols(L: TStrings);
     property ModuleTypes: TStringList read FModuleTypes;
+    property ProjName: string read FProjName;
+    property OnProjNameChanged: TNotifyEvent read FOnProjNameChanged write SetOnProjNameChanged;
   end;
 
 implementation
@@ -102,28 +108,29 @@ end;
 function TRadioLangRT.CBSendMessage(const Name: string; const V1, V2,
   V3: PtrUInt): Boolean;
 begin
-  RadioPostMessage(V1, V2, V3, UpperCase(Name));
+  RadioPostMessage(V1, V2, V3, Name);
 end;
 
 function TRadioLangRT.CBConnectFeature(const Source, Target: string): Boolean;
 begin
-  Result := TRadioSystem.Instance.ConnectFeature(UpperCase(Source), UpperCase(Target));
+  Result := TRadioSystem.Instance.ConnectFeature(Source, Target);
 end;
 
 function TRadioLangRT.CBConnectData(const Source, Target: string;
   const SourcePort, TargetPort: Integer): Boolean;
 begin
-  Result := TRadioSystem.Instance.ConnectData(UpperCase(Source), UpperCase(Target), SourcePort, TargetPort);
+  Result := TRadioSystem.Instance.ConnectData(Source, Target, SourcePort, TargetPort);
 end;
 
 procedure TRadioLangRT.CBEmitMessage(const Line: string);
 begin
-  TRadioLogger.Report(llError, Line);
+  TRadioLogger.Report(llSystem, Line);
 end;
 
 procedure TRadioLangRT.CBProjName(const Line: string);
 begin
-
+  FProjName := Line;
+  if Assigned(FOnProjNameChanged) then FOnProjNameChanged(Self);
 end;
 
 procedure TRadioLangRT.CBCreateModules(Sender: TObject);
@@ -134,9 +141,15 @@ begin
   begin
     if A.Value.AsObject.B['obj'] then
     begin
-      TRadioSystem.Instance.AddModule(A.Name, A.Value.AsObject.S['type']);
+      TRadioSystem.Instance.AddModule(A.Value.AsObject.S['disp'], A.Value.AsObject.S['type']);
     end;
   end;
+end;
+
+procedure TRadioLangRT.SetOnProjNameChanged(AValue: TNotifyEvent);
+begin
+  if FOnProjNameChanged = AValue then Exit;
+  FOnProjNameChanged := AValue;
 end;
 
 constructor TRadioLangRT.Create;
@@ -178,10 +191,11 @@ begin
   OnConnectData   := @CBConnectData;
   OnWriteLn       := @CBEmitMessage;
   OnProjName      := @CBProjName;
-  if Interpret(Fn) then
-    TRadioLogger.Report(llError, 'Succesfully executed.')
+  Result := Interpret(Fn);
+  if Result then
+    TRadioLogger.Report(llSystem, 'successfully executed.')
   else
-    TRadioLogger.Report(llError, 'There are errors.');
+    TRadioLogger.Report(llSystem, 'there are errors.');
 end;
 
 function TRadioLangRT.Check(const Fn: string): Boolean;
@@ -193,10 +207,19 @@ begin
   OnConnectData   := nil;
   OnWriteLn       := @CBEmitMessage;
   OnProjName      := @CBProjName;
-  if Interpret(Fn) then
-    TRadioLogger.Report(llError, 'Succesfully checked.')
+  Result := Interpret(Fn);
+  if Result then
+    TRadioLogger.Report(llSystem, 'successfully checked.')
   else
-    TRadioLogger.Report(llError, 'There are errors.');
+    TRadioLogger.Report(llSystem, 'there are errors.');
+end;
+
+procedure TRadioLangRT.GetRTSymbols(L: TStrings);
+var
+  A: TSuperAvlEntry;
+begin
+  for A in FConstTable.AsObject do
+    L.Add(A.Name);
 end;
 
 end.

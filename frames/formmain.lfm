@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 394
+  Left = 180
   Height = 700
-  Top = 88
+  Top = 86
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -677,7 +677,7 @@ object MainForm: TMainForm
       Height = 22
       Top = 2
       Width = 55
-      Action = PannelCode
+      Action = PanelCode
       Align = alLeft
       TabOrder = 0
     end
@@ -686,7 +686,7 @@ object MainForm: TMainForm
       Height = 22
       Top = 2
       Width = 47
-      Action = PannelGraph
+      Action = PanelGraph
       Align = alLeft
       TabOrder = 1
     end
@@ -809,6 +809,12 @@ object MainForm: TMainForm
         Action = FileExit
       end
     end
+    object MenuItem19: TMenuItem
+      Caption = '&Edit'
+      object MenuItem24: TMenuItem
+        Action = EditComplete
+      end
+    end
     object MenuItem9: TMenuItem
       Caption = '&System'
       object MenuItem11: TMenuItem
@@ -911,7 +917,7 @@ object MainForm: TMainForm
     object ViewLogError: TAction
       Tag = 3
       Category = 'View'
-      Caption = 'Error'
+      Caption = 'Error+'
       OnExecute = ViewLogLevelExecute
       OnUpdate = ViewLogLevelUpdate
     end
@@ -921,17 +927,17 @@ object MainForm: TMainForm
       OnExecute = FileSaveExecute
       ShortCut = 16467
     end
-    object PannelCode: TAction
+    object PanelCode: TAction
       Category = 'GUI'
       Caption = 'Code'
-      OnExecute = PannelCodeExecute
-      OnUpdate = PannelCodeUpdate
+      OnExecute = PanelCodeExecute
+      OnUpdate = PanelCodeUpdate
     end
-    object PannelGraph: TAction
+    object PanelGraph: TAction
       Category = 'GUI'
       Caption = 'Graph'
-      OnExecute = PannelGraphExecute
-      OnUpdate = PannelGraphUpdate
+      OnExecute = PanelGraphExecute
+      OnUpdate = PanelGraphUpdate
     end
     object FileNew: TAction
       Category = 'File'
@@ -964,6 +970,18 @@ object MainForm: TMainForm
       Caption = 'Check'
       OnExecute = SystemCheckExecute
       ShortCut = 16504
+    end
+    object EditComplete: TAction
+      Category = 'Edit'
+      Caption = 'Code Complete'
+      OnExecute = EditCompleteExecute
+    end
+    object ViewLogSystem: TAction
+      Tag = 4
+      Category = 'View'
+      Caption = 'System'
+      OnExecute = ViewLogLevelExecute
+      OnUpdate = ViewLogLevelUpdate
     end
   end
   object ModuleImgs: TImageList
@@ -1039,19 +1057,15 @@ object MainForm: TMainForm
     top = 112
   end
   object SynCompletion: TSynCompletion
-    ItemList.Strings = (
-      'sdfsf'
-      'aa'
-      'ccc'
-    )
-    Position = 0
+    Position = -1
     LinesInWindow = 6
+    OnKeyNextChar = SynCompletionKeyNextChar
     SelectedColor = clHighlight
     CaseSensitive = False
     Width = 262
     ShowSizeDrag = True
-    ShortCut = 16416
-    EndOfTokenChr = '()[].'
+    ShortCut = 8224
+    EndOfTokenChr = '()[].{}'
     ExecCommandID = ecSynCompletionExecute
     Editor = SynEdit
     left = 256

@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="45">
+    <Units Count="46">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -292,6 +292,13 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="lzr_interpreter"/>
       </Unit44>
+      <Unit45>
+        <Filename Value="frames\formwait.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="WaitForm"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="formwait"/>
+      </Unit45>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

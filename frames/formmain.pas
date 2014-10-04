@@ -8,14 +8,18 @@ uses
   Classes, SysUtils, FileUtil, SynEdit, SynHighlighterPas, SynMemo,
   SynHighlighterAny, SynCompletion, TreeFilterEdit, ListFilterEdit, Forms,
   Controls, Graphics, Dialogs, Menus, ExtCtrls, StdCtrls, ActnList, ComCtrls,
-  Buttons, StdActns, RadioSystem, RadioModule, RadioLang, types, Math;
+  Buttons, StdActns, RadioSystem, RadioModule, RadioLang, types, Math, LCLType;
 
 type
 
   { TMainForm }
 
   TMainForm = class(TForm)
+    ViewLogSystem: TAction;
+    EditComplete: TAction;
     MenuItem11: TMenuItem;
+    MenuItem19: TMenuItem;
+    MenuItem24: TMenuItem;
     SystemCheck: TAction;
     Image1: TImage;
     MenuItem20: TMenuItem;
@@ -40,8 +44,8 @@ type
     Panel3: TPanel;
     Panel4: TPanel;
     Panel5: TPanel;
-    PannelGraph: TAction;
-    PannelCode: TAction;
+    PanelGraph: TAction;
+    PanelCode: TAction;
     FileSave: TAction;
     MenuItem10: TMenuItem;
     MenuItem12: TMenuItem;
@@ -92,6 +96,7 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure EditCompleteExecute(Sender: TObject);
     procedure FileCloseExecute(Sender: TObject);
     procedure FileNewExecute(Sender: TObject);
     procedure FileOpenAccept(Sender: TObject);
@@ -100,10 +105,11 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure PannelCodeExecute(Sender: TObject);
-    procedure PannelCodeUpdate(Sender: TObject);
-    procedure PannelGraphExecute(Sender: TObject);
-    procedure PannelGraphUpdate(Sender: TObject);
+    procedure PanelCodeExecute(Sender: TObject);
+    procedure PanelCodeUpdate(Sender: TObject);
+    procedure PanelGraphExecute(Sender: TObject);
+    procedure PanelGraphUpdate(Sender: TObject);
+    procedure SynCompletionKeyNextChar(Sender: TObject);
     procedure SynEditChange(Sender: TObject);
     procedure SynEditMouseWheel(Sender: TObject; Shift: TShiftState;
       WheelDelta: Integer; MousePos: TPoint; var Handled: Boolean);
@@ -123,6 +129,7 @@ type
     procedure FMSys;
     procedure AMSys;
     procedure RDSSys;
+    procedure ProjNameChanged(Sender: TObject);
     procedure SetModified(AValue: Boolean);
     procedure SetSystemName(AValue: string);
     procedure UpdateCaption;
@@ -140,7 +147,8 @@ var
 implementation
 
 uses
-  Genfft, UComplex, SignalBasic, logger_treeview, logger, radiomessage, rm_fm;
+  Genfft, UComplex, SignalBasic, logger_treeview, logger, radiomessage, rm_fm,
+  formwait;
 
 {$R *.lfm}
 
@@ -186,6 +194,11 @@ begin
   FSystem.ShowSystem;
 end;
 
+procedure TMainForm.EditCompleteExecute(Sender: TObject);
+begin
+  //SynCompletion.Execute();
+end;
+
 procedure TMainForm.FileCloseExecute(Sender: TObject);
 begin
   AskForClose;
@@ -228,6 +241,8 @@ begin
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
+var
+  L: TStringList;
 begin
   TRadioLogger.Level := llError;
   //TTextLogger.Start;
@@ -238,15 +253,22 @@ begin
       MessageTree := TreeView1;
     end;
 
+  L := TStringList.Create;
+
   FSystem := TRadioSystem.Create;
   FSystem.ShowModules(ModuleTree);
-  FSystem.GetModList(SynAnySyn.Objects);
-  FSystem.GetModList(SynCompletion.ItemList);
+  FSystem.GetModList(SynAnySyn.Objects, False);
+  FSystem.GetModList(L, True);
 
   FRuntime := TRadioLangRT.Create;
-  FSystem.GetModList(FRuntime.ModuleTypes);
+  FRuntime.OnProjNameChanged := @ProjNameChanged;
+  FSystem.GetModList(FRuntime.ModuleTypes, False);
   FSystem.Graph.PaintBox := PaintBox1;
+  FRuntime.GetRTSymbols(L);
 
+  L.Sort;
+  SynCompletion.ItemList.Assign(L);
+  L.Free;
   UpdateCaption;
 end;
 
@@ -255,24 +277,29 @@ begin
   OpenProject('.\examples\fm.lzr');
 end;
 
-procedure TMainForm.PannelCodeExecute(Sender: TObject);
+procedure TMainForm.PanelCodeExecute(Sender: TObject);
 begin
   PageControl1.TabIndex := 0;
 end;
 
-procedure TMainForm.PannelCodeUpdate(Sender: TObject);
+procedure TMainForm.PanelCodeUpdate(Sender: TObject);
 begin
-  PannelCode.Checked := PageControl1.TabIndex = 0;
+  PanelCode.Checked := PageControl1.TabIndex = 0;
 end;
 
-procedure TMainForm.PannelGraphExecute(Sender: TObject);
+procedure TMainForm.PanelGraphExecute(Sender: TObject);
 begin
   PageControl1.TabIndex := 1;
 end;
 
-procedure TMainForm.PannelGraphUpdate(Sender: TObject);
+procedure TMainForm.PanelGraphUpdate(Sender: TObject);
 begin
-  PannelGraph.Checked := PageControl1.TabIndex = 1;
+  PanelGraph.Checked := PageControl1.TabIndex = 1;
+end;
+
+procedure TMainForm.SynCompletionKeyNextChar(Sender: TObject);
+begin
+
 end;
 
 procedure TMainForm.SynEditChange(Sender: TObject);
@@ -309,9 +336,15 @@ procedure TMainForm.SystemGoExecute(Sender: TObject);
 begin
   if Modified then FileSave.Execute;
   if Modified then Exit;
+  WaitForm.ShowWaitMessage('Executing...');
+  WaitForm.Update;
   FSystem.Reset;
-  FRuntime.Exec(FFileName);
-  FSystem.ShowSystem;
+  if FRuntime.Exec(FFileName) then
+  begin
+    FSystem.ShowSystem;
+    PanelGraph.Execute;
+  end;
+  WaitForm.Hide;
 end;
 
 procedure TMainForm.SystemRedrawExecute(Sender: TObject);
@@ -588,6 +621,11 @@ begin
 
  // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
   //RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
+end;
+
+procedure TMainForm.ProjNameChanged(Sender: TObject);
+begin
+  SystemName := FRuntime.ProjName;
 end;
 
 procedure TMainForm.SetModified(AValue: Boolean);

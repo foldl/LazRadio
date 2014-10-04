@@ -24,7 +24,7 @@ var
     OnWriteLn: TEmitMessage = nil;
     OnProjName: TEmitMessage = nil;
 
-function Interpret(const Fn: string): Boolean;
+function Interpret(const Fn: string): Boolean ;
 procedure PredefineInt(const S: string; const V: Integer);
 
 implementation

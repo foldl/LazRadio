@@ -53,7 +53,7 @@ type
 
     function MakeId: TModuleId;
 
-    procedure GetModList(ModList: TStrings);
+    procedure GetModList(ModList: TStrings; const bDispFmt: Boolean);
     procedure ShowModules(Tree: TTreeView);
     property Graph: TGenGraph read FGraph write FGraph;
   end;
@@ -188,6 +188,7 @@ var
   M: TRadioModule;
 begin
   Lock;
+  FGraph.Clear;
   FId2ModuleDict.Clear(True);
   Unlock;
   for A in FModuleDict do
@@ -329,7 +330,7 @@ begin
   Result := FIdCounter;
 end;
 
-procedure TRadioSystem.GetModList(ModList: TStrings);
+procedure TRadioSystem.GetModList(ModList: TStrings; const bDispFmt: Boolean);
 var
   A: TSuperAvlEntry;
   K: TRadioModuleClass;
@@ -337,7 +338,10 @@ begin
   for A in ModuleClassDict do
   begin
     K := TRadioModuleClass(PtrUInt(A.Value.AsInteger));
-    ModList.Add(UpperCase(ClassNameToModuleName(K.ClassName)));
+    if bDispFmt then
+      ModList.Add(ClassNameToModuleName(K.ClassName))
+    else
+      ModList.Add(UpperCase(ClassNameToModuleName(K.ClassName)));
   end;
 end;
 

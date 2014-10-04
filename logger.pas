@@ -25,7 +25,7 @@ type
 implementation
 
 const
-  LogLevel2Str: array[TRadioLogLevel] of string = ('verbose', 'info', 'warn', 'error');
+  LogLevel2Str: array[TRadioLogLevel] of string = ('verbose', 'info', 'warn', 'error', 'system');
 
 { TTextLogger }
 

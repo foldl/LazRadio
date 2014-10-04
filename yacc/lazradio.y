@@ -118,6 +118,12 @@ begin
   L.Free;
 end;
 
+function GetSymDisp(const N: string): string;
+begin
+  GetSymDisp := SymTable.S[UpperCase(N) + '.disp'];
+  if GetSymDisp = '' then GetSymDisp := N;
+end;
+
 function DefObjs(const S: string; const T: string): Boolean;
 var
   L: TStringList;
@@ -573,7 +579,7 @@ begin
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
   L.DelimitedText := M;
-  OnSendMessage(S, StrToInt(L[0]), StrToInt(L[1]), StrToInt(L[2]));
+  OnSendMessage(GetSymDisp(S), StrToInt(L[0]), StrToInt(L[1]), StrToInt(L[2]));
   L.Free;
 end;
 
@@ -581,7 +587,7 @@ function ConnectFeature(const Source, Target: string): Boolean;
 begin
   ConnectFeature := False;
   if Assigned(OnConnectFeature) then
-    ConnectFeature := OnConnectFeature(Source, Target);
+    ConnectFeature := OnConnectFeature(GetSymDisp(Source), GetSymDisp(Target));
 end;
 
 function ConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
@@ -589,7 +595,7 @@ begin
   // writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
   ConnectData := False;
   if Assigned(OnConnectData) then
-    ConnectData := OnConnectData(Source, Target, SourcePort, TargetPort);
+    ConnectData := OnConnectData(GetSymDisp(Source), GetSymDisp(Target), SourcePort, TargetPort);
 end;
 
 function ToStr(const S: string): string;
@@ -955,4 +961,5 @@ begin
   assign(yyinput, Fn);
   reset(yyinput);
   Interpret := yyparse=0;
+  CloseFile(yyinput);
 end;

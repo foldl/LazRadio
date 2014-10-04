@@ -37,9 +37,10 @@ uses
   util_config;
 
 const
-  LogLevel2ImageID: array[TRadioLogLevel] of Integer = (0, 1, 2, 3);
+  LogLevel2ImageID: array[TRadioLogLevel] of Integer = (0, 1, 2, 3, 4);
   LogLevel2ImageFn: array[TRadioLogLevel] of string = ('state12x12_hint.png',
-                    'state12x12_information.png', 'state12x12_warning.png', 'state12x12_error.png');
+                    'state12x12_information.png', 'state12x12_warning.png', 'state12x12_error.png',
+                    'state12x12_system.png');
 
 { TTreeViewLogger }
 

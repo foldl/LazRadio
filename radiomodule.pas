@@ -21,7 +21,7 @@ type
 
   TRadioModule = class;
 
-  TRadioLogLevel = (llVerbose, llInfo, llWarn, llError);
+  TRadioLogLevel = (llVerbose, llInfo, llWarn, llError, llSystem);
 
   { TRadioDataStream }
 
