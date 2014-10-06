@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 180
+  Left = 24
   Height = 700
-  Top = 86
+  Top = 89
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -851,6 +851,9 @@ object MainForm: TMainForm
         end
         object MenuItem8: TMenuItem
           Action = ViewLogError
+        end
+        object MenuItem25: TMenuItem
+          Action = ViewLogSystem
         end
       end
     end

@@ -44,6 +44,7 @@ type
       override;
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -349,6 +350,12 @@ begin
   Strs.Add(Format('^bWindow: ^n%s', [gWindowFunctionNames[FWnd]]));
 end;
 
+procedure TFilterModule.DoSyncDestroy;
+begin
+  FConfig.Free;
+  inherited DoSyncDestroy;
+end;
+
 constructor TFilterModule.Create(RunQueue: TRadioRunQueue);
 var
   R: TRegulatorNode;
@@ -369,7 +376,6 @@ end;
 
 destructor TFilterModule.Destroy;
 begin
-  FConfig.Free;
   FNode.Free;
   inherited Destroy;
 end;

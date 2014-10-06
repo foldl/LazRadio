@@ -37,6 +37,7 @@ type
     procedure Describe(Strs: TStrings); override;
 
     procedure DoStopThreadFun; override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -332,7 +333,6 @@ end;
 
 destructor TRadioOscillator.Destroy;
 begin
-  FUI.Free;
   inherited Destroy;
 end;
 
@@ -398,6 +398,12 @@ end;
 procedure TRadioOscillator.DoStopThreadFun;
 begin
   // nop
+end;
+
+procedure TRadioOscillator.DoSyncDestroy;
+begin
+  FUI.Free;
+  inherited DoSyncDestroy;
 end;
 
 initialization

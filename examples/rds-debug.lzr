@@ -1,0 +1,52 @@
+lazradio rds-debug;
+
+var
+  src: Rtl;
+  s, s2: Spectrum;
+  iqcor: IQCorrecter;
+  a: AudioIn;
+  u: AudioOut;
+  mixer1, mixer2: FreqMixer;
+  f1, f2: Filter;
+  r: DumpPlayer;
+  fd1: FreqDiscriminator;
+  fm1: FMReceiver;
+  re1, re2: Resampling;
+  aumixer: AudioMixer;
+  rds: RDSDecoder;
+  scope: Oscilloscope;
+
+  fm: FMReceiver;
+
+begin
+  src => iqcor => f1 => mixer1 => re1 => fd1 => fm1 => aumixer => u;
+  mixer1 => s2;
+  iqcor => s;
+  s :> mixer1;
+  s :> f1;
+
+  re1 ! {RM_RESAMPLING_CFG, 200000, 90000};
+
+  // setup rds
+  re2 ! {RM_RESAMPLING_CFG, 9500, 2500};
+  mixer1 ! {RM_FREQMIXER_SET_FREQ, 5700, 0};
+  f1     ! {RM_SET_FEATURE, RM_FEATURE_FREQ, 200000}
+         ! {RM_FILTER_CONFIG, FILTER_TAPS, 400}
+         ! {RM_SPECTRUM_BAND_SELECT_1, 57000 - 4500, 57000 + 4500};
+  f2     ! {RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500}
+         ! {RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL}
+         ! {RM_FILTER_CONFIG, FILTER_TYPE, 0}      // LPF
+         ! {RM_FILTER_CONFIG, FILTER_OMEGA, 2500}
+         ! {RM_FILTER_CONFIG, FILTER_TAPS, 64}
+         ! {RM_FILTER_REDESIGN};
+
+  s  ! {RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768};
+  s2 ! {RM_SPECTRUM_CFG, SET_SPAN, 100000}
+     ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
+
+  aumixer ! {RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4};
+  u       ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ};
+
+  // src ! (RM_DUMP_PLAYER_START, file('e:\90.0MHz.dump'), 0};
+end.
+

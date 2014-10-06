@@ -252,6 +252,7 @@ begin
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;
   FRegulator2 := TStreamRegulator.Create;
   FRegulator2.OnRegulatedData := @ReceiveRegulatedData2;
+  FHasConfig := False;
 end;
 
 destructor TRadioResampling.Destroy;

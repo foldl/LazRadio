@@ -1,0 +1,22 @@
+lazradio AM-receiver;
+
+var
+  src: Rtl;
+  s, s2: Spectrum;
+  u: AudioOut;
+  f: Filter;
+  am: AMDetector;
+  re: Resampling;
+
+begin
+  src => f => am => re => u;
+
+  src => s;
+  s :> f;
+
+  re ! {RM_RESAMPLING_CFG, 44100, 10000};
+  u  ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_MONO_I};
+
+  src ! {RM_CONFIGURE};
+end.
+

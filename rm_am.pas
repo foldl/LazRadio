@@ -76,6 +76,7 @@ begin
   FRegulator := TStreamRegulator.Create;
   FRegulator.Size := DefOutput.BufferSize;
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;
+  FHasConfig := False;
 end;
 
 destructor TRadioAMDetector.Destroy;

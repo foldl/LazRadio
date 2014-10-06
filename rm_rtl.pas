@@ -38,6 +38,7 @@ type
     procedure Describe(Strs: TStrings); override;
 
     procedure DoStopThreadFun; override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -232,7 +233,6 @@ end;
 destructor TRtlModule.Destroy;
 begin
   RTLeventdestroy(FEvent);
-  FConfig.Free;
   inherited;
 end;
 
@@ -280,6 +280,12 @@ procedure TRtlModule.DoStopThreadFun;
 begin
   CloseDev;
   RTLeventSetEvent(FEvent);
+end;
+
+procedure TRtlModule.DoSyncDestroy;
+begin
+  FConfig.Free;
+  inherited DoSyncDestroy;
 end;
 
 initialization

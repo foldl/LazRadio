@@ -640,6 +640,7 @@ begin
   FPLL.Bandwidth := 50;
   FPLL.FreqRange := 100;
   FPLL.DefaultFrequency := 0;
+  FHasConfig := False;
 end;
 
 destructor TRDSDecoder.Destroy;
@@ -819,6 +820,7 @@ begin
   FDeEmphasis.EmphasisTime := 50 / 1000000;  // 50us
 
   SetIIROrders(FPilotFilter, 2, 2);
+  FHasConfig := False;
 end;
 
 destructor TRadioFMReceiver.Destroy;
@@ -971,6 +973,7 @@ begin
   FRegulator.OnRegulatedData := @ReceiveRegulatedData;
   FFreqDev := 75000;
   FSourceFm := 60000;
+  FHasConfig := False;
 end;
 
 destructor TRadioFreqDiscriminator.Destroy;

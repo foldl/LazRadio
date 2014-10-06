@@ -61,6 +61,7 @@ type
 
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -297,6 +298,12 @@ begin
   Strs.Add(Format('^bSample Rate: ^n %d', [FRate]));
 end;
 
+procedure TRadioAudioMixer.DoSyncDestroy;
+begin
+  FConfig.Free;
+  inherited DoSyncDestroy;
+end;
+
 constructor TRadioAudioMixer.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -309,7 +316,6 @@ end;
 
 destructor TRadioAudioMixer.Destroy;
 begin
-  FConfig.Free;
   inherited Destroy;
 end;
 

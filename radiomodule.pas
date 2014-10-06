@@ -265,6 +265,7 @@ type
 
     procedure DoReset; virtual;
     procedure DoBeforeDestroy; virtual;
+    procedure DoSyncDestroy; virtual;
 
     procedure Describe(Strs: TStrings); virtual;
   public
@@ -1943,6 +1944,11 @@ begin
 
 end;
 
+procedure TRadioModule.DoSyncDestroy;
+begin
+
+end;
+
 procedure TRadioModule.Describe(Strs: TStrings);
 begin
 end;
@@ -1986,6 +1992,7 @@ end;
 destructor TRadioModule.Destroy;
 begin
   if not FDestroying then raise Exception.Create('Destroy must be done by message: RM_DESTROY');
+  TThread.Synchronize(nil, @DoSyncDestroy);
   TRadioLogger.Report(llWarn, 'free %s, cpu time %.f', [FName, FCPUTime * MSecsPerDay]);
   FDescStr.Free;
   ClearDataListeners;

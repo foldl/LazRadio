@@ -50,9 +50,9 @@ type
     procedure ReceiveWindowedData(const P: PComplex; const Len: Integer);
 
     procedure DoShowGUI; override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
-    destructor Destroy; override;
 
     procedure ReceiveData(const P: PComplex; const Len: Integer); override;
   end;
@@ -581,6 +581,13 @@ begin
   FForm.Show;
 end;
 
+procedure TRadioOscilloscope.DoSyncDestroy;
+begin
+  FGraphBox.Free;
+  FForm.Free;
+  inherited DoSyncDestroy;
+end;
+
 constructor TRadioOscilloscope.Create(RunQueue: TRadioRunQueue);
 begin
   inherited;
@@ -599,13 +606,6 @@ begin
   RedrawFull;
   FForm.PaintBox1.OnResize := @ImageResize;
   FForm.Module := Self;
-end;
-
-destructor TRadioOscilloscope.Destroy;
-begin
-  FGraphBox.Free;
-  FForm.Free;
-  inherited Destroy;
 end;
 
 procedure TRadioOscilloscope.ReceiveData(const P: PComplex; const Len: Integer);

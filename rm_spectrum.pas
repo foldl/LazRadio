@@ -95,6 +95,7 @@ type
 
     procedure DoShowGUI; override;
     procedure Describe(Strs: TStrings); override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -822,6 +823,15 @@ begin
   end;
 end;
 
+procedure TRadioSpectrum.DoSyncDestroy;
+begin
+  FRt.Free;
+  FWf.Free;
+  FForm.Free;
+  FFlow.Free;
+  inherited DoSyncDestroy;
+end;
+
 constructor TRadioSpectrum.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -866,11 +876,6 @@ begin
   P := FFFTPlan;
   FFFTPlan := nil;
   FinalizePlan(P);
-
-  FRt.Free;
-  FWf.Free;
-  FForm.Free;
-  FFlow.Free;
   inherited Destroy;
 end;
 

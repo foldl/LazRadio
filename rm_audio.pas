@@ -39,6 +39,7 @@ type
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
+    procedure DoSyncDestroy; override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
@@ -508,6 +509,12 @@ begin
     Strs.Add('^bNot running');
 end;
 
+procedure TRadioAudioIn.DoSyncDestroy;
+begin
+  FConfig.Free;
+  inherited DoSyncDestroy;
+end;
+
 constructor TRadioAudioIn.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
@@ -518,7 +525,6 @@ end;
 destructor TRadioAudioIn.Destroy;
 begin
   CloseDev;
-  FConfig.Free;
   inherited Destroy;
 end;
 
