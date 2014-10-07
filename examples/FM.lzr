@@ -4,7 +4,6 @@ var
   src: Rtl;
   s, s2: Spectrum;
   iqcor: IQCorrecter;
-  a: AudioIn;
   u: AudioOut;
   mixer1, mixer2: FreqMixer;
   f1, f2: Filter;
@@ -45,7 +44,7 @@ begin
      ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
 
   aumixer ! {RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4};
-  u       ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ};
+  u       ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0};
 
   // src ! (RM_DUMP_PLAYER_START, file('e:\90.0MHz.dump'), 0};
 end.
