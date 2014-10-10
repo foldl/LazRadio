@@ -400,7 +400,7 @@ begin
   Result := TSuperObject.Create(stObject);
   for A in FModuleDict do
   begin
-    Result.D[A.Name] := TRadioModule(PtrUInt(A.Value.AsInteger)).CPUTime;
+    Result.D[A.Name] := TRadioModule(PtrUInt(A.Value.AsInteger)).CPUTime * SecsPerDay;
   end;
 end;
 

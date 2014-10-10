@@ -61,12 +61,10 @@ type
     FPhaseDelta: Double;
     FSampleRate: Cardinal;
     FPhase: Double;
-    FRegulator: TStreamRegulator;
     procedure SetOscFreq(const Freq: Integer);
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
-    procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure Describe(Strs: TStrings); override;
   public
@@ -159,33 +157,6 @@ begin
   Result := inherited;
 end;
 
-procedure TRadioFreqMixer.ReceiveRegulatedData(const P: PComplex;
-  const Len: Integer);
-var
-  I: Integer;
-  J: Integer;
-  X: PComplex;
-  C: Integer;
-  V: Double;
-  T: Complex;
-begin
-  X := Alloc(DefOutput, I);
-  if not Assigned(X) then Exit;
-
-  V := FPhase;
-  for J := 0 to Len - 1 do
-  begin
-    T.re := Cos(V);
-    T.im := Sin(V);
-    X[J] := P[J] * T;
-    V := V + FPhaseDelta;
-  end;
-  C := Trunc(V / (2 * Pi));
-  FPhase := V - (2 * Pi * C);
-
-  DefOutput.Broadcast(I, FDataListeners);
-end;
-
 procedure TRadioFreqMixer.ProccessMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
@@ -215,21 +186,39 @@ end;
 constructor TRadioFreqMixer.Create(RunQueue: TRadioRunQueue);
 begin
   inherited Create(RunQueue);
-  FRegulator := TStreamRegulator.Create;
-  FRegulator.Size := DefOutput.BufferSize;
-  FRegulator.OnRegulatedData := @ReceiveRegulatedData;
   FHasConfig := False;
 end;
 
 destructor TRadioFreqMixer.Destroy;
 begin
-  FRegulator.Free;
   inherited Destroy;
 end;
 
 procedure TRadioFreqMixer.ReceiveData(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+  J: Integer;
+  X: PComplex;
+  C: Integer;
+  V: Double;
+  T: Complex;
 begin
-  FRegulator.ReceiveData(P, Len);
+  DefOutput.BufferSize := Len;
+  X := Alloc(DefOutput, I);
+  if not Assigned(X) then Exit;
+
+  V := FPhase;
+  for J := 0 to Len - 1 do
+  begin
+    T.re := Cos(V);
+    T.im := Sin(V);
+    X[J] := P[J] * T;
+    V := V + FPhaseDelta;
+  end;
+  C := Trunc(V / (2 * Pi));
+  FPhase := V - (2 * Pi * C);
+
+  DefOutput.Broadcast(I, FDataListeners);
 end;
 
 { TRadioOscillator }

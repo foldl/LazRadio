@@ -20,6 +20,9 @@ type
     TabSheet2: TTabSheet;
     Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
+    procedure ListView1ColumnClick(Sender: TObject; Column: TListColumn);
+    procedure ListView1Compare(Sender: TObject; Item1, Item2: TListItem;
+      Data: Integer; var Compare: Integer);
     procedure Timer1Timer(Sender: TObject);
   private
     FRadioSys: TRadioSystem;
@@ -49,6 +52,38 @@ const
 procedure TSystemInpectorForm.FormCreate(Sender: TObject);
 begin
   RadioSys := TRadioSystem.Instance;
+end;
+
+procedure TSystemInpectorForm.ListView1ColumnClick(Sender: TObject;
+  Column: TListColumn);
+begin
+  if ListView1.SortColumn = Column.Index then
+  begin
+    if Listview1.SortDirection = sdAscending then
+      ListView1.SortDirection := sdDescending
+    else
+      Listview1.SortDirection := sdAscending;
+  end
+  else begin
+    ListView1.SortColumn := Column.Index;
+    if Column.Index = 0 then
+      Listview1.SortDirection := sdAscending
+    else
+      Listview1.SortDirection := sdDescending;
+  end;
+end;
+
+procedure TSystemInpectorForm.ListView1Compare(Sender: TObject; Item1,
+  Item2: TListItem; Data: Integer; var Compare: Integer);
+begin
+  Compare := 0;
+  if ListView1.SortColumn < 0 then Exit;
+  if ListView1.SortColumn = 0 then
+  begin
+    Compare := CompareStr(Item1.Caption, Item2.Caption);
+  end
+  else
+    Compare := CompareStr(Item1.SubItems[ListView1.SortColumn], Item2.SubItems[ListView1.SortColumn]);
 end;
 
 procedure TSystemInpectorForm.Timer1Timer(Sender: TObject);

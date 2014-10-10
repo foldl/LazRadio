@@ -13,9 +13,13 @@ begin
 
   src => s;
   s :> f;
+  am => s2;
 
-  re ! {RM_RESAMPLING_CFG, 44100, 10000};
-  u  ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_MONO_I};
+  re ! {RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 2048000}
+     ! {RM_RESAMPLING_CFG, 44100, 10000};
+  u  ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_MONO_I}
+     ! {RM_AUDIO_OUT_GAIN, 240};
+
 
   src ! {RM_CONFIGURE};
 end.

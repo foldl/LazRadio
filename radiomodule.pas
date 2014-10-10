@@ -195,6 +195,7 @@ type
     FMessageFilter: TRadioMessageIdSet;
     FRunQueue: TRadioRunQueue;
     FCPUTime: TTime;
+    FYieldTime: TTime;
     FRunThread: TRadioThread;
     FDestroying: Boolean;
     function GetNeedExec: Boolean;
@@ -861,7 +862,8 @@ begin
         while (not Terminated) and NeedExecution do
           MessageExceute;
         RunThread := nil;
-        FCPUTime := FCPUTime + Now - T;
+        FCPUTime := FCPUTime + Now - T - FYieldTime;
+        FYieldTime := 0;
       end;
 
       FRunQueue.WorkerIdle(Self);
@@ -905,6 +907,8 @@ begin
     T := Now - T;
     J.FCPUTime := J.FCPUTime + T;
     J.RunThread := nil;
+
+    Job.FYieldTime := Job.FYieldTime + T;
   end;
 
   J.InQueue := False;

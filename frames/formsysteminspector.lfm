@@ -15,9 +15,9 @@ object SystemInpectorForm: TSystemInpectorForm
     Height = 296
     Top = 0
     Width = 498
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Thread Load'
@@ -75,8 +75,12 @@ object SystemInpectorForm: TSystemInpectorForm
             Width = 366
           end>
         GridLines = True
+        ReadOnly = True
+        RowSelect = True
+        SortType = stText
         TabOrder = 0
         ViewStyle = vsReport
+        OnColumnClick = ListView1ColumnClick
       end
     end
   end
