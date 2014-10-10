@@ -5,7 +5,7 @@ unit rm_audio;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, UComplex, SignalBasic, Math, mmsystem,
+  Classes, SysUtils, RadioModule, RadioNode, UComplex, SignalBasic, Math, mmsystem,
   Windows, formauin, radiomessage;
 
 const
@@ -328,8 +328,6 @@ end;
 procedure TRadioAudioOut.Describe(Strs: TStrings);
 const
   FS: array [0..3] of string = ('Mono I', 'Mono Q', 'Stereo IQ', 'Stereo QI');
-var
-  S: string;
 begin
   Strs.Add('^bFormat: ^n' + FS[FFmt mod 4]);
   if FAutoGain then

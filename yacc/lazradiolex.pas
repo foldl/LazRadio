@@ -23,12 +23,11 @@ function is_keyword(id : string; var token : integer) : boolean;
   type
     Ident = string[id_len];
   const
-    no_of_keywords = 31;
+    no_of_keywords = 30;
     keyword : array [1..no_of_keywords] of Ident = (
       'AND',       'ARCCOS',    'ARCSIN',   'BEGIN', 
       'CONST',     'COS',       'DIV',    
       'END',       'EXP', 
-      'FILE',   
       'ID',         'INTEGER',
       'LAZRADIO',   'LOG',
       'MOD',        'NOT',   
@@ -43,7 +42,6 @@ function is_keyword(id : string; var token : integer) : boolean;
       _AND,        _ARCCOS,     _ARCSIN,    _BEGIN, 
       _CONST,      _COS,        _DIV,
       _END,        _EXP,
-      _FILE,  
       _ID,         _INTEGER,
       _LAZRADIO,    _LOG,
       _MOD,         _NOT,

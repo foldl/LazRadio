@@ -351,7 +351,7 @@ implementation
 
 function RtlSdrGetTunerType(const Index: Integer): TRtlSdrTuner;
 var
-  P: PRtlSdrDev;
+  P: PRtlSdrDev = nil;
 begin
   Result := RTLSDR_TUNER_UNKNOWN;
   if RtlSdrOpen(P, Index) <> 0 then Exit;

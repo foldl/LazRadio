@@ -15,9 +15,6 @@ function Cos(X: TFloat): TFloat;
 
 implementation
 
-uses
-  Math;
-
 const
   TAB_SIZE = 1000;
   PI2 = 2 * Pi;

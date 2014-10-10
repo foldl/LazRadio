@@ -5,7 +5,7 @@ unit rm_iqcorrection;
 interface
 
 uses
-  Classes, SysUtils, UComplex, Math, RadioMessage, RadioModule, RadioSystem;
+  Classes, SysUtils, UComplex, Math, RadioModule, RadioSystem;
 
 {
   THIS IS EXPERIMENTAL!

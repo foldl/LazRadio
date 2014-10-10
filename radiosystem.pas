@@ -5,7 +5,8 @@ unit RadioSystem;
 interface
 
 uses
-  Classes, SysUtils, Controls, ComCtrls, Graphics, RadioModule, SuperObject, radiomessage, gen_graph;
+  Classes, SysUtils, Controls, ComCtrls, Graphics, RadioModule, SuperObject,
+  radiomessage, gen_graph;
 
 {
   A module has a name and an Id. Name/Id can used by users and scripts, while Id is *only*
@@ -28,6 +29,8 @@ type
     FGraph: TGenGraph;
     FIdCounter: TModuleId;
     FCS: TRTLCriticalSection;
+    FStringStorage: TRadioStringStorage;
+    FLoadInfo: array of Double;
     function GetModule(const Name: string): TRadioModule;
     function GetModuleFromId(const Id: TModuleId): TRadioModule;
   protected
@@ -53,6 +56,11 @@ type
 
     function MakeId: TModuleId;
 
+    function MakeStrParam(const S: string): PtrUInt;
+
+    function GetWorkerLoadInfo: tfl
+    function GetModuleUsageInfo: ISuperObject;
+
     procedure GetModList(ModList: TStrings; const bDispFmt: Boolean);
     procedure ShowModules(Tree: TTreeView);
     property Graph: TGenGraph read FGraph write FGraph;
@@ -63,13 +71,17 @@ procedure RegisterModule(AClass: TRadioModuleClass);
 function RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule): Boolean; overload;
 function RadioPostMessage(const M: TRadioMessage; const Receiver: string): Boolean;
 function RadioPostMessage(const M: TRadioMessage; const Receiver: TModuleId): Boolean;
+function RadioPostMessage(const Id: Integer; const ParamH: string; const ParamL: PtrUInt; const Receiver: string): Boolean;
+function RadioPostMessage(const Id: Integer; const ParamH: PtrUInt; const ParamL: string; const Receiver: string): Boolean;
+function RadioPostMessage(const Id: Integer; const ParamH, ParamL: string; const Receiver: string): Boolean;
 function RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; const Receiver: string): Boolean;
 function RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt; Receiver: TRadioModule): Boolean;
+function RadioPostMessage(const Id: Integer; const ParamH: string; const ParamL: PtrUInt; Receiver: TRadioModule): Boolean;
 
 implementation
 
 uses
-  Math, utils;
+  utils;
 
 var
   ModuleClassDict: TSuperTableString = nil;
@@ -80,7 +92,7 @@ var
 begin
   S := ClassNameToModuleName(AClass.ClassName);
   if not Assigned(ModuleClassDict) then ModuleClassDict := TSuperTableString.Create;
-  ModuleClassDict.I[LowerCase(S)] := Int64(AClass);
+  ModuleClassDict.I[LowerCase(S)] := Int64(PtrUInt(AClass));
 end;
 
 function RadioPostMessage(const M: TRadioMessage; Receiver: TRadioModule
@@ -119,16 +131,42 @@ begin
     TRadioLogger.Report(llError, 'module "%d" not found', [Receiver]);
 end;
 
+function RadioPostMessage(const Id: Integer; const ParamH: string;
+  const ParamL: PtrUInt; const Receiver: string): Boolean;
+begin
+  Result := RadioPostMessage(MakeMessage(Id, TRadioSystem.Instance.MakeStrParam(ParamH), ParamL), Receiver);
+end;
+
+function RadioPostMessage(const Id: Integer; const ParamH: PtrUInt;
+  const ParamL: string; const Receiver: string): Boolean;
+begin
+  Result := RadioPostMessage(MakeMessage(Id, ParamH, TRadioSystem.Instance.MakeStrParam(ParamL)), Receiver);
+end;
+
+function RadioPostMessage(const Id: Integer; const ParamH, ParamL: string;
+  const Receiver: string): Boolean;
+begin
+  with TRadioSystem.Instance do
+    Result := RadioPostMessage(MakeMessage(Id, MakeStrParam(ParamH), MakeStrParam(ParamL)), Receiver);
+end;
+
 function RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
   const Receiver: string): Boolean;
 begin
-  RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
+  Result := RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
 end;
 
 function RadioPostMessage(const Id: Integer; const ParamH, ParamL: PtrUInt;
   Receiver: TRadioModule): Boolean;
 begin
-  RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
+  Result := RadioPostMessage(MakeMessage(Id, ParamH, ParamL), Receiver);
+end;
+
+function RadioPostMessage(const Id: Integer; const ParamH: string;
+  const ParamL: PtrUInt; Receiver: TRadioModule): Boolean;
+begin
+  with TRadioSystem.Instance do
+    Result := RadioPostMessage(MakeMessage(Id, MakeStrParam(ParamH), ParamL), Receiver);
 end;
 
 { TRadioSystem }
@@ -166,6 +204,8 @@ begin
   FId2ModuleDict := TSuperTableString.Create;
   FInstance := Self;
   FGraph := TGenGraph.Create;
+  FStringStorage := TRadioStringStorage.Create;
+  SetLength(FLoadInfo, FRunQueue.SMP);
 end;
 
 destructor TRadioSystem.Destroy;
@@ -178,6 +218,7 @@ begin
   FInstance := nil;
   FId2ModuleDict.Free;
   FModuleDict.Free;
+  FStringStorage.Free;
   DoneCriticalsection(FCS);
   inherited;
 end;
@@ -197,6 +238,7 @@ begin
     M.PostMessage(RM_DESTROY, 0, 0);
   end;
   FModuleDict.Clear(True);
+  FStringStorage.Clear;
 end;
 
 procedure TRadioSystem.ShowSystem;
@@ -280,7 +322,8 @@ var
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
-  if Assigned(MF) and Assigned(MT) then
+  Result := Assigned(MF) and Assigned(MT);
+  if Result then
   begin
     MF.PostMessage(RM_ADD_FEATURE_LISTENER, 0, MT.Id);
     MF.PostMessage(RM_ADD_DATA_LISTENER, (SourcePort shl 16) or TargetPort, MT.Id);
@@ -296,7 +339,8 @@ var
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
-  if Assigned(MF) and Assigned(MT) then
+  Result := Assigned(MF) and Assigned(MT);
+  if Result then
     MF.PostMessage(RM_ADD_DATA_LISTENER, (SourcePort shl 16) or TargetPort, MT.Id)
   else
     TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
@@ -309,7 +353,8 @@ var
 begin
   MF := Module[ModuleFrom];
   MT := Module[ModuleTo];
-  if Assigned(MF) and Assigned(MT) then
+  Result := Assigned(MF) and Assigned(MT);
+  if Result then
     MF.PostMessage(RM_ADD_FEATURE_LISTENER, 0, MT.Id)
   else
     TRadioLogger.Report(llError, 'one or more modules (%s, %s) not found', [ModuleFrom, ModuleTo]);
@@ -328,6 +373,28 @@ function TRadioSystem.MakeId: TModuleId;
 begin
   Inc(FIdCounter);
   Result := FIdCounter;
+end;
+
+function TRadioSystem.MakeStrParam(const S: string): PtrUInt;
+begin
+  Result := FStringStorage.Store(S);
+end;
+
+function TRadioSystem.GetWorkerLoadInfo(var Load: array of Double): Boolean;
+begin
+  SetLength(Load, FRunQueue.SMP);
+  Result := FRunQueue.GetWorkerLoadInfo(Load);
+end;
+
+function TRadioSystem.GetModuleUsageInfo: ISuperObject;
+var
+  A: TSuperAvlEntry;
+begin
+  Result := TSuperObject.Create(stObject);
+  for A in FModuleDict do
+  begin
+    Result.D[A.Name] := TRadioModule(PtrUInt(A.Value.AsInteger)).CPUTime;
+  end;
 end;
 
 procedure TRadioSystem.GetModList(ModList: TStrings; const bDispFmt: Boolean);

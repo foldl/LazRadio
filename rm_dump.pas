@@ -122,7 +122,7 @@ begin
   RTLeventResetEvent(FStartEvent);
   RTLeventResetEvent(FStoppedEvent);
   F := FFile;
-  if FThread.Terminated then Exit;
+  if FThread.Terminated then goto Wait;
 
   if not Assigned(F) then goto Wait;
 
@@ -169,7 +169,7 @@ begin
     RM_DUMP_PLAYER_START:
       begin
         StopPlaying;
-        FFile := TStream(Msg.ParamH);
+        FFile := TFileStream.Create(PString(Msg.ParamH)^, fmOpenRead);
         RTLeventSetEvent(FStartEvent);
         GraphInvalidate;
       end;
@@ -279,14 +279,12 @@ begin
   case Msg.Id of
     RM_DUMP_START:
       begin
-        FFile := TStream(Msg.ParamH);
+        FreeAndNil(FFile);
+        FFile := TFileStream.Create(PString(Msg.ParamH)^, fmCreate);
         FQuota := Msg.ParamL;
         if FQuota = 0 then FQuota := MaxSIntValue;
         if Assigned(FFile) then
-        begin
-          FFile.Size := 0;
           FFile.Write(DUMP_HEADER, SizeOf(DUMP_HEADER));
-        end;
         GraphInvalidate;
       end;
     RM_DUMP_STOP:
@@ -305,18 +303,11 @@ end;
 procedure TRadioDump.DoConfigure;
 var
   D: TSaveDialog;
-  F: TFileStream = nil;
 begin
   D := TSaveDialog.Create(nil);
   D.Filter := 'radio dump (*.dump)|*.dump';
   if D.Execute then
-  begin
-    try
-      F := TFileStream.Create(D.FileName, fmCreate);
-      RadioPostMessage(RM_DUMP_START, PtrUInt(F), 0, Self);
-    except
-    end;
-  end;
+    RadioPostMessage(RM_DUMP_START, D.FileName, 0, Self);
   D.Free;
 end;
 

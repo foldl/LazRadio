@@ -60,7 +60,6 @@ type
     FOscFreq: Integer;
     FPhaseDelta: Double;
     FSampleRate: Cardinal;
-    FCounter: Cardinal;
     FPhase: Double;
     FRegulator: TStreamRegulator;
     procedure SetOscFreq(const Freq: Integer);
@@ -346,13 +345,15 @@ function TRadioOscillator.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
   FFreq := Freq;
+  Result := 0;
 end;
 
-function TRadioOscillator.RMSetSampleRate(const Msg: TRadioMessage;
+function TRadioOscillator.{%H-}RMSetSampleRate(const Msg: TRadioMessage;
   const Rate: Cardinal): Integer;
 begin
   FSampleRate := Rate;
   Broadcast(Msg);
+  Result := 0;
 end;
 
 procedure TRadioOscillator.ThreadFun(Thread: TGenericRadioThread);

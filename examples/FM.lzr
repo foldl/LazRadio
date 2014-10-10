@@ -46,6 +46,6 @@ begin
   aumixer ! {RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 4};
   u       ! {RM_AUDIO_OUT_FMT, AUDIO_OUT_FMT_STEREO_IQ, 0};
 
-  // src ! (RM_DUMP_PLAYER_START, file('e:\90.0MHz.dump'), 0};
+  src ! {RM_CONFIGURE};
 end.
 

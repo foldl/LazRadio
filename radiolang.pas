@@ -49,6 +49,8 @@ type
     function CBSendMessage(const Name: string; const V1, V2, V3: PtrUInt): Boolean;
     function CBConnectFeature(const Source, Target: string): Boolean;
     function CBConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
+    function CBMakeStrParam(const S: string): PtrUInt;
+    function CBMakeStrParam0(const S: string): PtrUInt;
     procedure CBEmitMessage(const Line: string);
     procedure CBProjName(const Line: string);
     procedure CBCreateModules(Sender: TObject);
@@ -82,7 +84,6 @@ var
     I: Integer;
     A: TSuperArray;
     N: string;
-    V: Integer;
   begin
     if not Assigned(Obj) then Exit;
     if Obj.IsType(stObject) then
@@ -108,7 +109,7 @@ end;
 function TRadioLangRT.CBSendMessage(const Name: string; const V1, V2,
   V3: PtrUInt): Boolean;
 begin
-  RadioPostMessage(V1, V2, V3, Name);
+  Result := RadioPostMessage(V1, V2, V3, Name);
 end;
 
 function TRadioLangRT.CBConnectFeature(const Source, Target: string): Boolean;
@@ -120,6 +121,16 @@ function TRadioLangRT.CBConnectData(const Source, Target: string;
   const SourcePort, TargetPort: Integer): Boolean;
 begin
   Result := TRadioSystem.Instance.ConnectData(Source, Target, SourcePort, TargetPort);
+end;
+
+function TRadioLangRT.CBMakeStrParam(const S: string): PtrUInt;
+begin
+  Result := TRadioSystem.Instance.MakeStrParam(S);
+end;
+
+function TRadioLangRT.CBMakeStrParam0(const S: string): PtrUInt;
+begin
+  Result := 0;
 end;
 
 procedure TRadioLangRT.CBEmitMessage(const Line: string);
@@ -155,8 +166,7 @@ end;
 constructor TRadioLangRT.Create;
 begin
   FModuleTypes := TStringList.Create;
-  FConstTable := TSuperObject.Create(stObject);
-  FConstTable.Clear(True);
+  FConstTable := TSuperObject.ParseFile(GetResFullName('lzr_internal.json'), False);
   LoadMsgConsts;
 end;
 
@@ -191,6 +201,7 @@ begin
   OnConnectData   := @CBConnectData;
   OnWriteLn       := @CBEmitMessage;
   OnProjName      := @CBProjName;
+  OnMakeStrParam  := @CBMakeStrParam;
   Result := Interpret(Fn);
   if Result then
     TRadioLogger.Report(llSystem, 'successfully executed.')
@@ -207,6 +218,7 @@ begin
   OnConnectData   := nil;
   OnWriteLn       := @CBEmitMessage;
   OnProjName      := @CBProjName;
+  OnMakeStrParam  := @CBMakeStrParam0;
   Result := Interpret(Fn);
   if Result then
     TRadioLogger.Report(llSystem, 'successfully checked.')

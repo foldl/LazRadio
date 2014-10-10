@@ -71,11 +71,11 @@ const
   RM_AUDIO_OUT_GAIN      = 111; // ParamH: gain in dB (cast from Integer)
   RM_AUDIO_OUT_GAIN_AUTO = 112; // auto adjust gain for one-shot
 
-  RM_DUMP_START = 120;              // ParamH: TStream, ParamL: MaxSize
-  RM_DUMP_STOP  = 121;              // no param, TStream is closed here
+  RM_DUMP_START = 120;              // ParamH: file name (PString), ParamL: MaxSize
+  RM_DUMP_STOP  = 121;              // no param, file is closed here
 
-  RM_DUMP_PLAYER_START = 130;       // ParamH: TStream
-  RM_DUMP_PLAYER_STOP  = 131;       // no param, TStream is closed here
+  RM_DUMP_PLAYER_START = 130;       // ParamH: file name (PString)
+  RM_DUMP_PLAYER_STOP  = 131;       // no param, file is closed here
 
   RM_FILTER_SET      = 140;         // ParamH: Coeff(PComplex); ParamL: Filter taps
   RM_FILTER_REDESIGN = 141;         // Apply RM_FILTER_CONFIG settings

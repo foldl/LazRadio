@@ -31,7 +31,7 @@ const
 
 constructor TTextLogger.Create;
 var
-  P: string;
+  P: string = '';
 begin
   inherited;
   while True do

@@ -547,6 +547,32 @@ begin
   end;
 end;
 
+function ReadMsgParam(const S: string; var bOK: Boolean): PtrUInt;
+var
+  T: string;
+begin
+  ReadMsgParam := 0;
+  T := ReadValue(S, bOK); 
+  if bOK then 
+  begin
+      bOK := RegTable.S[T + '.type'] = 'int';
+      if bOK then
+      begin
+        ReadMsgParam := RegTable.I[T + '.value'];
+        Exit;
+      end;
+
+      bOK := RegTable.S[T + '.type'] = 'string';
+      if bOK then
+      begin
+        ReadMsgParam := OnMakeStrParam(RegTable.S[T + '.value']);
+        Exit;
+      end;
+
+      yyerror('INTEGER/STRING required');
+  end;
+end;
+
 function ReadReal(const S: string; var bOK: Boolean): Real;
 var
   T: string;
@@ -566,18 +592,42 @@ begin
   end;
 end;
 
-procedure SendMsg(const S: string; const M: string);
+function StrVal(const S: string; var bOK: Boolean): string;
+var
+  R: Real;
+  I: Integer;
+  C: Integer;
+begin
+  val(S, R, C); bOK := C = 0;
+  if bOK then
+  begin
+    StrVal := RegAlloc('real');
+    RegWrite(StrVal, R);
+    Exit;
+  end;
+  val(S, I, C); bOK := C = 0;
+  if bOK then
+  begin
+    StrVal := RegAlloc('int');
+    RegWrite(StrVal, I);
+    Exit;
+  end;
+  StrVal := RegAlloc('int');  // default: 0
+end;
+
+function SendMsg(const S: string; const M: string): Boolean;
 var
   L: TStringList;
 begin
   // writeln('send ', S, ' ', M);
+  SendMsg := False;
   if not Assigned(OnSendMessage) then Exit;
   
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
   L.DelimitedText := M;
-  OnSendMessage(GetSymDisp(S), StrToInt(L[0]), StrToInt(L[1]), StrToInt(L[2]));
+  SendMsg := OnSendMessage(GetSymDisp(S), StrToInt64(L[0]), StrToInt64(L[1]), StrToInt64(L[2]));
   L.Free;
 end;
 
@@ -956,10 +1006,10 @@ begin
        end;
   83 : begin
          yyval.yyString := Format('%d %d %d', [ReadInt(yyv[yysp-5].yyString, RtOK), 
-         ReadInt(yyv[yysp-3].yyString, RtOK), ReadInt(yyv[yysp-1].yyString, RtOK)]); 
+         ReadMsgParam(yyv[yysp-3].yyString, RtOK), ReadMsgParam(yyv[yysp-1].yyString, RtOK)]); 
        end;
   84 : begin
-         yyval.yyString := Format('%d %d 0', [ReadInt(yyv[yysp-3].yyString, RtOK), ReadInt(yyv[yysp-1].yyString, RtOK)]); 
+         yyval.yyString := Format('%d %d 0', [ReadInt(yyv[yysp-3].yyString, RtOK), ReadMsgParam(yyv[yysp-1].yyString, RtOK)]); 
        end;
   85 : begin
          yyval.yyString := Format('%d 0 0', [ReadInt(yyv[yysp-1].yyString, RtOK)]); 
@@ -1097,7 +1147,7 @@ begin
          yyval.yyString := RegAlloc('int'); RegWrite(yyval.yyString, Trunc(ReadReal(yyv[yysp-0].yyString, RtOK))); 
        end;
  129 : begin
-         yyval.yyString := RegAlloc('real'); // TODO: 
+         yyval.yyString := StrVal(yyv[yysp-0].yyString, RtOK); 
        end;
  130 : begin
          yyval.yyString := yyv[yysp-1].yyString; 
@@ -4810,6 +4860,8 @@ begin
     ObjTypes := SO('{"RTL": {}, "SPECTRUM": {}, "FREQDISCRIMINATOR": {}, "FMRECEIVER": {}, "AUDIOOUT": {}}');
   
   filename := Fn;
+  yylineno := 0;
+  RtOK := True;
   assign(yyinput, Fn);
   reset(yyinput);
   Interpret := yyparse=0;

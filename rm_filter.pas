@@ -5,7 +5,7 @@ unit rm_filter;
 interface
 
 uses
-  Classes, SysUtils, RadioSystem, RadioModule, SignalBasic, UComplex, formfilter,
+  Classes, SysUtils, RadioSystem, RadioModule, RadioNode, SignalBasic, UComplex, formfilter,
   rm_spectrum, Math, radiomessage;
 
 

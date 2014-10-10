@@ -256,24 +256,24 @@ begin
       end;
     RM_AUDIOMIXER_SET_STREAM_OUPUT:
       begin
-        if Msg.ParamH > High(FStreams) then Exit;
+        if Integer(Msg.ParamH) > High(FStreams) then Exit;
         FStreams[Msg.ParamH].MixMethod := Msg.ParamL;
         GraphInvalidate;
       end;
     RM_AUDIOMIXER_SET_STREAM_TOTAL_GAIN:
       begin
-        if Msg.ParamH > High(FStreams) then Exit;
+        if Integer(Msg.ParamH) > High(FStreams) then Exit;
         FStreams[Msg.ParamH].TotalGain := Power(10, Integer(Msg.ParamL) / 10 / 20);
       end;
     RM_AUDIOMIXER_SET_STREAM_BASS_GAIN:
       begin
-        if Msg.ParamH > High(FStreams) then Exit;
+        if Integer(Msg.ParamH) > High(FStreams) then Exit;
         FStreams[Msg.ParamH].BassGain := Integer(Msg.ParamL) / 10;
         SetupBassFilter(Msg.ParamH);
       end;
     RM_AUDIOMIXER_SET_STREAM_TREBLE_GAIN:
       begin
-        if Msg.ParamH > High(FStreams) then Exit;
+        if Integer(Msg.ParamH) > High(FStreams) then Exit;
         FStreams[Msg.ParamH].TrebleGain := Integer(Msg.ParamL) / 10;
         SetupTrebleFilter(Msg.ParamH);
       end;
@@ -330,7 +330,6 @@ var
   N, M: Integer;
   I: Integer = 0;
   J: Integer;
-  G: Double;
 begin
   if (Port < 0) or (Port > High(FStreams)) then Exit;
   if FStreams[Port].MixMethod = AUDIOMIXER_STREAM_OUTPUT_OFF then Exit;
