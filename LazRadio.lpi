@@ -308,6 +308,7 @@
         <Filename Value="frames\formsysteminspector.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="SystemInpectorForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formsysteminspector"/>
       </Unit47>

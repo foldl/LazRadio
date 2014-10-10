@@ -15,6 +15,8 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    MenuItem26: TMenuItem;
+    ViewSysInspector: TAction;
     MenuItem25: TMenuItem;
     ViewLogSystem: TAction;
     EditComplete: TAction;
@@ -115,6 +117,7 @@ type
     procedure SystemResetExecute(Sender: TObject);
     procedure ViewLogLevelExecute(Sender: TObject);
     procedure ViewLogLevelUpdate(Sender: TObject);
+    procedure ViewSysInspectorExecute(Sender: TObject);
   private
     FModified: Boolean;
     FSystem: TRadioSystem;
@@ -140,7 +143,7 @@ implementation
 
 uses
   Genfft, UComplex, SignalBasic, logger_treeview, logger, radiomessage, rm_fm,
-  formwait;
+  formwait, formsysteminspector;
 
 {$R *.lfm}
 
@@ -324,6 +327,10 @@ begin
       Checked := TRadioLogger.Level = TRadioLogLevel(Tag);
 end;
 
+procedure TMainForm.ViewSysInspectorExecute(Sender: TObject);
+begin
+  SystemInpectorForm.Show;
+end;
 
 procedure TMainForm.ProjNameChanged(Sender: TObject);
 begin

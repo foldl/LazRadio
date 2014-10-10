@@ -37,6 +37,6 @@ begin
   s2 ! {RM_SPECTRUM_CFG, SET_SPAN, 100000}
      ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
 
-  src ! {RM_DUMP_PLAYER_START, 'D:\baiduyundownload\90.0MHz.dump', 0};
-  //src ! (RM_DUMP_PLAYER_START, file('e:\90.0MHz.dump'), 0};
+  //src ! {RM_DUMP_PLAYER_START, 'D:\baiduyundownload\90.0MHz.dump', 0};
+  src ! {RM_DUMP_PLAYER_START, 'e:\90.0MHz.dump', 0};
 end.

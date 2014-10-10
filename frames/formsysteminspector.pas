@@ -19,7 +19,8 @@ type
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
     Timer1: TTimer;
-    procedure Timer1StartTimer(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
   private
     FRadioSys: TRadioSystem;
     FThreadLoad: array of TLineSeries;
@@ -45,7 +46,12 @@ const
 
 { TSystemInpectorForm }
 
-procedure TSystemInpectorForm.Timer1StartTimer(Sender: TObject);
+procedure TSystemInpectorForm.FormCreate(Sender: TObject);
+begin
+  RadioSys := TRadioSystem.Instance;
+end;
+
+procedure TSystemInpectorForm.Timer1Timer(Sender: TObject);
 var
   I: Integer;
   O: ISuperObject;
@@ -62,8 +68,7 @@ begin
   begin
     with FThreadLoad[I] do
     begin
-      if Count > MAX_POINTS then
-        Delete(0);
+      Delete(0);
       Add(FLoad[I]);
     end;
   end;
@@ -88,11 +93,14 @@ procedure TSystemInpectorForm.SetRadioSys(AValue: TRadioSystem);
 begin
   if FRadioSys = AValue then Exit;
   FRadioSys := AValue;
+  if Assigned(FRadioSys) then
+    SetLength(FLoad, FRadioSys.WorkerCount);
 end;
 
 procedure TSystemInpectorForm.CreateSeries;
 var
   I: Integer;
+  J: Integer;
   S: TLineSeries;
 begin
   for I := 0 to High(FThreadLoad) do FThreadLoad[I].Free;
@@ -114,6 +122,7 @@ begin
     end;
     FThreadLoad[I] := S;
     Chart1.AddSeries(S);
+    for J := 1 to MAX_POINTS do S.Add(0.0);
   end;
 end;
 

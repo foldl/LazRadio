@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 372
+  Left = 297
   Height = 700
-  Top = 199
+  Top = 421
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.2.2.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -571,10 +571,10 @@ object MainForm: TMainForm
           Top = 0
           Width = 778
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 600
+          HorzScrollBar.Page = 774
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 432
+          VertScrollBar.Page = 466
           VertScrollBar.Tracking = True
           Align = alClient
           ClientHeight = 466
@@ -849,6 +849,9 @@ object MainForm: TMainForm
           Action = ViewLogSystem
         end
       end
+      object MenuItem26: TMenuItem
+        Action = ViewSysInspector
+      end
     end
     object MenuItem4: TMenuItem
       Caption = '&Help'
@@ -978,6 +981,11 @@ object MainForm: TMainForm
       Caption = 'System'
       OnExecute = ViewLogLevelExecute
       OnUpdate = ViewLogLevelUpdate
+    end
+    object ViewSysInspector: TAction
+      Category = 'View'
+      Caption = 'System Inspector'
+      OnExecute = ViewSysInspectorExecute
     end
   end
   object ModuleImgs: TImageList

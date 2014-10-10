@@ -33,6 +33,7 @@ type
     FLoadInfo: array of Double;
     function GetModule(const Name: string): TRadioModule;
     function GetModuleFromId(const Id: TModuleId): TRadioModule;
+    function GetWorkerCount: Integer;
   protected
     procedure Lock;
     procedure Unlock;
@@ -58,12 +59,13 @@ type
 
     function MakeStrParam(const S: string): PtrUInt;
 
-    function GetWorkerLoadInfo: tfl
+    function GetWorkerLoadInfo(var Load: array of Double): Boolean;
     function GetModuleUsageInfo: ISuperObject;
 
     procedure GetModList(ModList: TStrings; const bDispFmt: Boolean);
     procedure ShowModules(Tree: TTreeView);
     property Graph: TGenGraph read FGraph write FGraph;
+    property WorkerCount: Integer read GetWorkerCount;
   end;
 
 procedure RegisterModule(AClass: TRadioModuleClass);
@@ -183,6 +185,11 @@ begin
   Lock;
   Result := TRadioModule(PtrUInt(FId2ModuleDict.I[IntToStr(Id)]));
   Unlock;
+end;
+
+function TRadioSystem.GetWorkerCount: Integer;
+begin
+  Result := Length(FLoadInfo);
 end;
 
 procedure TRadioSystem.Lock;
@@ -382,8 +389,8 @@ end;
 
 function TRadioSystem.GetWorkerLoadInfo(var Load: array of Double): Boolean;
 begin
-  SetLength(Load, FRunQueue.SMP);
-  Result := FRunQueue.GetWorkerLoadInfo(Load);
+  Result := FRunQueue.GetWorkerLoadInfo(FLoadInfo);
+  Move(FLoadInfo[0], Load[0], Length(FLoadInfo) * SizeOf(FLoadInfo[0]));
 end;
 
 function TRadioSystem.GetModuleUsageInfo: ISuperObject;

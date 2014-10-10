@@ -1,28 +1,31 @@
 object SystemInpectorForm: TSystemInpectorForm
-  Left = 399
+  Left = 314
   Height = 296
-  Top = 221
+  Top = 131
   Width = 498
+  BorderIcons = [biSystemMenu]
   Caption = 'System Inpector'
   ClientHeight = 296
   ClientWidth = 498
-  LCLVersion = '1.2.4.0'
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '1.2.2.0'
   object PageControl1: TPageControl
     Left = 0
     Height = 296
     Top = 0
     Width = 498
-    ActivePage = TabSheet2
+    ActivePage = TabSheet1
     Align = alClient
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Thread Load'
-      ClientHeight = 268
+      ClientHeight = 266
       ClientWidth = 490
       object Chart1: TChart
         Left = 0
-        Height = 268
+        Height = 266
         Top = 0
         Width = 490
         AxisList = <        
@@ -35,10 +38,12 @@ object SystemInpectorForm: TSystemInpectorForm
           end        
           item
             Alignment = calBottom
+            Marks.Visible = False
             Minors = <>
           end>
         Foot.Brush.Color = clBtnFace
         Foot.Font.Color = clBlue
+        Legend.Visible = True
         Title.Brush.Color = clBtnFace
         Title.Font.Color = clBlue
         Title.Text.Strings = (
@@ -50,23 +55,24 @@ object SystemInpectorForm: TSystemInpectorForm
     end
     object TabSheet2: TTabSheet
       Caption = 'Module CPU Usage'
-      ClientHeight = 268
+      ClientHeight = 266
       ClientWidth = 490
       object ListView1: TListView
         Left = 0
-        Height = 268
+        Height = 266
         Top = 0
         Width = 490
         Align = alClient
         Columns = <        
           item
             Caption = 'Name'
-            Width = 44
+            Width = 120
           end        
           item
+            Alignment = taRightJustify
             AutoSize = True
             Caption = 'Total CPU Time (s)'
-            Width = 442
+            Width = 366
           end>
         GridLines = True
         TabOrder = 0
@@ -75,7 +81,7 @@ object SystemInpectorForm: TSystemInpectorForm
     end
   end
   object Timer1: TTimer
-    OnStartTimer = Timer1StartTimer
+    OnTimer = Timer1Timer
     left = 272
     top = 40
   end

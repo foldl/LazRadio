@@ -793,6 +793,7 @@ begin
     FIdleNode.Next := T^.Next;
     UnLock;
 
+    T^.Thread.FStartTime := Now;
     T^.Thread.Job := Job;
     RTLEventSetEvent(T^.Thread.FJobScheduled);
 
@@ -827,7 +828,7 @@ begin
   begin
     if FWorkers[I].FStartTime > 0 then
     begin
-      Load[I] := FWorkers[I].FRunTimeAcc + (T - FWorkers[I].FStartTime) / S;
+      Load[I] := (FWorkers[I].FRunTimeAcc + (T - FWorkers[I].FStartTime)) / S;
       FWorkers[I].FStartTime := T;
     end
     else begin
