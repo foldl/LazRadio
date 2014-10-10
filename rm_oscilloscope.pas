@@ -218,30 +218,12 @@ var
   E: TSize;
   T: Double;
   I: Integer;
-  Style: TTextStyle;
   R: TRect;
   S: string;
-  TimeScale: Integer;
-  ScaledSweep: Double;
   Range: Double;
   Mid: Integer;
   PR: Integer;
 begin
-  with Style do
-  begin
-    Alignment := taRightJustify;
-    Layout    := tlCenter;
-    SingleLine:= True;
-    Clipping  := True;
-    ExpandTabs:= False;
-    ShowPrefix:= False;
-    Wordbreak := False;
-    Opaque    := False;
-    SystemFont:= False;
-    RightToLeft:= False;
-    EndEllipsis:= False;
-  end;
-
   with FGraphBox.Background.Canvas do
   begin
     Brush.Style := bsSolid;
@@ -323,11 +305,10 @@ label
   PAINT;
 var
   I: Integer;
-  J: Integer;
-  Dual: Boolean = False;
   MI, MA: Double;
-  Y2Pixes: Double;
   YRange: Integer;
+  Dual: Boolean;
+  Y2Pixes: Double;
 begin
   if FChMode = OSCILLOSCOPE_CHANNEL_XY then
   begin
@@ -450,9 +431,7 @@ end;
 procedure TRadioOscilloscope.DrawDataXY(const P: PComplex; const Len: Integer);
 var
   I: Integer;
-  Dual: Boolean = False;
   MA: Double;
-  Y2Pixes: Double;
   XRange, YRange: Integer;
   MidX, MidY: Integer;
   X, Y: Integer;

@@ -5,7 +5,7 @@ unit RadioModule;
 interface
 
 uses
-  Classes, SysUtils, Types, Graphics, GraphType, UComplex, Genfft, radiomessage, gen_graph;
+  Classes, SysUtils, Types, Graphics, GraphType, UComplex, radiomessage, gen_graph;
 
 type
 
@@ -23,6 +23,26 @@ type
 
   TRadioLogLevel = (llVerbose, llInfo, llWarn, llError, llSystem);
 
+  PRadioStringNode = ^TRadioStringNode;
+  TRadioStringNode = record
+    Next: PRadioStringNode;
+    S: string;
+  end;
+
+  { TRadioStringStorage }
+
+  TRadioStringStorage = class
+  private
+    FHead: TRadioStringNode;
+    FLast: PRadioStringNode;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    procedure Clear;
+    function Store(const S: string): PtrUInt;
+  end;
+
   { TRadioDataStream }
 
   TRadioDataStream = class
@@ -39,8 +59,8 @@ type
     FPortId: Integer;
     function GetBuffer(const Index: Integer): PComplex;
     function GetBufferCount: Integer;
-    function GetDefBufferSize: Integer;
-    procedure SetDefBufferSize(AValue: Integer);
+    function GetDefBufferSize: Cardinal;
+    procedure SetDefBufferSize(AValue: Cardinal);
     procedure FreeBlock(X: PDataStreamRec); // Lock is required
     procedure DumpList;
   public
@@ -61,7 +81,7 @@ type
 
     property Name: string read FName;
     property Buffer[const Index: Integer]: PComplex read GetBuffer;
-    property BufferSize: Integer read GetDefBufferSize write SetDefBufferSize;
+    property BufferSize: Cardinal read GetDefBufferSize write SetDefBufferSize;
     property BufferCount: Integer read GetBufferCount;
     property PortId: Integer read FPortId write FPortId;
   end;
@@ -111,6 +131,8 @@ type
     FNode: PRadioThreadNode;
     FRunQueue: TRadioRunQueue;
     FJobScheduled: PRTLEvent;
+    FRunTimeAcc: TTime;  // maintained by TRadioRunQueue
+    FStartTime: TTime;
   protected
     procedure Execute; override;
   public
@@ -144,7 +166,9 @@ type
     FIdleNode: TRadioThreadNode;
     FWorkers: array of TRadioThread;
     FDestroying: Boolean;
+    FStatStart: TDateTime;
   private
+    function GetSMP: Integer;
     procedure Schedule;
     procedure Lock;
     procedure UnLock;
@@ -154,6 +178,10 @@ type
     destructor Destroy; override;
     function  PickJob: TRadioMessageQueue;
     procedure Request(Job: TRadioMessageQueue);
+
+  public
+    function GetWorkerLoadInfo(var Load: array of Double): Boolean;
+    property SMP: Integer read GetSMP;
   end;
 
   { TRadioMessageQueue }
@@ -216,7 +244,6 @@ type
     FDescStr: TStringList;
     FGUIBtnRect: TRect;
     FConfigBtnRect: TRect;
-    FModRef: Integer;
     procedure SetId(AValue: TModuleId);
   protected
     FIcon: string;
@@ -322,126 +349,6 @@ type
     destructor Destroy; override;
   end;
 
-  { TDataFlowNode }
-
-  TDataFlowNode = class
-  private
-    FNext: TDataFlowNode;
-    FOnSendToNext: TReceiveData;
-    FCache: array of Complex;
-    FHoldCount: Integer;
-  protected
-    procedure DoReceiveData(const P: PComplex; const Len: Integer); virtual;
-  public
-    destructor Destroy; override;
-
-    procedure SendToNext(const P: PComplex; const Len: Integer);
-    procedure ReceiveData(const P: PComplex; const Len: Integer);
-
-    procedure Hold;
-    procedure ReleaseHold;
-
-    function  Connect(ANext: TDataFlowNode): TDataFlowNode;
-    function  LastNode: TDataFlowNode;
-
-    property Next: TDataFlowNode read FNext;
-    property OnSendToNext: TReceiveData read FOnSendToNext write FOnSendToNext;
-  end;
-
-  { TRegulatorNode }
-
-  TRegulatorNode = class(TDataFlowNode)
-  private
-    FRegulator: TStreamRegulator;
-  protected
-    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    property Regulator: TStreamRegulator read FRegulator;
-  end;
-
-  { TWindowNode }
-
-  TWindowNode = class(TDataFlowNode)
-  private
-    FWnd: array of Double;
-    FRegulator: TStreamRegulator;
-    function GetOverlap: Integer;
-    function GetWindowLen: Integer;
-    procedure RegulatedData(const P: PComplex; const Len: Integer);
-    procedure SetOverlap(AValue: Integer);
-  protected
-    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure SetWindow(const P: PDouble; const Len: Integer);
-
-    property WindowLen: Integer read GetWindowLen;
-    property Overlap: Integer read GetOverlap write SetOverlap;
-  end;
-
-  { TFIRNode }
-
-  TFIRNode = class(TDataFlowNode)
-  private
-    FHFIR: array of Complex;
-    FBuf: array of Complex;
-    FRes: array of Complex;
-    FFPlan: PFFTPlan;
-    FIPlan: PFFTPlan;
-    FRegulator: TStreamRegulator;
-    FTaps: Integer;
-    function GetProcessingSize: Integer;
-    procedure SetTimeDomainFIR(const P: PComplex; const Len: Integer); virtual;
-    procedure RegulatedData(const P: PComplex; const Len: Integer); virtual;
-  protected
-    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    procedure SetFIR(const P: PComplex; const Len: Integer; const FreqDomain: Boolean = False); overload;
-    procedure SetFIR(const P: PDouble; const Len: Integer);
-
-    property ProcessingSize: Integer read GetProcessingSize;
-  end;
-
-  { TRealFIRNode }
-
-  TRealFIRNode = class(TFIRNode)
-  private
-    FMono: Boolean;
-    procedure RegulatedData(const P: PComplex; const Len: Integer); override;
-    procedure SetMono(AValue: Boolean);
-  public
-    property Mono: Boolean read FMono write SetMono;
-  end;
-
-  { TResampleNode }
-
-  TResampleNode = class(TDataFlowNode)
-  private
-    FBuf: array [0..2048 - 1] of Complex;
-    FCursor: Integer;
-    FLastInput: Complex;
-    FLastScaledIndex: Double;
-    FInputRate: Cardinal;
-    FOutputRate: Cardinal;
-    procedure SetInputRate(AValue: Cardinal);
-    procedure SetOutputRate(AValue: Cardinal);
-  protected
-    procedure DoReceiveData(const P: PComplex; const Len: Integer); override;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    property InputRate: Cardinal read FInputRate write SetInputRate ;
-    property OutputRate: Cardinal read FOutputRate write SetOutputRate;
-  end;
-
   { TRadioLogger }
 
   TRadioLogger = class
@@ -505,56 +412,42 @@ begin
   if Copy(Result, Length(Result) - 5, 6) = 'Module' then Delete(Result, Length(Result) - 5, 6);
 end;
 
-{ TRealFIRNode }
+{ TRadioStringStorage }
 
-procedure TRealFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
-var
-  I: Integer;
+constructor TRadioStringStorage.Create;
 begin
-  if Assigned(FFPlan) then
-  begin
-    if Len <> High(FBuf) + 1 then
-    begin
-      TRadioLogger.Report(llWarn, 'TRealFIRNode.RegulatedData: Len <> High(FBuf) + 1');
-      Exit;
-    end;
-  end
-  else begin
-    TRadioLogger.Report(llWarn, 'TRealFIRNode.RegulatedData: FPlan = nil');
-    Exit;
-  end;
-
-  FillChar(FRes[0], Len * SizeOf(FRes[0]), 0);
-  FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
-  for I := 0 to Len - 1 do
-    FBuf[I].re := P[I].re;
-  FFT(FFPlan, @FBuf[0], @FBuf[0]);
-  for I := 0 to Len - 1 do
-    FBuf[I] := FBuf[I] * FHFIR[I];
-  FFT(FIPlan, @FBuf[0], @FBuf[0]);
-  for I := 0 to Len - 1 do
-    FRes[I].re := FBuf[I].re;
-
-  if not FMono then
-  begin
-    FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
-    for I := 0 to Len - 1 do
-      FBuf[I].re := P[I].im;
-    FFT(FFPlan, @FBuf[0], @FBuf[0]);
-    for I := 0 to Len - 1 do
-      FBuf[I] := FBuf[I] * FHFIR[I];
-    FFT(FIPlan, @FBuf[0], @FBuf[0]);
-    for I := 0 to Len - 1 do
-      FRes[I].im := FBuf[I].re;
-  end;
-  I := FTaps - 1;
-  SendToNext(@FRes[I], Len - I);
+  FLast := @FHead;
 end;
 
-procedure TRealFIRNode.SetMono(AValue: Boolean);
+destructor TRadioStringStorage.Destroy;
 begin
-  if FMono = AValue then Exit;
-  FMono := AValue;
+  Clear;
+  inherited Destroy;
+end;
+
+procedure TRadioStringStorage.Clear;
+var
+  X: PRadioStringNode;
+begin
+  X := FHead.Next;
+  while Assigned(X) do
+  begin
+    FHead.Next := X^.Next;
+    Dispose(X);
+    X := FHead.Next;
+  end;
+  FLast := @FHead;
+end;
+
+function TRadioStringStorage.Store(const S: string): PtrUInt;
+var
+  X: PRadioStringNode;
+begin
+  New(X);
+  X^.S := Copy(S, 1, Length(S));
+  X^.Next := nil;
+  FLast^.Next := X;
+  Result := PtrUInt(@X^.S);
 end;
 
 { TRadioLogger }
@@ -595,322 +488,6 @@ end;
 class function TRadioLogger.GetInstance: TRadioLogger;
 begin
   Result := FInstance;
-end;
-
-{ TResampleNode }
-
-procedure TResampleNode.SetInputRate(AValue: Cardinal);
-begin
-  if FInputRate = AValue then Exit;
-  FInputRate := Max(1, AValue);
-  FLastScaledIndex := 0;
-end;
-
-procedure TResampleNode.SetOutputRate(AValue: Cardinal);
-begin
-  if FOutputRate = AValue then Exit;
-  FOutputRate := Max(1, AValue);
-  FLastScaledIndex := 0;
-end;
-
-procedure TResampleNode.DoReceiveData(const P: PComplex; const Len: Integer);
-label
-  again;
-var
-  I: Integer = 0;
-  K: Double;
-  V: Double;
-begin
-  if FInputRate = FOutputRate then
-  begin
-    if FCursor > 0 then
-    begin
-      SendToNext(@FBuf[0], FCursor);
-      FCursor := 0;
-    end;
-
-    SendToNext(P, Len);
-    Exit;
-  end;
-
-  V := FLastScaledIndex;
-  K := FInputRate / FOutputRate;
-again:
-  while FCursor <= High(FBuf) do
-  begin
-    V := V + K;
-    I := Trunc(V);
-    if I >= Len - 1 then
-    begin
-      FLastScaledIndex := V - Len;
-      FLastInput := P[Len - 1];
-      Exit;
-    end;
-    if I >= 0 then
-      FBuf[FCursor] := P[I] * (V - I) + P[I + 1] * (1 + I - V)
-    else
-      FBuf[FCursor] := FLastInput * (V + 1) + P[0] * (- V);
-    Inc(FCursor);
-  end;
-
-  if FCursor = High(FBuf) + 1 then
-  begin
-    SendToNext(@FBuf[0], High(FBuf) + 1);
-    FCursor := 0;
-    goto again;
-  end;
-end;
-
-constructor TResampleNode.Create;
-begin
-  FInputRate := 1;
-  FOutputRate := 1;
-end;
-
-destructor TResampleNode.Destroy;
-begin
-  inherited Destroy;
-end;
-
-{ TWindowNode }
-
-procedure TWindowNode.RegulatedData(const P: PComplex; const Len: Integer);
-var
-  I: Integer;
-begin
-  if Len = High(FWnd) + 1 then
-    for I := 0 to Len - 1 do P[I] := P[I] * FWnd[I];
-  SendToNext(P, Len);
-end;
-
-function TWindowNode.GetOverlap: Integer;
-begin
-  Result := FRegulator.Overlap;
-end;
-
-function TWindowNode.GetWindowLen: Integer;
-begin
-  Result := High(FWnd) + 1;
-end;
-
-procedure TWindowNode.SetOverlap(AValue: Integer);
-begin
-  FRegulator.Overlap := AValue;
-end;
-
-constructor TWindowNode.Create;
-begin
-  inherited;
-  FRegulator := TStreamRegulator.Create;
-  FRegulator.OnRegulatedData := @RegulatedData;
-end;
-
-destructor TWindowNode.Destroy;
-begin
-  FRegulator.Free;
-  inherited Destroy;
-end;
-
-procedure TWindowNode.SetWindow(const P: PDouble; const Len: Integer);
-begin
-  SetLength(FWnd, Len);
-  Move(P^, FWnd[0], Len * SizeOf(P^));
-  FRegulator.Size := Len;
-end;
-
-procedure TWindowNode.DoReceiveData(const P: PComplex; const Len: Integer);
-begin
-  FRegulator.ReceiveData(P, Len);
-end;
-
-{ TFIRNode }
-
-procedure TFIRNode.SetTimeDomainFIR(const P: PComplex; const Len: Integer);
-var
-  T: array of Complex;
-  I: Integer;
-begin
-  if Assigned(FFPlan) then
-  begin
-    FinalizePlan(FFPlan);
-    FinalizePlan(FIPlan);
-  end;
-  SetLength(T, Len);
-  ModArg(P, @T[0], Len);
-  I := NextFastSize(2 * Len - 1);
-  FRegulator.Size := I;
-  SetLength(FHFIR, I);
-  SetLength(FBuf, I);
-  SetLength(FRes, I);
-  FillChar(FHFIR[0], I * SizeOf(FHFIR[0]), 0);
-  FillChar(FBuf[0], I * SizeOf(FHFIR[0]), 0);
-  Move(P^, FBuf[0], Len * SizeOf(FHFIR[0]));
-  FFPlan := BuildFFTPlan(I, False);
-  FFT(FFPlan, @FBuf[0], @FHFIR[0]);
-  FIPlan := BuildFFTPlan(I, True);
-  FRegulator.Overlap := Len - 1;
-  FTaps := Len;
-end;
-
-function TFIRNode.GetProcessingSize: Integer;
-begin
-  Result := Length(FBuf);
-end;
-
-procedure TFIRNode.RegulatedData(const P: PComplex; const Len: Integer);
-var
-  I: Integer;
-begin
-  if Assigned(FFPlan) then
-  begin
-    if Len <> High(FBuf) + 1 then
-    begin
-      TRadioLogger.Report(llWarn, 'TFIRNode.RegulatedData: Len <> High(FBuf) + 1');
-      Exit;
-    end;
-
-    FFT(FFPlan, P, @FBuf[0]);
-    for I := 0 to Len - 1 do
-      FBuf[I] := FBuf[I] * FHFIR[I];
-    FFT(FIPlan, @FBuf[0], @FRes[0]);
-    I := FTaps - 1;
-    SendToNext(@FRes[I], Len - I);
-  end
-  else
-    TRadioLogger.Report(llWarn, 'TFIRNode.RegulatedData: FPlan = nil');
-end;
-
-constructor TFIRNode.Create;
-begin
-  inherited Create;
-  FRegulator := TStreamRegulator.Create;
-  FRegulator.OnRegulatedData := @RegulatedData;
-end;
-
-destructor TFIRNode.Destroy;
-begin
-  FRegulator.Free;
-  inherited Destroy;
-end;
-
-procedure TFIRNode.SetFIR(const P: PComplex; const Len: Integer;
-  const FreqDomain: Boolean);
-var
-  T: array of Complex;
-  X: PFFTPlan;
-begin
-  if not FreqDomain then
-    SetTimeDomainFIR(P, Len)
-  else begin
-    SetLength(T, Len);
-    X := BuildFFTPlan(Len, True);
-    FFT(X, P, @T[0]);
-    FinalizePlan(X);
-    SetTimeDomainFIR(@T[0], Len);
-  end;
-end;
-
-procedure TFIRNode.SetFIR(const P: PDouble; const Len: Integer);
-var
-  X: array of Complex;
-  I: Integer;
-begin
-  SetLength(X, Len);
-  for I := 0 to Len - 1 do
-  begin
-    X[I].re := P[I];
-    X[I].im := 0;
-  end;
-  SetTimeDomainFIR(PComplex(@X[0]), Len);
-end;
-
-procedure TFIRNode.DoReceiveData(const P: PComplex; const Len: Integer);
-begin
-  FRegulator.ReceiveData(P, Len);
-end;
-
-{ TRegulatorNode }
-
-procedure TRegulatorNode.DoReceiveData(const P: PComplex; const Len: Integer);
-begin
-  FRegulator.ReceiveData(P, Len);
-end;
-
-constructor TRegulatorNode.Create;
-begin
-  inherited Create;
-  FRegulator := TStreamRegulator.Create;
-  FRegulator.OnRegulatedData := @SendToNext;
-end;
-
-destructor TRegulatorNode.Destroy;
-begin
-  FRegulator.Free;
-  inherited Destroy;
-end;
-
-{ TDataFlowNode }
-
-procedure TDataFlowNode.DoReceiveData(const P: PComplex; const Len: Integer);
-begin
-
-end;
-
-destructor TDataFlowNode.Destroy;
-begin
-  if Assigned(FNext) then FNext.Free;
-  inherited Destroy;
-end;
-
-procedure TDataFlowNode.SendToNext(const P: PComplex; const Len: Integer);
-begin
-  if Assigned(FOnSendToNext) then
-    FOnSendToNext(P, Len)
-  else if Assigned(FNext) then
-    FNext.ReceiveData(P, Len);
-end;
-
-procedure TDataFlowNode.ReceiveData(const P: PComplex; const Len: Integer);
-var
-  I: Integer;
-begin
-  if FHoldCount <= 0 then
-    DoReceiveData(P, Len)
-  else begin
-    I := High(FCache) + 1;
-    SetLength(FCache, High(FCache) + Len + 1);
-    Move(P^, FCache[I], Len * SizeOf(P^));
-  end;
-end;
-
-procedure TDataFlowNode.Hold;
-begin
-  Inc(FHoldCount);
-end;
-
-procedure TDataFlowNode.ReleaseHold;
-begin
-  Dec(FHoldCount);
-  if FHoldCount = 0 then
-  begin
-    if High(FCache) >= 0 then
-    begin
-      DoReceiveData(@FCache[0], High(FCache) + 1);
-      SetLength(FCache, 0);
-    end;
-  end;
-end;
-
-function TDataFlowNode.Connect(ANext: TDataFlowNode): TDataFlowNode;
-begin
-  FNext := ANext;
-  Result := ANext;
-end;
-
-function TDataFlowNode.LastNode: TDataFlowNode;
-begin
-  Result := Self;
-  while Assigned(Result.FNext) do Result := Result.FNext;
 end;
 
 { TRadioMessageQueue }
@@ -965,12 +542,12 @@ begin
   Dispose(P);
 
   try
-    TRadioLogger.Report(llVerbose, 'in thread #' + IntToStr(GetThreadID) + ', ' + Name + Format(' start exec msg %s', [TRadioLogger.MsgToStr(Msg)]));
+    TRadioLogger.Report(llVerbose, Format('in thread #%d, %s  start exec msg %s', [GetThreadID, Name, TRadioLogger.MsgToStr(Msg)]));
     ProccessMessage(Msg, Ret);
     TRadioLogger.Report(llVerbose, Name + ' msg exec done');
   except
     on E: Exception do
-      TRadioLogger.Report(llError, 'Exception: ' + E.Message);
+      TRadioLogger.Report(llError, Format('MessageExceute Exception: %s when handling %s', [E.Message, TRadioLogger.MsgToStr(Msg)]));
   end;
 end;
 
@@ -1073,6 +650,11 @@ end;
 
 { TRadioRunQueue }
 
+function TRadioRunQueue.GetSMP: Integer;
+begin
+  Result := Length(FWorkers);
+end;
+
 procedure TRadioRunQueue.Schedule;
 label
   again;
@@ -1092,6 +674,7 @@ again:
     FFirstJob.Next := P^.Next;
     UnLock;
 
+    T^.Thread.FStartTime := Now;
     T^.Thread.Job := P^.Queue;
     Dispose(P);
     RTLEventSetEvent(T^.Thread.FJobScheduled);
@@ -1112,12 +695,22 @@ begin
 end;
 
 procedure TRadioRunQueue.WorkerIdle(Worker: TRadioThread);
+var
+  J: TRadioMessageQueue;
 begin
   if FDestroying then Exit;
+  Worker.FRunTimeAcc := Worker.FRunTimeAcc + (Now - Worker.FStartTime);
+  Worker.FStartTime := 0;
   Lock;
   Worker.Node^.Next := FIdleNode.Next;
   FIdleNode.Next := Worker.Node;
   Unlock;
+  if Assigned(Worker.FJob) then
+  begin
+    J := Worker.FJob;
+    Worker.FJob := nil;
+    J.InQueue := False;  // here, worker might be re-scheduled!
+  end;
   Schedule;
 end;
 
@@ -1139,6 +732,7 @@ begin
 
     TRadioLogger.Report(llVerbose, 'TRadioRunQueue: thread #%d added', [P^.Thread.ThreadID]);
   end;
+  FStatStart := Now;
 end;
 
 destructor TRadioRunQueue.Destroy;
@@ -1218,11 +812,35 @@ begin
   Schedule;
 end;
 
+function TRadioRunQueue.GetWorkerLoadInfo(var Load: array of Double): Boolean;
+var
+  I: Integer;
+  T: TDateTime;
+  S: TDateTime;
+begin
+  Result := Length(Load) = Length(FWorkers);
+  if not Result then Exit;
+  T := Now;
+  S := Max(1 / MSecsPerDay, T - FStatStart);
+  FStatStart := Now;
+  for I := 0 to High(FWorkers) do
+  begin
+    if FWorkers[I].FStartTime > 0 then
+    begin
+      Load[I] := FWorkers[I].FRunTimeAcc + (T - FWorkers[I].FStartTime) / S;
+      FWorkers[I].FStartTime := T;
+    end
+    else begin
+      Load[I] := FWorkers[I].FRunTimeAcc / S;
+    end;
+    FWorkers[I].FRunTimeAcc := 0.0;
+  end;
+end;
+
 { TRadioThread }
 
 procedure TRadioThread.Execute;
 var
-  J: TRadioMessageQueue;
   T: TTime;
 begin
   while not Terminated do
@@ -1234,19 +852,18 @@ begin
 
     if Assigned(FJob) then
     begin
-      J := FJob;
-      FJob := nil;
-
       T := Now;
 
-      J.RunThread := Self;
-      while (not Terminated) and J.NeedExecution do
-        J.MessageExceute;
-      J.RunThread := nil;
-      J.FCPUTime := J.FCPUTime + Now - T;
+      with FJob do
+      begin
+        RunThread := Self;
+        while (not Terminated) and NeedExecution do
+          MessageExceute;
+        RunThread := nil;
+        FCPUTime := FCPUTime + Now - T;
+      end;
 
       FRunQueue.WorkerIdle(Self);
-      J.InQueue := False;
     end
     else;
   end;
@@ -1268,8 +885,6 @@ begin
 end;
 
 function TRadioThread.Yield(Job: TRadioMessageQueue): Cardinal;
-label
-  PICK_JOB;
 var
   J: TRadioMessageQueue;
   T: TTime;
@@ -1279,15 +894,18 @@ begin
   J := FRunQueue.PickJob;
   if not Assigned(J) then Exit;
 
-  T := Now;
-  J.RunThread := Self;
   // we only exec one message here, and this job will be at the tail of the queue
   // if it has more messaages.
   if J.NeedExecution then
+  begin
+    T := Now;
+    J.RunThread := Self;
     J.MessageExceute;
-  T := Now - T;
-  J.FCPUTime := J.FCPUTime + T;
-  J.RunThread := nil;
+    T := Now - T;
+    J.FCPUTime := J.FCPUTime + T;
+    J.RunThread := nil;
+  end;
+
   J.InQueue := False;
 
   Result := Round(T * MSecsPerDay);
@@ -1377,12 +995,12 @@ begin
   Result := Length(FBuffers);
 end;
 
-function TRadioDataStream.GetDefBufferSize: Integer;
+function TRadioDataStream.GetDefBufferSize: Cardinal;
 begin
   Result := FBlockSize;
 end;
 
-procedure TRadioDataStream.SetDefBufferSize(AValue: Integer);
+procedure TRadioDataStream.SetDefBufferSize(AValue: Cardinal);
 begin
   Lock;
   FBlockSize := AValue;

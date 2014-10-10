@@ -5,7 +5,7 @@ unit rm_pll;
 interface
 
 uses
-  Classes, SysUtils, RadioModule, RadioSystem, UComplex, Math, radiomessage;
+  Classes, SysUtils, RadioModule, UComplex, Math;
 
 type
 
@@ -24,7 +24,6 @@ type
     FFreqRange: Cardinal;
     FState: TPLLState;
     FDefaultFrequency: Cardinal;
-    FOutputVoltage: Boolean;
     FSampleRate: Cardinal;
     FTolerance: Double;
     FNextPhase: Double;
@@ -215,12 +214,11 @@ end;
 procedure TPLLNode.ProcessReal(IO: PComplex; const Len: Integer);
 var
   I: Integer;
-  T, C: Complex;
+  T: Complex;
   V: Double;
   A: Double;
   P: Double;
   E: Double;
-  Dc: Double = 0.0;
   Amp: Double = 0.0;
 
   function arcsin(const X: Double): Double; inline;

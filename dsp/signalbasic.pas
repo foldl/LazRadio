@@ -723,9 +723,7 @@ var
   PCoeff: PDouble;
   Sum: Complex;
   TapsPerPhaseHigh: Integer;
-  LenH: Integer;
 begin
-  LenH := High(H) + 1;
   TapsPerPhaseHigh := High(Z);
   OutLen := FactorL * InLen;
 

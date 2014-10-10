@@ -21,8 +21,8 @@ type
     FMode: TResamplingMode;
     FRateIn: Cardinal;
     FRateOut: Cardinal;
-    FInterpL: Integer;
-    FDecimM: Integer;
+    FInterpL: Cardinal;
+    FDecimM: Cardinal;
     FBandwidth: Integer;
     FH: array of Double;
     FZ: array of Complex;
@@ -54,7 +54,7 @@ uses
 
 procedure TRadioResampling.Reconfig;
 var
-  D: Integer;
+  D: Cardinal;
   FilterRate: Cardinal;
   Taps: Integer;
   Bw: Integer;
@@ -105,7 +105,7 @@ begin
     else begin
       FMode := rmResampling;
       FPhase := 0;
-      SetLength(FResampleBuff, ((FRegulator.Size + 1) * FInterpL) div FDecimM + 1);
+      SetLength(FResampleBuff, (Int64(FRegulator.Size + 1) * FInterpL) div FDecimM + 1);
       FRegulator2.Size := DefOutput.BufferSize;
     end;
   end;
@@ -186,7 +186,7 @@ begin
       end;
     rmInterpolation:
       begin
-        if Len * FInterpL <> DefOutput.BufferSize then
+        if Cardinal(Len) * FInterpL <> DefOutput.BufferSize then
         begin
           TRadioLogger.Report(llWarn, 'TRadioResampling: Len * FInterpL <> DefOutput.BufferSize');
           Exit;

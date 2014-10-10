@@ -8,15 +8,18 @@ uses
   SysUtils, Classes, Math, LexLib, YaccLib, superobject;
 
 type
+
   TSendMessage = function (const Name: ansistring; const V1, V2, V3: PtrUInt): Boolean of object;
   TConnectFeature = function (const Source, Target: ansistring): Boolean of object;
   TConnectData = function (const Source, Target: ansistring; const SourcePort, TargetPort: Integer): Boolean of object;
+  TMakeStrParam = function (const S: ansistring): PtrUInt of object;
   TEmitMessage = procedure (const Line: ansistring) of  object;
 
 var
     ObjTypes: ISuperObject = nil;
     SymTable: ISuperObject = nil;
-    RegTable: ISuperObject = nil;
+    RegTable: ISuperObject = nil ;
+    OnMakeStrParam: TMakeStrParam = nil;
     OnCreateModules: TNotifyEvent = nil;
     OnSendMessage: TSendMessage = nil;
     OnConnectFeature: TConnectFeature = nil;

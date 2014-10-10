@@ -5,7 +5,7 @@ unit rm_am;
 interface
 
 uses
-  Classes, SysUtils, UComplex, RadioMessage, RadioModule, RadioSystem, Math;
+  Classes, SysUtils, UComplex, RadioMessage, RadioModule, RadioSystem;
 
 type
 
@@ -38,9 +38,6 @@ var
   I: Integer;
   J: Integer;
   O: PComplex;
-  T: Complex;
-  X: Complex;
-  F: Double;
 begin
   O := Alloc(DefOutput, I);
   if not Assigned(O) then

@@ -22,7 +22,6 @@ type
     MenuItem19: TMenuItem;
     MenuItem24: TMenuItem;
     SystemCheck: TAction;
-    Image1: TImage;
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
     MenuItem22: TMenuItem;
@@ -92,11 +91,6 @@ type
     SynEdit: TSynEdit;
     SheetCode: TTabSheet;
     SheetGraph: TTabSheet;
-    procedure BitBtn1Click(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
     procedure EditCompleteExecute(Sender: TObject);
     procedure FileCloseExecute(Sender: TObject);
     procedure FileNewExecute(Sender: TObject);
@@ -127,7 +121,6 @@ type
     FRuntime: TRadioLangRT;
     FSystemName: string;
     FFileName: string;
-    procedure RDSSys;
     procedure ProjNameChanged(Sender: TObject);
     procedure SetModified(AValue: Boolean);
     procedure SetSystemName(AValue: string);
@@ -152,46 +145,6 @@ uses
 {$R *.lfm}
 
 { TMainForm }
-
-procedure TMainForm.Button1Click(Sender: TObject);
-begin
-  RDSSys;
-end;
-
-procedure TMainForm.BitBtn1Click(Sender: TObject);
-begin
-
-end;
-
-procedure TMainForm.Button2Click(Sender: TObject);
-begin
-  Button1Click(Sender);
-end;
-
-procedure TMainForm.Button3Click(Sender: TObject);
-var
-  M: Cardinal = $1234;
-  C: Cardinal;
-  S: Cardinal;
-  X: Word;
-  E: Integer;
-  B: Boolean;
-begin
-  {C := EncodeMessage(M);
-  S := CalcSyndrome(C);
-  TRadioLogger.Report(llError, 'encoded = %7x, syndrome = %3x', [C, S]);
-  C := C xor ($1f shl 10);
-  B := DecodeMessage(C, X, E);
-  TRadioLogger.Report(llError, 'received = %7x', [C]);
-  TRadioLogger.Report(llError, 'decoded = %7x, ok = %d, errbits = %d', [X, Ord(B), E]);
-  }
-  RadioPostMessage(RM_DUMP_PLAYER_STOP, 0, 0, 'src');
-end;
-
-procedure TMainForm.Button4Click(Sender: TObject);
-begin
-  FSystem.ShowSystem;
-end;
 
 procedure TMainForm.EditCompleteExecute(Sender: TObject);
 begin
@@ -274,7 +227,7 @@ end;
 
 procedure TMainForm.FormShow(Sender: TObject);
 begin
-  OpenProject('.\examples\fm.lzr');
+  OpenProject('.\examples\rds-debug.lzr');
 end;
 
 procedure TMainForm.PanelCodeExecute(Sender: TObject);
@@ -371,79 +324,6 @@ begin
       Checked := TRadioLogger.Level = TRadioLogLevel(Tag);
 end;
 
-procedure TMainForm.RDSSys;
-begin
-  FSystem.AddModule('src', 'DumpPlayer');
-  FSystem.AddModule('iqcor', 'IQCorrecter');
-  FSystem.AddModule('s', 'Spectrum');
-  FSystem.AddModule('s2', 'Spectrum');
-  FSystem.AddModule('mixer1', 'FreqMixer');
-  FSystem.AddModule('mixer2', 'FreqMixer');
-  FSystem.AddModule('f1', 'Filter');
-  FSystem.AddModule('f2', 'Filter');
-  // FSystem.AddModule('f3', 'Filter');
-  FSystem.AddModule('fd1', 'FreqDiscriminator');
-  FSystem.AddModule('fm1', 'FMReceiver');
-  FSystem.AddModule('re1', 'Resampling');
-  FSystem.AddModule('re2', 'Resampling');
-  FSystem.AddModule('rds', 'RDSDecoder');
-  FSystem.AddModule('scope', 'Oscilloscope');
-
-  FSystem.ConnectBoth('src', 'iqcor');
-  FSystem.ConnectBoth('iqcor', 'f1');
-  FSystem.ConnectBoth('f1', 'mixer1');
-  FSystem.ConnectBoth('mixer1', 're1');
-  FSystem.ConnectBoth('re1', 'fd1');
-  FSystem.ConnectBoth('fd1', 'f2');
-  FSystem.ConnectBoth('f2', 'mixer2');
-  FSystem.ConnectBoth('mixer2', 're2');
-  FSystem.ConnectBoth('re2', 'rds');
-
-  FSystem.ConnectBoth('mixer1', 's');
-  FSystem.ConnectBoth('re2', 's2');
-  FSystem.ConnectBoth('re2', 'scope');
-
-  // set-up channel 1
-  RadioPostMessage(RM_RESAMPLING_CFG, 200000, 90000, 're1');
-  RadioPostMessage(RM_RESAMPLING_CFG, 9500, 2500, 're2');
-
-  RadioPostMessage(RM_FREQMIXER_SET_FREQ, 57000, 0, 'mixer2');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 2048000, 'f1');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 200, 'f1');
-  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, -90000, 90000, 'f1');
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 200000, 'f2');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 200, 'f2');
-  RadioPostMessage(RM_SPECTRUM_BAND_SELECT_1, 57000 - 2500, 57000 + 2500, 'f2');
-  {
-  RadioPostMessage(RM_SET_FEATURE, RM_FEATURE_SAMPLE_RATE, 9500, 'f3');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TYPE, Ord(ftBPF), 'f3');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_OMEGA, 2500, 'f3');
-  RadioPostMessage(RM_FILTER_CONFIG, FILTER_TAPS, 64, 'f3');
-  RadioPostMessage(RM_FILTER_REDESIGN, 0, 0, 'f3');
-  }
-  //FSystem.ConnectBoth('src', 'dump');
-
- // FSystem.ConnectBoth('f', 's2');
-  //FSystem.ConnectBoth('f', 'u');
- // FSystem.ConnectBoth('dump', 'u');
-
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768, 's');
-//  RadioPostMessage(RM_SPECTRUM_CFG, SET_Y_RANGE, 10, 's');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 100000, 's2');
-  RadioPostMessage(RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000, 's2');
-  //RadioPostMessage(RM_SPECTRUM_CFG, SET_DATA_DOMAIN, SPECTRUM_DATA_DOMAIN_REAL, 's2');
-//  RadioPostMessage(RM_FILTER_CONFIG, FILTER_COEFF_DOMAIN, FILTER_COEFF_DOMAIN_REAL, 'f2');
-  //RadioPostMessage(RM_SPECTRUM_CFG, SET_SPAN, 0, 's');
-
- // FSystem.ConfigModule('a');
- // FSystem.ConfigModule('r');
-  //FSystem.ConfigModule('src');
-
-  FSystem.ShowSystem;
-
- // RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('D:\baiduyundownload\90.0MHz.dump', fmOpenRead)), 0, 'src');
-  //RadioPostMessage(RM_DUMP_PLAYER_START, PtrUInt(TFileStream.Create('e:\90.0MHz.dump', fmOpenRead)), 0, 'src');
-end;
 
 procedure TMainForm.ProjNameChanged(Sender: TObject);
 begin

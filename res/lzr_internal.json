@@ -1,0 +1,6 @@
+{
+    ftLPF: 0,
+    ftBPF: 1,
+    ftBSF: 2, 
+    ftHPF: 3
+}

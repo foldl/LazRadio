@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 24
+  Left = 372
   Height = 700
-  Top = 89
+  Top = 199
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -31,7 +31,6 @@ object MainForm: TMainForm
       Top = 440
       Width = 75
       Caption = 'Button1'
-      OnClick = Button1Click
       TabOrder = 0
     end
     object PageControl1: TPageControl
@@ -572,10 +571,10 @@ object MainForm: TMainForm
           Top = 0
           Width = 778
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 774
+          HorzScrollBar.Page = 600
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 466
+          VertScrollBar.Page = 432
           VertScrollBar.Tracking = True
           Align = alClient
           ClientHeight = 466
@@ -696,12 +695,6 @@ object MainForm: TMainForm
       Width = 5
       Caption = 'ToolButton1'
       Style = tbsDivider
-    end
-    object Image1: TImage
-      Left = 108
-      Height = 22
-      Top = 2
-      Width = 90
     end
   end
   object Panel2: TPanel

@@ -464,6 +464,7 @@ function VarNameToWords(const N: string): string;
 var
   I: Integer;
 begin
+  Result := '';
   for I := 1 to Length(N) do
   begin
     if N[I] in ['A'..'Z'] then

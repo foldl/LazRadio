@@ -5,7 +5,7 @@ unit rm_spectrum;
 interface
 
 uses
-  Classes, SysUtils, Types, Graphics, ExtCtrls, FPImage, RadioModule, UComplex, SignalBasic,
+  Classes, SysUtils, Types, Graphics, ExtCtrls, FPImage, RadioModule, RadioNode, UComplex, SignalBasic,
   GenFFT, formspectrum, Forms, Math, Controls, radiomessage, Utils;
 
 const
@@ -20,7 +20,7 @@ type
 
   TBandInfo = record
     Freq: Integer;
-    Bandwidth: Cardinal;
+    Bandwidth: Integer;
     Enable: Boolean;
   end;
 
@@ -164,7 +164,6 @@ procedure TRadioSpectrum.PickerEnable(const Index: Integer;
 var
   B: Boolean;
   S: Integer;
-  Z: Integer;
 begin
   if (Index < 0) or (Index > High(FBandPicker)) then Exit;
   B := Enable <> 0;
@@ -215,7 +214,6 @@ end;
 
 procedure TRadioSpectrum.MouseUp(Button: TMouseButton; X, Y: Integer);
 var
-  M: TRadioMessage;
   Z: Int64;
   F: Integer;
 begin

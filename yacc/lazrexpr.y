@@ -549,32 +549,6 @@ begin
   end;
 end;
 
-function ReadMsgParam(const S: string; var bOK: Boolean): PtrUInt;
-var
-  T: string;
-begin
-  ReadMsgParam := 0;
-  T := ReadValue(S, bOK); 
-  if bOK then 
-  begin
-      bOK := RegTable.S[T + '.type'] = 'int';
-      if bOK then
-      begin
-        ReadMsgParam := RegTable.I[T + '.value'];
-        Exit;
-      end;
-
-      bOK := RegTable.S[T + '.type'] = 'string';
-      if bOK then
-      begin
-        ReadMsgParam := OnMakeStrParam(RegTable.S[T + '.value']);
-        Exit;
-      end;
-
-      yyerror('INTEGER/STRING required');
-  end;
-end;
-
 function ReadReal(const S: string; var bOK: Boolean): Real;
 var
   T: string;
@@ -594,42 +568,18 @@ begin
   end;
 end;
 
-function StrVal(const S: string; var bOK: Boolean): string;
-var
-  R: Real;
-  I: Integer;
-  C: Integer;
-begin
-  val(S, R, C); bOK := C = 0;
-  if bOK then
-  begin
-    StrVal := RegAlloc('real');
-    RegWrite(StrVal, R);
-    Exit;
-  end;
-  val(S, I, C); bOK := C = 0;
-  if bOK then
-  begin
-    StrVal := RegAlloc('int');
-    RegWrite(StrVal, I);
-    Exit;
-  end;
-  StrVal := RegAlloc('int');  // default: 0
-end;
-
-function SendMsg(const S: string; const M: string): Boolean;
+procedure SendMsg(const S: string; const M: string);
 var
   L: TStringList;
 begin
   // writeln('send ', S, ' ', M);
-  SendMsg := False;
   if not Assigned(OnSendMessage) then Exit;
   
   L := TStringList.Create;
   L.Delimiter := ' ';
   L.StrictDelimiter := True;
   L.DelimitedText := M;
-  SendMsg := OnSendMessage(GetSymDisp(S), StrToInt64(L[0]), StrToInt64(L[1]), StrToInt64(L[2]));
+  OnSendMessage(GetSymDisp(S), StrToInt(L[0]), StrToInt(L[1]), StrToInt(L[2]));
   L.Free;
 end;
 
@@ -888,8 +838,8 @@ send_statement : identifier SEND radio_message { SendMsg($1, $3); $$ := $1;}
     ;
 
 radio_message : LBRACE expression COMMA expression COMMA expression RBRACE  { $$ := Format('%d %d %d', [ReadInt($2, RtOK), 
-                                                                                       ReadMsgParam($4, RtOK), ReadMsgParam($6, RtOK)]); }
-    | LBRACE expression COMMA expression RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadMsgParam($4, RtOK)]); }
+                                                                                       ReadInt($4, RtOK), ReadInt($6, RtOK)]); }
+    | LBRACE expression COMMA expression RBRACE  { $$ := Format('%d %d 0', [ReadInt($2, RtOK), ReadInt($4, RtOK)]); }
     | LBRACE expression RBRACE  { $$ := Format('%d 0 0', [ReadInt($2, RtOK)]); }
     ;
 
@@ -956,7 +906,7 @@ function_designator : _ARCCOS params { $$ := RegAlloc('real'); RegWrite($$, arcc
     | _SUCC params { $$ := RegAlloc('int'); RegWrite($$, Succ(ReadInt($2, RtOK))); } 
     | _STR params { $$ := RegAlloc('string'); RegWrite($$, ToStr($2)); } 
     | _TRUNC params { $$ := RegAlloc('int'); RegWrite($$, Trunc(ReadReal($2, RtOK))); } 
-    | _VAL params {$$ := StrVal($2, RtOK); } 
+    | _VAL params { $$ := RegAlloc('real'); // TODO: } 
     ;
 
 params : LPAREN actual_parameter_list RPAREN   { $$ := $2; }
@@ -1008,8 +958,6 @@ begin
     ObjTypes := SO('{"RTL": {}, "SPECTRUM": {}, "FREQDISCRIMINATOR": {}, "FMRECEIVER": {}, "AUDIOOUT": {}}');
   
   filename := Fn;
-  yylineno := 0;
-  RtOK := True;
   assign(yyinput, Fn);
   reset(yyinput);
   Interpret := yyparse=0;

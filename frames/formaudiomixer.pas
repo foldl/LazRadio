@@ -63,9 +63,6 @@ var
 
 implementation
 
-uses
-  util_math;
-
 {$R *.lfm}
 
 { TAudioMixerForm }
