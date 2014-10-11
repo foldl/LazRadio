@@ -15,9 +15,9 @@ var
   scope: Oscilloscope;
 
 begin
-  src => iqcor => f1 => mixer1 => re1 => fd => f2 => mixer2 => re2 => rds => u;
+  src => iqcor ;//=> f1 => mixer1 => re1 => fd => f2 => mixer2 => re2 => rds => u;
 
-  mixer1 => s;
+  iqcor => s;
   re2 => s2;
   re2 => scope;
 
@@ -37,6 +37,6 @@ begin
   s2 ! {RM_SPECTRUM_CFG, SET_SPAN, 100000}
      ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
 
-  //src ! {RM_DUMP_PLAYER_START, 'D:\baiduyundownload\90.0MHz.dump', 0};
-  src ! {RM_DUMP_PLAYER_START, 'e:\90.0MHz.dump', 0};
+  src ! {RM_DUMP_PLAYER_START, 'D:\baiduyundownload\90.0MHz.dump', 0};
+  //src ! {RM_DUMP_PLAYER_START, 'e:\90.0MHz.dump', 0};
 end.

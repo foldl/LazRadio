@@ -230,7 +230,7 @@ end;
 
 procedure TMainForm.FormShow(Sender: TObject);
 begin
-  OpenProject('.\examples\am.lzr');
+  OpenProject('.\examples\rds-debug.lzr');
 end;
 
 procedure TMainForm.PanelCodeExecute(Sender: TObject);
@@ -292,7 +292,7 @@ procedure TMainForm.SystemGoExecute(Sender: TObject);
 begin
   if Modified then FileSave.Execute;
   if Modified then Exit;
-  WaitForm.ShowWaitMessage('Executing...');
+  WaitForm.ShowWaitMessage('Launching...');
   WaitForm.Update;
   FSystem.Reset;
   if FRuntime.Exec(FFileName) then

@@ -26,7 +26,7 @@ type
     procedure GenRect(P: PComplex; const Len: Integer);
     procedure GenTriangle(P: PComplex; const Len: Integer);
   protected
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
 
     procedure DoReset; override;
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
@@ -65,7 +65,7 @@ type
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -157,7 +157,7 @@ begin
   Result := inherited;
 end;
 
-procedure TRadioFreqMixer.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioFreqMixer.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then
@@ -290,7 +290,7 @@ begin
   FPhase := Frac(V);
 end;
 
-procedure TRadioOscillator.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioOscillator.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   case Msg.Id of

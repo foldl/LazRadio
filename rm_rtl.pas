@@ -30,7 +30,7 @@ type
     procedure CloseDev;
     procedure DataIn(Buf: PByte; const Len: Cardinal);
   protected
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
@@ -133,8 +133,8 @@ begin
   DefOutput.Broadcast(I, FDataListeners);
 end;
 
-procedure TRtlModule.ProccessMessage(const Msg: TRadioMessage; var Ret: Integer
-  );
+procedure TRtlModule.ProccessCustomMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
 var
   C: Integer;
 begin

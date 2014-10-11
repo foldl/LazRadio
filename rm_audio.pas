@@ -36,7 +36,7 @@ type
     procedure PrepareBufs(Hwi: HWAVEIN; const SampleRate: Integer);
     procedure WaveInData(const Index: Integer);
   protected
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
     procedure DoSyncDestroy; override;
@@ -66,7 +66,7 @@ type
   protected
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoStart;
     procedure DoBeforeDestroy; override;
     procedure Describe(Strs: TStrings); override;
@@ -261,7 +261,7 @@ begin
   Result := inherited;
 end;
 
-procedure TRadioAudioOut.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioAudioOut.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   case Msg.Id of
@@ -287,7 +287,7 @@ begin
         FClosing := False;
       end
     else
-      inherited ProccessMessage(Msg, Ret);
+      inherited;
   end;
 end;
 
@@ -441,7 +441,7 @@ begin
   end;
 end;
 
-procedure TRadioAudioIn.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioAudioIn.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 var
   F: WAVEFORMATEX;

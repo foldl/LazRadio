@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="48">
+    <Units Count="49">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -312,6 +312,11 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formsysteminspector"/>
       </Unit47>
+      <Unit48>
+        <Filename Value="rm_squelch.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_squelch"/>
+      </Unit48>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

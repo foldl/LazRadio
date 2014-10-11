@@ -34,7 +34,7 @@ type
     procedure Reconfig;
   protected
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
     procedure ReceiveRegulatedData2(const P: PComplex; const Len: Integer);
     procedure Describe(Strs: TStrings); override;
@@ -120,7 +120,7 @@ begin
   Result := 0;
 end;
 
-procedure TRadioResampling.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioResampling.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   if Msg.Id = RM_SPECTRUM_BAND_SELECT_1 + FBandIndex then

@@ -14,7 +14,7 @@ uses
   genfft, fftw, gen_graph, radiomessage, minij, util_config, rm_resampling,
   mathlut, rm_audiomixer, formaudiomixer, util_math, logger_treeview, rm_am,
   rm_soundfx, rm_iqcorrection, rm_oscilloscope, formoscilloscope, radiolang,
-  lzr_interpreter, formwait, radionode, formsysteminspector;
+  lzr_interpreter, formwait, radionode, formsysteminspector, rm_squelch;
 
 {$R *.res}
 

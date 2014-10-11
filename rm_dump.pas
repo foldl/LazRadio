@@ -43,7 +43,7 @@ type
   protected
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
   public
@@ -64,7 +64,7 @@ type
     procedure StopPlaying;
   protected
     procedure ThreadFun(Thread: TGenericRadioThread); override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
     procedure DoConfigure; override;
     procedure DoStopThreadFun; override;
@@ -161,7 +161,7 @@ Wait:
   RTLeventSetEvent(FStoppedEvent);
 end;
 
-procedure TRadioDumpPlayer.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioDumpPlayer.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   Ret := 0;
@@ -273,8 +273,8 @@ begin
   Result := 0;
 end;
 
-procedure TRadioDump.ProccessMessage(const Msg: TRadioMessage; var Ret: Integer
-  );
+procedure TRadioDump.ProccessCustomMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
 begin
   case Msg.Id of
     RM_DUMP_START:

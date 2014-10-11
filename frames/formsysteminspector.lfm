@@ -1,7 +1,7 @@
 object SystemInpectorForm: TSystemInpectorForm
-  Left = 314
+  Left = 500
   Height = 296
-  Top = 131
+  Top = 250
   Width = 498
   BorderIcons = [biSystemMenu]
   Caption = 'System Inpector'
@@ -9,7 +9,7 @@ object SystemInpectorForm: TSystemInpectorForm
   ClientWidth = 498
   OnCreate = FormCreate
   Position = poMainFormCenter
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   object PageControl1: TPageControl
     Left = 0
     Height = 296
@@ -21,17 +21,20 @@ object SystemInpectorForm: TSystemInpectorForm
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Thread Load'
-      ClientHeight = 266
+      ClientHeight = 268
       ClientWidth = 490
       object Chart1: TChart
         Left = 0
-        Height = 266
+        Height = 268
         Top = 0
         Width = 490
         AxisList = <        
           item
+            Marks.Format = '%0:.0f%%'
+            Marks.Range.Max = 100
+            Marks.Style = smsCustom
             Minors = <>
-            Range.Max = 1
+            Range.Max = 100
             Range.UseMax = True
             Range.UseMin = True
             Title.LabelFont.Orientation = 900
@@ -55,11 +58,11 @@ object SystemInpectorForm: TSystemInpectorForm
     end
     object TabSheet2: TTabSheet
       Caption = 'Module CPU Usage'
-      ClientHeight = 266
+      ClientHeight = 268
       ClientWidth = 490
       object ListView1: TListView
         Left = 0
-        Height = 266
+        Height = 268
         Top = 0
         Width = 490
         Align = alClient
@@ -80,7 +83,7 @@ object SystemInpectorForm: TSystemInpectorForm
         SortType = stText
         TabOrder = 0
         ViewStyle = vsReport
-        OnColumnClick = ListView1ColumnClick
+        OnCompare = ListView1Compare
       end
     end
   end

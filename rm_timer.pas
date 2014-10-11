@@ -27,7 +27,7 @@ type
     // *lock* required when call FindTimer
     function  FindTimer(const AId: PtrUInt): PTimerNode;
   protected
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure CreateTimer(const AId: PtrUInt; const AInterval: Cardinal);
     procedure DeleteTimer(const AId: PtrUInt);
 
@@ -75,8 +75,8 @@ begin
   while Assigned(Result) and (Result^.Id <> Id) do Result := Result^.Next;
 end;
 
-procedure TRadioTimer.ProccessMessage(const Msg: TRadioMessage; var Ret: Integer
-  );
+procedure TRadioTimer.ProccessCustomMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
 begin
   case Msg.Id of
     RM_CREATE_TIMER:
@@ -90,7 +90,7 @@ begin
         GraphInvalidate;
       end
     else
-      inherited ProccessMessage(Msg, Ret);
+      inherited;
   end;
 end;
 

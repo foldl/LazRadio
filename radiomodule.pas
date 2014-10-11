@@ -276,6 +276,7 @@ type
     function Alloc(Stream: TRadioDataStream; out Index: Integer): PComplex;
 
     procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); virtual;
 
     procedure RMControl(const Msg: TRadioMessage; var Ret: Integer); virtual;
     procedure RMData(const Msg: TRadioMessage; var Ret: Integer); virtual;
@@ -483,7 +484,7 @@ begin
     Result := 'from ' + M.Sender
   else
     Result := 'from unknown';
-  Result := Result + Format(' Id = %d, ParamH = %d, ParamL = %d', [M.Id, M.ParamH, M.ParamL]);
+  Result := Result + Format(' {%d, %d, %d}', [M.Id, M.ParamH, M.ParamL]);
 end;
 
 class function TRadioLogger.GetInstance: TRadioLogger;
@@ -1482,7 +1483,14 @@ begin
       else
         ClearDataListeners
   else
+    ProccessCustomMessage(Msg, Ret);
   end;
+end;
+
+procedure TRadioModule.ProccessCustomMessage(const Msg: TRadioMessage;
+  var Ret: Integer);
+begin
+
 end;
 
 procedure TRadioModule.RMControl(const Msg: TRadioMessage; var Ret: Integer);

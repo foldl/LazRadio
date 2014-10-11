@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 297
+  Left = 165
   Height = 700
-  Top = 421
+  Top = 324
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.2.0'
+  LCLVersion = '1.2.4.0'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -571,10 +571,10 @@ object MainForm: TMainForm
           Top = 0
           Width = 778
           HorzScrollBar.Increment = 80
-          HorzScrollBar.Page = 774
+          HorzScrollBar.Page = 600
           HorzScrollBar.Tracking = True
           VertScrollBar.Increment = 80
-          VertScrollBar.Page = 466
+          VertScrollBar.Page = 432
           VertScrollBar.Tracking = True
           Align = alClient
           ClientHeight = 466

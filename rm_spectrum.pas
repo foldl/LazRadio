@@ -90,7 +90,7 @@ type
     procedure SyncRedrawFull;
     procedure ConfigWndNode(const Wt: TWindowFunction; const L: Integer; const Ov: Double);
     procedure SetWindowFunc(const FuncIndex: Integer);
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveWindowedData(const P: PComplex; const Len: Integer);
 
     procedure DoShowGUI; override;
@@ -630,7 +630,7 @@ begin
   end;
 end;
 
-procedure TRadioSpectrum.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioSpectrum.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 var
   I: Integer;
@@ -692,7 +692,7 @@ begin
         GraphInvalidate;
       end
     else
-      inherited ProccessMessage(Msg, Ret);
+      inherited;
   end;
 end;
 

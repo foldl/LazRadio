@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TAGraph, TATransformations, Forms, Controls,
-  Graphics, Dialogs, ComCtrls, ExtCtrls, TASeries, RadioSystem, superobject;
+  Graphics, Dialogs, ComCtrls, ExtCtrls, TASeries, RadioSystem, superobject,
+  Math;
 
 type
 
@@ -20,7 +21,6 @@ type
     TabSheet2: TTabSheet;
     Timer1: TTimer;
     procedure FormCreate(Sender: TObject);
-    procedure ListView1ColumnClick(Sender: TObject; Column: TListColumn);
     procedure ListView1Compare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
     procedure Timer1Timer(Sender: TObject);
@@ -43,7 +43,7 @@ implementation
 const
   MAX_POINTS = 100;
   THEME: array [0..8] of TColor =
-    (505739, 482559, 654847, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712);
+    (482559, 505739, 6450981, 15631106, 8199463, 9847672, 8192996, 2164712, 654847);
 
 {$R *.lfm}
 
@@ -52,25 +52,6 @@ const
 procedure TSystemInpectorForm.FormCreate(Sender: TObject);
 begin
   RadioSys := TRadioSystem.Instance;
-end;
-
-procedure TSystemInpectorForm.ListView1ColumnClick(Sender: TObject;
-  Column: TListColumn);
-begin
-  if ListView1.SortColumn = Column.Index then
-  begin
-    if Listview1.SortDirection = sdAscending then
-      ListView1.SortDirection := sdDescending
-    else
-      Listview1.SortDirection := sdAscending;
-  end
-  else begin
-    ListView1.SortColumn := Column.Index;
-    if Column.Index = 0 then
-      Listview1.SortDirection := sdAscending
-    else
-      Listview1.SortDirection := sdDescending;
-  end;
 end;
 
 procedure TSystemInpectorForm.ListView1Compare(Sender: TObject; Item1,
@@ -83,7 +64,9 @@ begin
     Compare := CompareStr(Item1.Caption, Item2.Caption);
   end
   else
-    Compare := CompareStr(Item1.SubItems[ListView1.SortColumn], Item2.SubItems[ListView1.SortColumn]);
+    Compare := Sign(StrToFloat(Item1.SubItems[0]) - StrToFloat(Item2.SubItems[0]));
+  if ListView1.SortDirection = sdDescending then
+    Compare := -Compare;
 end;
 
 procedure TSystemInpectorForm.Timer1Timer(Sender: TObject);
@@ -104,7 +87,7 @@ begin
     with FThreadLoad[I] do
     begin
       Delete(0);
-      Add(FLoad[I]);
+      Add(100 * FLoad[I]);
     end;
   end;
 
@@ -113,9 +96,20 @@ begin
 
   O := FRadioSys.GetModuleUsageInfo;
   ListView1.BeginUpdate;
-  ListView1.Clear;
+  for I := ListView1.Items.Count - 1 downto 0 do
+  begin
+    L := ListView1.Items[I];
+    if Assigned(O.O[L.Caption]) then
+    begin
+      L.SubItems[0] := Format('%.2f', [O.D[L.Caption]]);
+      O.D[L.Caption] := -1;
+    end
+    else
+      ListView1.Items.Delete(I);
+  end;
   for A in O.AsObject do
   begin
+    if A.Value.AsDouble < 0 then Continue;
     L := ListView1.Items.Add;
     L.Caption := A.Name;
     L.SubItems.Add(Format('%.2f', [A.Value.AsDouble]));

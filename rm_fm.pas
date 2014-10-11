@@ -127,7 +127,7 @@ type
   protected
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer; override;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure Describe(Strs: TStrings); override;
   public
     constructor Create(RunQueue: TRadioRunQueue); override;
@@ -757,7 +757,7 @@ begin
   end;
 end;
 
-procedure TRadioFMReceiver.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioFMReceiver.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   case Msg.Id of

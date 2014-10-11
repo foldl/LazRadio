@@ -57,7 +57,7 @@ type
   protected
     function RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
 
     procedure DoConfigure; override;
     procedure Describe(Strs: TStrings); override;
@@ -228,7 +228,7 @@ begin
   Result := inherited;
 end;
 
-procedure TRadioAudioMixer.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioAudioMixer.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 var
   I: Integer;

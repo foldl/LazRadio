@@ -39,7 +39,7 @@ type
     class procedure DesignBPFComplex(FIR: TFIRNode; const Taps, SampleRate: Integer; LowFreq, HighFreq: Integer);
     class procedure DesignBPFReal(FIR: TFIRNode; const Taps, SampleRate: Integer; LowFreq, HighFreq: Integer);
   protected
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     function  RMSetSampleRate(const Msg: TRadioMessage; const Rate: Cardinal): Integer;
       override;
     procedure DoConfigure; override;
@@ -264,7 +264,7 @@ begin
   FIR.SetFIR(PDouble(@Coeff[0]), N);
 end;
 
-procedure TFilterModule.ProccessMessage(const Msg: TRadioMessage;
+procedure TFilterModule.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 
 begin

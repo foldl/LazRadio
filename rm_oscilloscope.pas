@@ -46,7 +46,7 @@ type
     procedure RedrawFull;
     procedure SyncRedrawFull;
 
-    procedure ProccessMessage(const Msg: TRadioMessage; var Ret: Integer); override;
+    procedure ProccessCustomMessage(const Msg: TRadioMessage; var Ret: Integer); override;
     procedure ReceiveWindowedData(const P: PComplex; const Len: Integer);
 
     procedure DoShowGUI; override;
@@ -484,7 +484,7 @@ begin
   TThread.Synchronize(nil, @RedrawFull);
 end;
 
-procedure TRadioOscilloscope.ProccessMessage(const Msg: TRadioMessage;
+procedure TRadioOscilloscope.ProccessCustomMessage(const Msg: TRadioMessage;
   var Ret: Integer);
 begin
   case Msg.Id of
@@ -531,7 +531,7 @@ begin
         ;
       end
     else
-      inherited ProccessMessage(Msg, Ret);
+      inherited;
   end;
 end;
 

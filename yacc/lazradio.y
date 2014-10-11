@@ -25,10 +25,15 @@ begin
   yywrap := True;
 end;
 
+procedure Abort;
+begin
+  yychar := 0; // abort 
+end;
+
 procedure yyerror(msg : string);
 begin
   EmitMsg(Format('%s: %d: %s at or before `%s`.', [filename, yylineno, msg, yytext]));
-  yychar := 0; // abort 
+  Abort;
 end;
 
 function IsDefined(const S: string): Boolean;
@@ -631,21 +636,29 @@ begin
   L.DelimitedText := M;
   SendMsg := OnSendMessage(GetSymDisp(S), StrToInt64(L[0]), StrToInt64(L[1]), StrToInt64(L[2]));
   L.Free;
+  if not SendMsg then 
+    Abort;
 end;
 
 function ConnectFeature(const Source, Target: string): Boolean;
 begin
   ConnectFeature := False;
-  if Assigned(OnConnectFeature) then
-    ConnectFeature := OnConnectFeature(GetSymDisp(Source), GetSymDisp(Target));
+  if not Assigned(OnConnectFeature) then Exit;
+
+  ConnectFeature := OnConnectFeature(GetSymDisp(Source), GetSymDisp(Target));
+  if not ConnectFeature then 
+    Abort;
 end;
 
 function ConnectData(const Source, Target: string; const SourcePort, TargetPort: Integer): Boolean;
 begin
   // writeln(Format('ConnectData %s[%d] [%d]%s', [Source, SourcePort, TargetPort, Target]));
   ConnectData := False;
-  if Assigned(OnConnectData) then
-    ConnectData := OnConnectData(GetSymDisp(Source), GetSymDisp(Target), SourcePort, TargetPort);
+  if not  Assigned(OnConnectData) then Exit;
+
+  ConnectData := OnConnectData(GetSymDisp(Source), GetSymDisp(Target), SourcePort, TargetPort);
+  if not ConnectData then 
+    Abort;
 end;
 
 function ToStr(const S: string): string;
@@ -673,7 +686,9 @@ end;
 procedure CreateModules;
 begin
   if Assigned(OnCreateModules) then 
+  begin
     OnCreateModules(nil);
+  end;
 end;
 
 %}
@@ -884,7 +899,7 @@ connection_data_statement_0: identifier CONNDATA identifier  { ConnectData($1, $
     | connection_data_statement_0 CONNDATA identifier  { ConnectData($1, $3, 0, 0); $$ := $3; }
 
 send_statement : identifier SEND radio_message { SendMsg($1, $3); $$ := $1;}
-    | send_statement SEND radio_message  {SendMsg($1, $3); $$ := $1;}
+    | send_statement SEND radio_message  { SendMsg($1, $3); $$ := $1;}
     ;
 
 radio_message : LBRACE expression COMMA expression COMMA expression RBRACE  { $$ := Format('%d %d %d', [ReadInt($2, RtOK), 
@@ -1007,8 +1022,11 @@ begin
   if not Assigned(ObjTypes) then
     ObjTypes := SO('{"RTL": {}, "SPECTRUM": {}, "FREQDISCRIMINATOR": {}, "FMRECEIVER": {}, "AUDIOOUT": {}}');
   
-  filename := Fn;
+  yylastchar := #0;  
   yylineno := 0;
+  yyclear;
+
+  filename := Fn;
   RtOK := True;
   assign(yyinput, Fn);
   reset(yyinput);
