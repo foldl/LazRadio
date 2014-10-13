@@ -14,7 +14,8 @@ uses
   genfft, fftw, gen_graph, radiomessage, minij, util_config, rm_resampling,
   mathlut, rm_audiomixer, formaudiomixer, util_math, logger_treeview, rm_am,
   rm_soundfx, rm_iqcorrection, rm_oscilloscope, formoscilloscope, radiolang,
-  lzr_interpreter, formwait, radionode, formsysteminspector, rm_squelch;
+  lzr_interpreter, formwait, radionode, formsysteminspector, rm_squelch, 
+formsendmsg, rm_noisereduction;
 
 {$R *.res}
 
@@ -31,6 +32,7 @@ begin
   Application.CreateForm(TOscilloscopeForm, OscilloscopeForm);
   Application.CreateForm(TWaitForm, WaitForm);
   Application.CreateForm(TSystemInpectorForm, SystemInpectorForm);
+  Application.CreateForm(TSendMsgForm, SendMsgForm);
   Application.Run;
 end.
 

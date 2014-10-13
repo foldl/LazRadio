@@ -196,9 +196,13 @@ const
                                             OSCILLOSCOPE_DC_COUPLING = 0;
                                             OSCILLOSCOPE_AC_COUPLING = 1;
 
-  RM_SQUELCH_BPF_BAND                       = 230;  // set BFP band, ParamH: band start (Hz); ParamL: band end (Hz);
+  RM_SQUELCH_BPF_BAND                       = 230;  // set BFP band, ParamH: band center (Hz); ParamL: band width (Hz);
   RM_SQUELCH_CFG                            = 231;
                  SQUELCH_NOISE_THRESHOLD          = 1;  // ParamL: noise threshold (0..100)
+                 SQUELCH_CHANNEL_NUM              = 2;  // ParamL: channel num (1 or 2)
+                 SQUELCH_ALG                      = 3;  // ParamL: algorithm
+                                            SQUELCH_ALG_HISS_FILTER = 0;
+                                            SQUELCH_ALG_TIME_DOMAIN = 1;
 
   RM_USER            = 1000;
 

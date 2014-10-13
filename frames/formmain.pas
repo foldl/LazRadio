@@ -15,6 +15,9 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    MenuItem27: TMenuItem;
+    MenuItem28: TMenuItem;
+    SystemSendMessage: TAction;
     MenuItem26: TMenuItem;
     ViewSysInspector: TAction;
     MenuItem25: TMenuItem;
@@ -32,12 +35,10 @@ type
     SystemReset: TAction;
     SystemRedraw: TAction;
     SystemFullRedraw: TAction;
-    Edit2: TEdit;
     FileClose: TAction;
     FileNew: TAction;
     BitBtn3: TBitBtn;
     BitBtn4: TBitBtn;
-    Label1: TLabel;
     ModuleIntro: TMemo;
     MenuItem17: TMenuItem;
     MenuItem18: TMenuItem;
@@ -45,7 +46,6 @@ type
     Panel2: TPanel;
     Panel3: TPanel;
     Panel4: TPanel;
-    Panel5: TPanel;
     PanelGraph: TAction;
     PanelCode: TAction;
     FileSave: TAction;
@@ -115,6 +115,7 @@ type
     procedure SystemGoExecute(Sender: TObject);
     procedure SystemRedrawExecute(Sender: TObject);
     procedure SystemResetExecute(Sender: TObject);
+    procedure SystemSendMessageExecute(Sender: TObject);
     procedure ViewLogLevelExecute(Sender: TObject);
     procedure ViewLogLevelUpdate(Sender: TObject);
     procedure ViewSysInspectorExecute(Sender: TObject);
@@ -143,7 +144,7 @@ implementation
 
 uses
   Genfft, UComplex, SignalBasic, logger_treeview, logger, radiomessage, rm_fm,
-  formwait, formsysteminspector;
+  formwait, formsysteminspector, formsendmsg;
 
 {$R *.lfm}
 
@@ -212,13 +213,13 @@ begin
   L := TStringList.Create;
 
   FSystem := TRadioSystem.Create;
-  FSystem.ShowModules(ModuleTree);
-  FSystem.GetModList(SynAnySyn.Objects, False);
-  FSystem.GetModList(L, True);
+  FSystem.ShowModuleTypes(ModuleTree);
+  FSystem.GetModTypeList(SynAnySyn.Objects, False);
+  FSystem.GetModTypeList(L, True);
 
   FRuntime := TRadioLangRT.Create;
   FRuntime.OnProjNameChanged := @ProjNameChanged;
-  FSystem.GetModList(FRuntime.ModuleTypes, False);
+  FSystem.GetModTypeList(FRuntime.ModuleTypes, False);
   FSystem.Graph.PaintBox := PaintBox1;
   FRuntime.GetRTSymbols(L);
 
@@ -312,6 +313,13 @@ procedure TMainForm.SystemResetExecute(Sender: TObject);
 begin
   FSystem.Reset;
   SystemFullRedraw.Execute;
+end;
+
+procedure TMainForm.SystemSendMessageExecute(Sender: TObject);
+begin
+  SendMsgForm.ModuleName.Clear;
+  FSystem.GetModules(SendMsgForm.ModuleName.Items);
+  SendMsgForm.Show;
 end;
 
 procedure TMainForm.ViewLogLevelExecute(Sender: TObject);

@@ -62,8 +62,9 @@ type
     function GetWorkerLoadInfo(var Load: array of Double): Boolean;
     function GetModuleUsageInfo: ISuperObject;
 
-    procedure GetModList(ModList: TStrings; const bDispFmt: Boolean);
-    procedure ShowModules(Tree: TTreeView);
+    procedure GetModules(List: TStrings);
+    procedure GetModTypeList(ModList: TStrings; const bDispFmt: Boolean);
+    procedure ShowModuleTypes(Tree: TTreeView);
     property Graph: TGenGraph read FGraph write FGraph;
     property WorkerCount: Integer read GetWorkerCount;
   end;
@@ -404,7 +405,15 @@ begin
   end;
 end;
 
-procedure TRadioSystem.GetModList(ModList: TStrings; const bDispFmt: Boolean);
+procedure TRadioSystem.GetModules(List: TStrings);
+var
+  A: TSuperAvlEntry;
+begin
+  for A in FModuleDict do
+    List.Add(A.Name);
+end;
+
+procedure TRadioSystem.GetModTypeList(ModList: TStrings; const bDispFmt: Boolean);
 var
   A: TSuperAvlEntry;
   K: TRadioModuleClass;
@@ -419,7 +428,7 @@ begin
   end;
 end;
 
-procedure TRadioSystem.ShowModules(Tree: TTreeView);
+procedure TRadioSystem.ShowModuleTypes(Tree: TTreeView);
 const
   ICON_SIZE = 44;
   ICON_MARGIN = 4;

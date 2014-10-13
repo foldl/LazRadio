@@ -1242,6 +1242,7 @@ begin
 
   // sort the reference Level and layout: maximum is at center, sides follows
   I := K;
+  {
   for K := 0 to High(A) do
   begin
     if Odd(K) then
@@ -1249,6 +1250,14 @@ begin
     else
       Entities[I + K div 2] := A[K];
   end;
+  }
+
+  // sort the reference Level and layout: maximum is the top most
+  for K := 0 to High(A) do
+  begin
+    Entities[I + K] := A[High(A) - K];
+  end;
+
   for K := 0 to High(A) do
   begin
     with TGenEntityNode(Entities[K + I]) do

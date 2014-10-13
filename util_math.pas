@@ -12,6 +12,9 @@ procedure HSL2RGB(Hue, Saturation, Lightness: Double; out R, G, B: Byte);
 procedure BeatifulTick(const ScreenWidth, MinTickWidth: Integer; const V0, V1: Double; out Start, Step: Double);
 
 function AtoF(const S: string): Double;
+function AtoI(const S: string): Int64;
+function HexToInt(HexStr: string): Int64;
+
 function FindNearest(L: array of Integer; const V, Def: Integer): Integer;
 
 function  IsPtInRect(const APt: TPoint; const ARect: TRect): Boolean;
@@ -185,6 +188,50 @@ begin
       Result := StrToFloatDef(Copy(S, I, Length(S) + 1 - I), 0.0);
       Break;
     end;
+end;
+
+function AtoI(const S: string): Int64;
+var
+  T: string;
+begin
+  T := S;
+  Result := 0;
+  if T = '' then
+    Exit;
+  if T[1] = '$' then
+  begin
+    Delete(T, 1, 1);
+    Result := HexToInt(T);
+  end
+  else if (Length(T) > 2) and (T[1] in ['X', 'x']) then
+  begin
+    Delete(T, 1, 2);
+    Result := HexToInt(T);
+  end
+  else
+    Result := StrToInt64Def(T, 0);
+end;
+
+function HexToInt(HexStr: string): Int64;
+var
+  I: integer;
+begin
+  HexStr := UpperCase(HexStr);
+  Result := 0;
+
+  for i := 1 to length(HexStr) do
+  begin
+    Result := Result shl 4;
+    if HexStr[i] in ['0'..'9'] then
+      Result := Result + DWord(byte(HexStr[i]) - 48)
+    else
+    if HexStr[i] in ['A'..'F'] then
+      Result := Result + DWord(byte(HexStr[i]) - 55)
+    else
+    begin
+      Break;
+    end;
+  end;
 end;
 
 function FindNearest(L: array of Integer; const V, Def: Integer): Integer;

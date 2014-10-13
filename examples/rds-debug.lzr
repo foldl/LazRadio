@@ -13,13 +13,17 @@ var
   aumixer: AudioMixer;
   rds: RDSDecoder;
   scope: Oscilloscope;
+  sq: Squelch;
 
 begin
-  src => iqcor ;//=> f1 => mixer1 => re1 => fd => f2 => mixer2 => re2 => rds => u;
+  src => iqcor => f1 => mixer1 => re1 => fd => sq => u; // => f2 => mixer2 => re2 => rds => u;
 
   iqcor => s;
-  re2 => s2;
-  re2 => scope;
+  s :> f1;
+  s :> mixer1;
+  sq => s2;
+  //re2 => s2;
+  //re2 => scope;
 
   re1 ! {RM_RESAMPLING_CFG, 200000, 90000};
   re2 ! {RM_RESAMPLING_CFG, 9500, 2500};

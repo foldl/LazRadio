@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="49">
+    <Units Count="51">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -296,6 +296,7 @@
         <Filename Value="frames\formwait.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="WaitForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formwait"/>
       </Unit45>
@@ -317,6 +318,19 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_squelch"/>
       </Unit48>
+      <Unit49>
+        <Filename Value="frames\formsendmsg.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="SendMsgForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="formsendmsg"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="rm_noisereduction.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_noisereduction"/>
+      </Unit50>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

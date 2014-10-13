@@ -222,7 +222,7 @@
  "name": "RM_AUDIO_OUT_GAIN_AUTO"
 },
 {
- "doc": "ParamH: TStream, ParamL: MaxSize",
+ "doc": "ParamH: file name (PString), ParamL: MaxSize",
  "paramh": {
   "type": "any"
  },
@@ -230,7 +230,7 @@
  "name": "RM_DUMP_START"
 },
 {
- "doc": "no param, TStream is closed here",
+ "doc": "no param, file is closed here",
  "paramh": {
   "type": "any"
  },
@@ -238,7 +238,7 @@
  "name": "RM_DUMP_STOP"
 },
 {
- "doc": "ParamH: TStream",
+ "doc": "ParamH: file name (PString)",
  "paramh": {
   "type": "any"
  },
@@ -246,7 +246,7 @@
  "name": "RM_DUMP_PLAYER_START"
 },
 {
- "doc": "no param, TStream is closed here",
+ "doc": "no param, file is closed here",
  "paramh": {
   "type": "any"
  },
@@ -954,6 +954,38 @@
  },
  "id": 220,
  "name": "RM_OSCILLOSCOPE_CFG"
+},
+{
+ "doc": "set BFP band, ParamH: band center (Hz); ParamL: band width (Hz);",
+ "paramh": {
+  "type": "any"
+ },
+ "id": 230,
+ "name": "RM_SQUELCH_BPF_BAND"
+},
+{
+ "doc": "\"\"",
+ "paramh": {
+  "vals": [
+   {
+    "doc": "ParamL: noise threshold (0..100)",
+    "paraml": {
+     "type": "any"
+    },
+    "id": 1,
+    "name": "SQUELCH_NOISE_THRESHOLD"
+   },{
+    "doc": "ParamL: channel num (1 or 2)",
+    "paraml": {
+     "type": "any"
+    },
+    "id": 2,
+    "name": "SQUELCH_CHANNEL_NUM"
+   }],
+  "type": "enum"
+ },
+ "id": 231,
+ "name": "RM_SQUELCH_CFG"
 },
 {
  "doc": "\"\"",

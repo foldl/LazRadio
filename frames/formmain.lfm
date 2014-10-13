@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 165
+  Left = 576
   Height = 700
-  Top = 324
+  Top = 246
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -533,7 +533,7 @@ object MainForm: TMainForm
               MarkupInfo.Foreground = clNone
               MarkupInfo.FrameEdges = sfeAround
               DigitCount = 2
-              ShowOnlyLineNumbersMultiplesOf = 1
+              ShowOnlyLineNumbersMultiplesOf = 5
               ZeroStart = False
               LeadingZeros = False
             end
@@ -602,41 +602,9 @@ object MainForm: TMainForm
       ClientHeight = 85
       ClientWidth = 788
       TabOrder = 2
-      object Panel5: TPanel
-        Left = 1
-        Height = 29
-        Top = 55
-        Width = 786
-        Align = alBottom
-        Caption = 'Panel5'
-        ClientHeight = 29
-        ClientWidth = 786
-        TabOrder = 0
-        object Label1: TLabel
-          Left = 1
-          Height = 25
-          Top = 3
-          Width = 134
-          Align = alLeft
-          BorderSpacing.Top = 2
-          Caption = 'Quick Command : '
-          ParentColor = False
-        end
-        object Edit2: TEdit
-          Left = 135
-          Height = 27
-          Top = 1
-          Width = 650
-          Align = alClient
-          Font.Name = 'Consolas'
-          ParentFont = False
-          TabOrder = 0
-          Text = 'Edit2'
-        end
-      end
       object TreeView1: TTreeView
         Left = 1
-        Height = 54
+        Height = 83
         Top = 1
         Width = 786
         Align = alClient
@@ -644,7 +612,7 @@ object MainForm: TMainForm
         Font.Height = -12
         Font.Name = 'Consolas'
         ParentFont = False
-        TabOrder = 1
+        TabOrder = 0
       end
     end
     object Splitter1: TSplitter
@@ -828,6 +796,12 @@ object MainForm: TMainForm
       object MenuItem23: TMenuItem
         Action = SystemFullRedraw
       end
+      object MenuItem27: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem28: TMenuItem
+        Action = SystemSendMessage
+      end
     end
     object MenuItem3: TMenuItem
       Caption = '&View'
@@ -952,12 +926,13 @@ object MainForm: TMainForm
       Category = 'System'
       Caption = 'Full Redraw'
       OnExecute = SystemFullRedrawExecute
-      ShortCut = 116
+      ShortCut = 16500
     end
     object SystemRedraw: TAction
       Category = 'System'
       Caption = 'Redraw'
       OnExecute = SystemRedrawExecute
+      ShortCut = 116
     end
     object SystemReset: TAction
       Category = 'System'
@@ -986,6 +961,11 @@ object MainForm: TMainForm
       Category = 'View'
       Caption = 'System Inspector'
       OnExecute = ViewSysInspectorExecute
+    end
+    object SystemSendMessage: TAction
+      Category = 'System'
+      Caption = 'Send a Message...'
+      OnExecute = SystemSendMessageExecute
     end
   end
   object ModuleImgs: TImageList
