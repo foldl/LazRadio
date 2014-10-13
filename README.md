@@ -3,27 +3,27 @@ LazRadio
 
 An SDR in Lazarus.
 
+Design your Sofware-Defined-Radio by connecting modules. 
+
+Messages are used for inter-module communication.
+
 Under development. Stay tuned.
 
-Message Passing System
+Message Passing & Scheduling System
 ================
 
 See also:
-1. Windows Messages
-1. Erlang 
-1. Flow Based Programming
 
-Dead-lock
-===========
-
-Dead-lock might occur in TRadioModule.Alloc, when 
+# Windows Messages
+# Erlang 
+# Flow Based Programming
 
 Directory
 ===========
 
-1. yacc: 
-1. graph:
-1. frames
-1. dsp
-1. gen
-
+# dsp
+# examples
+# frames
+# graph: graph components
+# res: resources
+# yacc: yacc for our lazradio script
