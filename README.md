@@ -14,16 +14,16 @@ Message Passing & Scheduling System
 
 See also:
 
-# Windows Messages
-# Erlang 
-# Flow Based Programming
+* Windows Messages
+* Erlang 
+* Flow Based Programming
 
 Directory
 ===========
 
-# dsp
-# examples
-# frames
-# graph: graph components
-# res: resources
-# yacc: yacc for our lazradio script
+* dsp
+* examples
+* frames
+* graph: graph components
+* res: resources
+* yacc: yacc for our lazradio script
