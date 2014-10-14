@@ -1,0 +1,49 @@
+lazradio dual-nfm;
+
+var
+  src: Rtl;
+  s, s2: Spectrum;
+  iqcor: IQCorrecter;
+  u: AudioOut;
+  mixer1, mixer2: FreqMixer;
+  f1, f2: Filter;
+  fd1, fd2: FreqDiscriminator;
+  re1, re2: Resampling;
+  aumixer: AudioMixer;
+  sq1, sq2: Squelch;
+
+begin
+  src => iqcor => f1 => mixer1 => re1 => fd1 => sq1 => aumixer => u;
+         iqcor => f2 => mixer2 => re2 => fd2 => sq2;
+
+  sq2 -> [1]aumixer;
+  iqcor => s;
+  s :> f1; s :> mixer1;
+  s :> f2; s :> mixer2;
+  sq1 => s2;
+
+  //re2 => s2;
+  //re2 => scope;
+
+  re1 ! {RM_RESAMPLING_CFG, 200000, 90000};
+  re2 ! {RM_RESAMPLING_CFG, 200000, 90000};;
+
+  f1 ! {RM_FILTER_CONFIG, FILTER_TAPS, 100}
+     ! {RM_FILTER_USE_BAND_SELECT, 0, 0};
+  f2 ! {RM_FILTER_CONFIG, FILTER_TAPS, 100}
+     ! {RM_FILTER_USE_BAND_SELECT, 1, 0};
+
+  mixer1 ! {RM_FREQMIXER_USE_BAND_SELECT, 0, 0};
+  mixer2 ! {RM_FREQMIXER_USE_BAND_SELECT, 1, 0};
+
+  s  ! {RM_SPECTRUM_CFG, SET_FFT_SIZE, 32768};
+  s2 ! {RM_SPECTRUM_CFG, SET_SPAN, 100000}
+     ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
+
+  aumixer ! {RM_AUDIOMIXER_CFG, AUDIOMIXER_STREAM_NUM, 2}
+          ! {RM_AUDIOMIXER_SET_STREAM_OUPUT, 0, AUDIOMIXER_STREAM_OUTPUT_I_I}
+          ! {RM_AUDIOMIXER_SET_STREAM_OUPUT, 1, AUDIOMIXER_STREAM_OUTPUT_I_Q};
+
+  src ! {RM_CONFIGURE};
+  //src ! {RM_DUMP_PLAYER_START, 'e:\90.0MHz.dump', 0};
+end.

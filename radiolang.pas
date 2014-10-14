@@ -120,7 +120,7 @@ end;
 function TRadioLangRT.CBConnectData(const Source, Target: string;
   const SourcePort, TargetPort: Integer): Boolean;
 begin
-  Result := TRadioSystem.Instance.ConnectData(Source, Target, SourcePort, TargetPort);
+  Result := TRadioSystem.Instance.ConnectData(Source, Target, TargetPort, SourcePort);
 end;
 
 function TRadioLangRT.CBMakeStrParam(const S: string): PtrUInt;

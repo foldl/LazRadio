@@ -914,7 +914,7 @@ begin
 
   J.InQueue := False;
 
-  Result := Round(T * MSecsPerDay);
+  Result := Max(1, Round(T * MSecsPerDay));
 end;
 
 { TStreamRegulator }
@@ -1418,13 +1418,13 @@ var
   I: Cardinal;
 begin
   Result := Stream.TryAlloc(Index);
-  while (not Assigned(Result)) and (not RunThread.Terminated) and (T < 1500) do
+  while (not Assigned(Result)) and (not RunThread.Terminated) and (T < 150) do
   begin
     I := RunThread.Yield(Self);
     if I = 0 then
     begin
-      Sleep(10);
-      I := 10;
+      Sleep(2);
+      I := 2;
     end;
     Inc(T, I);
     Result := Stream.TryAlloc(Index);

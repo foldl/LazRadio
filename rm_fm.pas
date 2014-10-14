@@ -959,7 +959,7 @@ end;
 procedure TRadioFreqDiscriminator.Describe(Strs: TStrings);
 begin
   Strs.Add(Format('^bFreq Deviation : ^n%s', [FormatFreq(FFreqDev)]));
-  Strs.Add(Format('^bSingal Max Freq: ^n%s', [FormatFreq(FSourceFm)]));
+  Strs.Add(Format('^bSignal Max Freq: ^n%s', [FormatFreq(FSourceFm)]));
   Strs.Add(Format('^bDC Cancellation: ^n%s', [BoolToStr(FCancelDC)]));
 end;
 
