@@ -142,7 +142,7 @@ const
   RM_RESAMPLING_USE_BAND_SELECT = 181; // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
 
   RM_FREQMIXER_USE_BAND_SELECT = 190;  // ParamH: Band index, 0, 1,... (see RM_SPECTRUM_BAND_SELECT_x); ParamL: reserved
-  RM_FREQMIXER_SET_FREQ        = 191;  // ParamH: oscillator frequency
+  RM_FREQMIXER_SET_FREQ        = 191;  // ParamH: oscillator frequency; ParamL: type (0-complex wave; 1-real wave)
 
   RM_AUDIOMIXER_SET_STREAM_OUPUT = 200;      // ParamH: Stream index; ParamL: output type
                   AUDIOMIXER_STREAM_OUTPUT_OFF   = 0;

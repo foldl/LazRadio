@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 576
+  Left = 342
   Height = 700
-  Top = 246
+  Top = 0
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680

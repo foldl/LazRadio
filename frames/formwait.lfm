@@ -1,7 +1,7 @@
 object WaitForm: TWaitForm
-  Left = 397
+  Left = 324
   Height = 40
-  Top = 231
+  Top = 170
   Width = 349
   BorderIcons = []
   BorderStyle = bsDialog

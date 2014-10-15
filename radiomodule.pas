@@ -181,6 +181,7 @@ type
 
   public
     function GetWorkerLoadInfo(var Load: array of Double): Boolean;
+    function GetRunningModules(var Modules: array of string): Boolean;
     property SMP: Integer read GetSMP;
   end;
 
@@ -837,6 +838,27 @@ begin
       Load[I] := FWorkers[I].FRunTimeAcc / S;
     end;
     FWorkers[I].FRunTimeAcc := 0.0;
+  end;
+end;
+
+function TRadioRunQueue.GetRunningModules(var Modules: array of string
+  ): Boolean;
+var
+  I: Integer;
+  M: TRadioMessageQueue;
+begin
+  Result := Length(Modules) = Length(FWorkers);
+  if not Result then Exit;
+  for I := 0 to High(FWorkers) do
+  begin
+    Modules[I] := '<nil>';
+    M := FWorkers[I].Job;
+    if not Assigned(M) then Continue;
+
+    try
+      Modules[I] := M.Name;
+    except
+    end;
   end;
 end;
 

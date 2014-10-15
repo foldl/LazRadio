@@ -61,6 +61,11 @@ type
     FPhaseDelta: Double;
     FSampleRate: Cardinal;
     FPhase: Double;
+    FMode: Integer;
+    procedure ComplexMix(const X: PComplex; const Len: Integer;
+      const P: PComplex);
+    procedure RealMix(const X: PComplex; const Len: Integer;
+      const P: PComplex);
     procedure SetOscFreq(const Freq: Integer);
   protected
     function RMSetFrequency(const Msg: TRadioMessage; const Freq: Cardinal): Integer; override;
@@ -139,6 +144,45 @@ begin
   if FSampleRate > 0 then FPhaseDelta := 2 * Pi * (FFreq - FOscFreq) / FSampleRate;
 end;
 
+procedure TRadioFreqMixer.ComplexMix(const X: PComplex; const Len: Integer;
+  const P: PComplex);
+var
+  T: Complex;
+  V: Double;
+  C: Integer;
+  J: Integer;
+begin
+  V := FPhase;
+  for J := 0 to Len - 1 do
+  begin
+    T.re := Cos(V);
+    T.im := Sin(V);
+    X[J] := P[J] * T;
+    V := V + FPhaseDelta;
+  end;
+  C := Trunc(V / (2 * Pi));
+  FPhase := V - (2 * Pi * C);
+end;
+
+procedure TRadioFreqMixer.RealMix(const X: PComplex; const Len: Integer;
+  const P: PComplex);
+var
+  T: Double;
+  V: Double;
+  C: Integer;
+  J: Integer;
+begin
+  V := FPhase;
+  for J := 0 to Len - 1 do
+  begin
+    T := Cos(V);
+    X[J] := P[J] * T;
+    V := V + FPhaseDelta;
+  end;
+  C := Trunc(V / (2 * Pi));
+  FPhase := V - (2 * Pi * C);
+end;
+
 function TRadioFreqMixer.RMSetFrequency(const Msg: TRadioMessage;
   const Freq: Cardinal): Integer;
 begin
@@ -168,7 +212,11 @@ begin
   end;
 
   case Msg.Id of
-    RM_FREQMIXER_SET_FREQ:        SetOscFreq(Msg.ParamH);
+    RM_FREQMIXER_SET_FREQ:
+      begin
+        SetOscFreq(Msg.ParamH);
+        FMode := Msg.ParamL;
+      end;
     RM_FREQMIXER_USE_BAND_SELECT: FBandIndex := Msg.ParamH
   else
     inherited
@@ -197,26 +245,16 @@ end;
 procedure TRadioFreqMixer.ReceiveData(const P: PComplex; const Len: Integer);
 var
   I: Integer;
-  J: Integer;
   X: PComplex;
-  C: Integer;
-  V: Double;
-  T: Complex;
 begin
   DefOutput.BufferSize := Len;
   X := Alloc(DefOutput, I);
   if not Assigned(X) then Exit;
 
-  V := FPhase;
-  for J := 0 to Len - 1 do
-  begin
-    T.re := Cos(V);
-    T.im := Sin(V);
-    X[J] := P[J] * T;
-    V := V + FPhaseDelta;
-  end;
-  C := Trunc(V / (2 * Pi));
-  FPhase := V - (2 * Pi * C);
+  if FMode = 0 then
+    ComplexMix(X, Len, P)
+  else
+    RealMix(X, Len, P);
 
   DefOutput.Broadcast(I, FDataListeners);
 end;

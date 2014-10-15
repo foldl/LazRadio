@@ -61,6 +61,7 @@ type
 
     function GetWorkerLoadInfo(var Load: array of Double): Boolean;
     function GetModuleUsageInfo: ISuperObject;
+    function GetRunningModules: ISuperObject;
 
     procedure GetModules(List: TStrings);
     procedure GetModTypeList(ModList: TStrings; const bDispFmt: Boolean);
@@ -402,6 +403,23 @@ begin
   for A in FModuleDict do
   begin
     Result.D[A.Name] := TRadioModule(PtrUInt(A.Value.AsInteger)).CPUTime * SecsPerDay;
+  end;
+end;
+
+function TRadioSystem.GetRunningModules: ISuperObject;
+var
+  X: array of string;
+  I: Integer;
+begin
+  SetLength(X, Length(FLoadInfo));
+  Result := SO('{}');
+
+  if FRunQueue.GetRunningModules(X) then
+  begin
+    for I := 0 to High(X) do
+    begin
+      Result.S[IntToStr(I)] := X[I];
+    end;
   end;
 end;
 

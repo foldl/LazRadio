@@ -1129,10 +1129,14 @@ begin
 
   for P in Entities do
   begin
-    TGenEntityNode(P).Pos.x := -1;
-    TGenEntityNode(P).Pos.y := -1;
-    TGenEntityNode(P).DegIn := 0;
-    TGenEntityNode(P).DegOut := 0;
+    with TGenEntityNode(P) do
+    begin
+      Pos.x := -1;
+      Pos.y := -1;
+      DegIn := 0;
+      DegOut := 0;
+      Tag := 0;
+    end;
   end;
 
   for C in Conns do
@@ -1142,22 +1146,14 @@ begin
       FromPort.Entity.DegOut := FromPort.Entity.DegOut + 1;
     end;
 
-  for P in Entities do
-  begin
-    with TGenEntityNode(P) do
-    begin
-      Tag := IfThen(DegIn = 0, 0, MaxInt);
-    end;
-  end;
-
   repeat
     Dirty := False;
     for C in Conns do
     begin
       with TGenEntityConnection(C) do
       begin
-        if FromPort.Entity.Tag = MaxInt then Continue;
-        if ToPort.Entity.Tag > FromPort.Entity.Tag + 1 then
+        if FromPort.Entity.Tag >= Entities.Count then Continue;
+        if ToPort.Entity.Tag < FromPort.Entity.Tag + 1 then
         begin
           ToPort.Entity.Tag := FromPort.Entity.Tag + 1;
           Dirty := True;

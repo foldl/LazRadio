@@ -69,6 +69,7 @@ var
   Noise: Double;
 begin
   IIRFilterReal(FHissFilter1, P, O, Len);
+  Exit;
   Noise := FNoise1;
   for I := 0 to Len - 1 do
   begin
@@ -179,7 +180,7 @@ begin
   inherited Create(RunQueue);
   FChannelNum := 1;
   FCenter := 5000;
-  FBw     := 2000;
+  FBw     := 200;
   FThreshold := 0.3;
   FHasConfig := False;
   FThresholdTime := -100;

@@ -6,20 +6,25 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, TAGraph, TATransformations, Forms, Controls,
-  Graphics, Dialogs, ComCtrls, ExtCtrls, TASeries, RadioSystem, superobject,
-  Math;
+  Graphics, Dialogs, ComCtrls, ExtCtrls, Buttons, TASeries, RadioSystem,
+  superobject, Math;
 
 type
 
   { TSystemInpectorForm }
 
   TSystemInpectorForm = class(TForm)
+    BitBtn1: TBitBtn;
     Chart1: TChart;
     ListView1: TListView;
+    ListView2: TListView;
     PageControl1: TPageControl;
+    Panel1: TPanel;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
+    TabSheet3: TTabSheet;
     Timer1: TTimer;
+    procedure BitBtn1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ListView1Compare(Sender: TObject; Item1, Item2: TListItem;
       Data: Integer; var Compare: Integer);
@@ -52,6 +57,27 @@ const
 procedure TSystemInpectorForm.FormCreate(Sender: TObject);
 begin
   RadioSys := TRadioSystem.Instance;
+end;
+
+procedure TSystemInpectorForm.BitBtn1Click(Sender: TObject);
+var
+  I: Integer;
+  O: ISuperObject;
+  A: TSuperAvlEntry;
+  L: TListItem;
+begin
+  if not Assigned(FRadioSys) then Exit;
+
+  ListView2.BeginUpdate;
+  ListView2.Clear;
+  O := FRadioSys.GetRunningModules;
+  for A in O.AsObject do
+  begin
+    L := ListView2.Items.Add;
+    L.Caption := A.Name;
+    L.SubItems.Add(A.Value.AsString);
+  end;
+  ListView2.EndUpdate;
 end;
 
 procedure TSystemInpectorForm.ListView1Compare(Sender: TObject; Item1,
