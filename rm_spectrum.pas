@@ -826,7 +826,6 @@ begin
   FRt.Free;
   FWf.Free;
   FForm.Free;
-  FFlow.Free;
   inherited DoSyncDestroy;
 end;
 
@@ -871,6 +870,7 @@ destructor TRadioSpectrum.Destroy;
 var
   P: PFFTPlan;
 begin
+  FFlow.Free;
   P := FFFTPlan;
   FFFTPlan := nil;
   FinalizePlan(P);

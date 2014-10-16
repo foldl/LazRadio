@@ -167,7 +167,7 @@ procedure TRadioSquelch.Describe(Strs: TStrings);
 begin
   if FAlg = SQUELCH_ALG_HISS_FILTER then
   begin
-    Strs.Add(Format('^bRef Band   : ^n[%s, %s]', [FormatFreq(FCenter - FBw div 2), FormatFreq(FCenter + FBw div 2)]));
+    Strs.Add(Format('^bRef Band: ^n[%s, %s]', [FormatFreq(FCenter - FBw div 2), FormatFreq(FCenter + FBw div 2)]));
     Strs.Add(Format('^bNoise Level: ^n%f',       [FThreshold]));
   end
   else begin

@@ -15,9 +15,9 @@ object SystemInpectorForm: TSystemInpectorForm
     Height = 296
     Top = 0
     Width = 498
-    ActivePage = TabSheet3
+    ActivePage = TabSheet1
     Align = alClient
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Thread Load'
@@ -125,7 +125,7 @@ object SystemInpectorForm: TSystemInpectorForm
           item
             AutoSize = True
             Caption = 'Current Module'
-            Width = 366
+            Width = 276
           end>
         GridLines = True
         ReadOnly = True

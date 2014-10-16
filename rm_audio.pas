@@ -59,6 +59,8 @@ type
     FFmt: Integer;
     FClosing: Boolean;
     FResample: TResampleNode;
+    procedure Lock;
+    procedure Unlock;
     procedure CloseDev;
     procedure PrepareBufs;
     procedure ReceiveRegulatedData(const P: PComplex; const Len: Integer);
@@ -112,12 +114,17 @@ begin
   case uMsg of
     WOM_DONE:
       begin
-        H := PWAVEHDR(dwParam1);
         with M do
         begin
-          waveOutUnprepareHeader(M.FHandle, @FHDRs[H^.dwUser], Sizeof(FHDRs[0]));
-          FHDRs[H^.dwUser].dwFlags := 0;
-          SetEvent(FEvents[H^.dwUser]);
+          Lock;
+          if not FClosing then
+          begin
+            waveOutUnprepareHeader(FHandle, @FHDRs[PWAVEHDR(dwParam1)^.dwUser], Sizeof(FHDRs[0]));
+          end;
+          Unlock;
+
+          FHDRs[PWAVEHDR(dwParam1)^.dwUser].dwFlags := 0;
+          SetEvent(FEvents[PWAVEHDR(dwParam1)^.dwUser]);
         end;
       end;
     WOM_CLOSE: RadioPostMessage(PRIV_RM_AUDIO_OUT_CLOSE, 0, 0, M);
@@ -126,11 +133,23 @@ end;
 
 { TRadioAudioOut }
 
+procedure TRadioAudioOut.Lock;
+begin
+  RadioGlobalLock;
+end;
+
+procedure TRadioAudioOut.Unlock;
+begin
+  RadioGlobalUnlock;
+end;
+
 procedure TRadioAudioOut.CloseDev;
 begin
   if FHandle <> 0 then
   begin
+    Lock;
     FClosing := True;
+    UnLock;
     waveOutReset(FHandle);
     waveOutClose(FHandle);
   end;
@@ -179,7 +198,7 @@ begin
 
   H := WaitForMultipleObjects(Length(FEvents), @FEvents[0], False, INFINITE) - WAIT_OBJECT_0;
 
-  if H < 0 then
+  if FClosing or (H < 0) then
   begin
     TRadioLogger.Report(llWarn, 'TRadioAudioOut.ReceiveRegulatedData: no buffer, data lost');
     Exit;
@@ -281,12 +300,11 @@ begin
         FAutoGain := True;
         GraphInvalidate;
       end;
-    PRIV_RM_AUDIO_IN_CLOSE:
+    PRIV_RM_AUDIO_OUT_CLOSE:
       begin
-        // TODO:
         FClosing := False;
       end
-    else
+  else
       inherited;
   end;
 end;
@@ -417,7 +435,8 @@ var
   J: Integer;
   K: Integer;
 begin
-  waveInUnprepareHeader(FHandle, @FHDRs[Index], Sizeof(FHDRs[Index]));
+  if not FClosing then
+    waveInUnprepareHeader(FHandle, @FHDRs[Index], Sizeof(FHDRs[Index]));
   P := DefOutput.TryAlloc(I);
   if Assigned(P) then
   begin
@@ -484,11 +503,7 @@ begin
         GraphInvalidate;
       end;
     PRIV_RM_AUDIO_IN_DATA: waveInData(Integer(Msg.ParamH));
-    PRIV_RM_AUDIO_IN_CLOSE:
-      begin
-        // TODO:
-        FClosing := False;
-      end
+    PRIV_RM_AUDIO_IN_CLOSE:  FClosing := False;
   else
     inherited;
   end;

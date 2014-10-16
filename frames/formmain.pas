@@ -194,7 +194,10 @@ procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := AskForClose;
   if CanClose then
+  begin
+    SystemInpectorForm.RadioSys := nil;
     FSystem.Free;
+  end;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);

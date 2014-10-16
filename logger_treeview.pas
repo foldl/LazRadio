@@ -54,7 +54,7 @@ begin
   inherited;
   FImages := TImageList.Create(nil);
   I := TBitmap.Create;
-  M := TLazIntfImage.Create(0, 0, [riqfRGB]);
+  M := TLazIntfImage.Create(0, 0, [riqfRGB, riqfAlpha]);
   R := TFPReaderPNG.create;
   for S in LogLevel2ImageFn do
   begin
