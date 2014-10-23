@@ -12,19 +12,19 @@ uses
 
 type
 
-  TFComplex = record
-    Re: Float;
-    Im: Float;
+  TSComplex = record
+    Re: Single;
+    Im: Single;
   end;
-  PFComplex = ^TFComplex;
+  PFComplex = ^TSComplex;
 
   TFFTState = record
     N: Integer;
     Pow2: Integer;
     NRep: Double;
     Inverse: Boolean;
-    Twiddles: array of TFComplex;
-    I: array of TFComplex;
+    Twiddles: array of TSComplex;
+    I: array of TSComplex;
   end;
 
   PFFTPlan = ^TFFTState;
@@ -43,7 +43,7 @@ function NextFastSize(N: Integer): Integer;
 
 implementation
 
-operator + (z1 : TFComplex; z2 :TFComplex) z : TFComplex; inline;
+operator + (z1 : TSComplex; z2 :TSComplex) z : TSComplex; inline;
 begin
    with z do
    begin
@@ -52,7 +52,7 @@ begin
    end;
 end;
 
-operator - (z1 : TFComplex; z2 :TFComplex) z : TFComplex; inline;
+operator - (z1 : TSComplex; z2 :TSComplex) z : TSComplex; inline;
 begin
    with z do
    begin
@@ -61,19 +61,19 @@ begin
    end;
 end;
 
-operator * (z1 : TFComplex; z2 :TFComplex) z : TFComplex; inline;
+operator * (z1 : TSComplex; z2 :TSComplex) z : TSComplex; inline;
 begin
   z.re := (z1.re * z2.re) - (z1.im * z2.im);
   z.im := (z1.re * z2.im) + (z1.im * z2.re);
 end;
 
-operator := (z1 : Complex) z : TFComplex; inline;
+operator := (z1 : Complex) z : TSComplex; inline;
 begin
   z.re := z1.re;
   z.im := z1.im;
 end;
 
-operator := (z1 : TFComplex) z : Complex; inline;
+operator := (z1 : TSComplex) z : Complex; inline;
 begin
   z.re := z1.re;
   z.im := z1.im;
@@ -103,7 +103,7 @@ end;
 procedure ChangePlan(Plan: PFFTPlan; const N: Integer; const Inverse: Boolean);
 var
   I: Integer;
-  P: TFComplex = (re: 0; im: 0);
+  P: TSComplex = (re: 0; im: 0);
 begin
   Plan^.N := N;
   Plan^.Pow2 := GetMinPow2(N);
@@ -133,8 +133,8 @@ procedure FFT0(Plan: PFFTPlan);
 var
   nm1, nd2: Integer;
   i, j, jm1, k, l, m, n, le, le2, ip, nd4: Integer;
-  W, T: TFComplex;
-  B: array of TFComplex;
+  W, T: TSComplex;
+  B: array of TSComplex;
 begin
   B := Plan^.I;
   nm1 := Plan^.N - 1;

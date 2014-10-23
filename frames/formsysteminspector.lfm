@@ -1,10 +1,10 @@
-object SystemInpectorForm: TSystemInpectorForm
+object SystemInspectorForm: TSystemInspectorForm
   Left = 500
   Height = 296
   Top = 250
   Width = 498
   BorderIcons = [biSystemMenu]
-  Caption = 'System Inpector'
+  Caption = 'System Inspector'
   ClientHeight = 296
   ClientWidth = 498
   OnCreate = FormCreate

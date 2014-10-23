@@ -195,7 +195,7 @@ begin
   CanClose := AskForClose;
   if CanClose then
   begin
-    SystemInpectorForm.RadioSys := nil;
+    SystemInspectorForm.RadioSys := nil;
     FSystem.Free;
   end;
 end;
@@ -340,7 +340,7 @@ end;
 
 procedure TMainForm.ViewSysInspectorExecute(Sender: TObject);
 begin
-  SystemInpectorForm.Show;
+  SystemInspectorForm.Show;
 end;
 
 procedure TMainForm.ProjNameChanged(Sender: TObject);

@@ -11,9 +11,9 @@ uses
 
 type
 
-  { TSystemInpectorForm }
+  { TSystemInspectorForm }
 
-  TSystemInpectorForm = class(TForm)
+  TSystemInspectorForm = class(TForm)
     BitBtn1: TBitBtn;
     Chart1: TChart;
     ListView1: TListView;
@@ -41,7 +41,7 @@ type
   end;
 
 var
-  SystemInpectorForm: TSystemInpectorForm;
+  SystemInspectorForm: TSystemInspectorForm;
 
 implementation
 
@@ -52,14 +52,14 @@ const
 
 {$R *.lfm}
 
-{ TSystemInpectorForm }
+{ TSystemInspectorForm }
 
-procedure TSystemInpectorForm.FormCreate(Sender: TObject);
+procedure TSystemInspectorForm.FormCreate(Sender: TObject);
 begin
   RadioSys := TRadioSystem.Instance;
 end;
 
-procedure TSystemInpectorForm.BitBtn1Click(Sender: TObject);
+procedure TSystemInspectorForm.BitBtn1Click(Sender: TObject);
 var
   I: Integer;
   O: ISuperObject;
@@ -80,7 +80,7 @@ begin
   ListView2.EndUpdate;
 end;
 
-procedure TSystemInpectorForm.ListView1Compare(Sender: TObject; Item1,
+procedure TSystemInspectorForm.ListView1Compare(Sender: TObject; Item1,
   Item2: TListItem; Data: Integer; var Compare: Integer);
 begin
   Compare := 0;
@@ -95,7 +95,7 @@ begin
     Compare := -Compare;
 end;
 
-procedure TSystemInpectorForm.Timer1Timer(Sender: TObject);
+procedure TSystemInspectorForm.Timer1Timer(Sender: TObject);
 var
   I: Integer;
   O: ISuperObject;
@@ -143,7 +143,7 @@ begin
   ListView1.EndUpdate;
 end;
 
-procedure TSystemInpectorForm.SetRadioSys(AValue: TRadioSystem);
+procedure TSystemInspectorForm.SetRadioSys(AValue: TRadioSystem);
 
 begin
   if FRadioSys = AValue then Exit;
@@ -152,7 +152,7 @@ begin
     SetLength(FLoad, FRadioSys.WorkerCount);
 end;
 
-procedure TSystemInpectorForm.CreateSeries;
+procedure TSystemInspectorForm.CreateSeries;
 var
   I: Integer;
   J: Integer;

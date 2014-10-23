@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="51">
+    <Units Count="52">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -308,7 +308,7 @@
       <Unit47>
         <Filename Value="frames\formsysteminspector.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="SystemInpectorForm"/>
+        <ComponentName Value="SystemInspectorForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="formsysteminspector"/>
@@ -331,6 +331,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="rm_noisereduction"/>
       </Unit50>
+      <Unit51>
+        <Filename Value="MMDeviceAPI.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="MMDeviceAPI"/>
+      </Unit51>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
