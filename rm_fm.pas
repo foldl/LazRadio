@@ -107,6 +107,7 @@ type
     constructor Create(RunQueue: TRadioRunQueue); override;
     destructor Destroy; override;
 
+    procedure Algo2(const P: PComplex; const Len: Integer);
     procedure ReceiveData(const P: PComplex; const Len: Integer); override;
   end;
 
@@ -649,10 +650,54 @@ begin
   inherited Destroy;
 end;
 
+var
+  RDSFreq: Double = 1187.5;
+  RDSPhase: Double = 0.0;
+  LastClock: Boolean;
+  LastSample: Double = 0.0;
+  Acc: Double = 0.0;
+
+
+procedure TRDSDecoder.Algo2(const P: PComplex; const Len: Integer);
+var
+  I: Integer;
+  R: Double;
+  C: Double;
+  B: Boolean;
+begin
+  for I := 0 to Len - 1 do
+  begin
+    C := RDSPhase + 2 * Pi * RDSFreq / FRate;
+    if C > 2 * Pi then C := C - 2 * Pi;
+    B := C >= Pi;
+    if B then
+      Acc := Acc + P[I].re
+    else
+      Acc := Acc - P[I].re;
+    if LastClock xor B then
+    begin
+      FState(Acc > 0);
+      Acc := 0;
+    end;
+
+    if LastSample * P[I].re < 0 then
+    begin
+      R := C - Pi;
+      RDSPhase := RDSPhase - 0.01 * R;
+    end;
+    LastClock := B;
+    RDSPhase := C;
+    LastSample := P[I].re;
+  end;
+end;
+
 procedure TRDSDecoder.ReceiveData(const P: PComplex; const Len: Integer);
 var
   I: Integer;
 begin
+  //Algo2(P, Len);
+  //Exit;
+
   if Len > Length(FData) then
     SetLength(FData, Len);
 

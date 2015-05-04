@@ -1,0 +1,13 @@
+lazradio capture;
+
+var
+  src: Rtl;
+  s: Spectrum;
+  d: Dump;
+
+begin
+  src => d;
+  src => s;
+end.
+
+

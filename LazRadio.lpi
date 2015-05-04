@@ -42,11 +42,10 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="52">
+    <Units Count="54">
       <Unit0>
         <Filename Value="LazRadio.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="LazRadio"/>
       </Unit0>
       <Unit1>
         <Filename Value="frames\formmain.pas"/>
@@ -64,7 +63,6 @@
       <Unit3>
         <Filename Value="rtlsdr.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RtlSdr"/>
       </Unit3>
       <Unit4>
         <Filename Value="frames\formrtl.pas"/>
@@ -72,42 +70,34 @@
         <ComponentName Value="RTLForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formrtl"/>
       </Unit4>
       <Unit5>
         <Filename Value="rm_rtl.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_rtl"/>
       </Unit5>
       <Unit6>
         <Filename Value="async.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Async"/>
       </Unit6>
       <Unit7>
         <Filename Value="rm_oscillator.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_oscillator"/>
       </Unit7>
       <Unit8>
         <Filename Value="radiosystem.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RadioSystem"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\superobject\superobject.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="superobject"/>
       </Unit9>
       <Unit10>
         <Filename Value="rm_spectrum.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_spectrum"/>
       </Unit10>
       <Unit11>
         <Filename Value="rm_timer.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_timer"/>
       </Unit11>
       <Unit12>
         <Filename Value="rm_audio.pas"/>
@@ -117,7 +107,6 @@
       <Unit13>
         <Filename Value="rm_filter.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_filter"/>
       </Unit13>
       <Unit14>
         <Filename Value="frames\formspectrum.pas"/>
@@ -125,12 +114,10 @@
         <ComponentName Value="SpectrumForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formspectrum"/>
       </Unit14>
       <Unit15>
         <Filename Value="dsp\kissfft.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="KissFFT"/>
       </Unit15>
       <Unit16>
         <Filename Value="dsp\signalbasic.pas"/>
@@ -143,7 +130,6 @@
         <ComponentName Value="OscillatorForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formoscillator"/>
       </Unit17>
       <Unit18>
         <Filename Value="frames\formauin.pas"/>
@@ -151,22 +137,18 @@
         <ComponentName Value="AudioInForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formauin"/>
       </Unit18>
       <Unit19>
         <Filename Value="utils.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="utils"/>
       </Unit19>
       <Unit20>
         <Filename Value="rm_dump.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_dump"/>
       </Unit20>
       <Unit21>
         <Filename Value="logger.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="logger"/>
       </Unit21>
       <Unit22>
         <Filename Value="frames\formfilter.pas"/>
@@ -174,7 +156,6 @@
         <ComponentName Value="FilterForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formfilter"/>
       </Unit22>
       <Unit23>
         <Filename Value="rm_fm.pas"/>
@@ -184,27 +165,22 @@
       <Unit24>
         <Filename Value="rm_pll.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_pll"/>
       </Unit24>
       <Unit25>
         <Filename Value="dsp\fft2.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="FFT2"/>
       </Unit25>
       <Unit26>
         <Filename Value="dsp\genfft.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="GenFFT"/>
       </Unit26>
       <Unit27>
         <Filename Value="dsp\fftw.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="FFTW"/>
       </Unit27>
       <Unit28>
         <Filename Value="graph\gen_graph.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="gen_graph"/>
       </Unit28>
       <Unit29>
         <Filename Value="radiomessage.pas"/>
@@ -214,12 +190,10 @@
       <Unit30>
         <Filename Value="minij.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="MiniJ"/>
       </Unit30>
       <Unit31>
         <Filename Value="util_config.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="util_config"/>
       </Unit31>
       <Unit32>
         <Filename Value="rm_resampling.pas"/>
@@ -234,7 +208,6 @@
       <Unit34>
         <Filename Value="rm_audiomixer.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_audiomixer"/>
       </Unit34>
       <Unit35>
         <Filename Value="frames\formaudiomixer.pas"/>
@@ -242,37 +215,30 @@
         <ComponentName Value="AudioMixerForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formaudiomixer"/>
       </Unit35>
       <Unit36>
         <Filename Value="util_math.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="util_math"/>
       </Unit36>
       <Unit37>
         <Filename Value="logger_treeview.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="logger_treeview"/>
       </Unit37>
       <Unit38>
         <Filename Value="rm_am.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_am"/>
       </Unit38>
       <Unit39>
         <Filename Value="rm_soundfx.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_soundfx"/>
       </Unit39>
       <Unit40>
         <Filename Value="rm_iqcorrection.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_iqcorrection"/>
       </Unit40>
       <Unit41>
         <Filename Value="rm_oscilloscope.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_oscilloscope"/>
       </Unit41>
       <Unit42>
         <Filename Value="frames\formoscilloscope.pas"/>
@@ -280,17 +246,14 @@
         <ComponentName Value="OscilloscopeForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formoscilloscope"/>
       </Unit42>
       <Unit43>
         <Filename Value="radiolang.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="RadioLang"/>
       </Unit43>
       <Unit44>
         <Filename Value="lzr_interpreter.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="lzr_interpreter"/>
       </Unit44>
       <Unit45>
         <Filename Value="frames\formwait.pas"/>
@@ -298,7 +261,6 @@
         <ComponentName Value="WaitForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formwait"/>
       </Unit45>
       <Unit46>
         <Filename Value="radionode.pas"/>
@@ -311,12 +273,10 @@
         <ComponentName Value="SystemInspectorForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formsysteminspector"/>
       </Unit47>
       <Unit48>
         <Filename Value="rm_squelch.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_squelch"/>
       </Unit48>
       <Unit49>
         <Filename Value="frames\formsendmsg.pas"/>
@@ -324,18 +284,28 @@
         <ComponentName Value="SendMsgForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="formsendmsg"/>
       </Unit49>
       <Unit50>
         <Filename Value="rm_noisereduction.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_noisereduction"/>
       </Unit50>
       <Unit51>
-        <Filename Value="MMDeviceAPI.pas"/>
+        <Filename Value="frames\formsoundfx.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="MMDeviceAPI"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
       </Unit51>
+      <Unit52>
+        <Filename Value="dsp\ltebasic.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="LteBasic"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="rm_lte.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_lte"/>
+      </Unit53>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -360,12 +330,6 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerMessages>
-        <MsgFileName Value=""/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

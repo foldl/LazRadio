@@ -15,7 +15,7 @@ uses
   mathlut, rm_audiomixer, formaudiomixer, util_math, logger_treeview, rm_am,
   rm_soundfx, rm_iqcorrection, rm_oscilloscope, formoscilloscope, radiolang,
   lzr_interpreter, formwait, radionode, formsysteminspector, rm_squelch, 
-formsendmsg, rm_noisereduction, MMDeviceAPI;
+formsendmsg, rm_noisereduction, formsoundfx, ltebasic, rm_lte;
 
 {$R *.res}
 
@@ -33,6 +33,7 @@ begin
   Application.CreateForm(TWaitForm, WaitForm);
   Application.CreateForm(TSystemInspectorForm, SystemInspectorForm);
   Application.CreateForm(TSendMsgForm, SendMsgForm);
+  Application.CreateForm(TForm1, Form1);
   Application.Run;
 end.
 

@@ -62,6 +62,9 @@ procedure CancelDC(Signal: PComplex; const N: Integer);
 
 function FormatFreq(F: Integer): string;
 
+procedure Reverse(X: PComplex; const Len: Integer);
+procedure Conjugate(X: PComplex; const Len: Integer);
+
 procedure FIRDesign(Coef: PDouble; const N: Integer;
   const AType: TFilterType;
   const OmegaC: Double; const Bandwidth: Double;
@@ -437,6 +440,26 @@ begin
   end;
 end;
 
+procedure Reverse(X: PComplex; const Len: Integer);
+var
+  I: Integer;
+  T: Complex;
+begin
+  for I := 0 to Len div 2 - 1 do
+  begin
+    T := X[I];
+    X[I] := X[Len - 1 - I];
+    X[Len - 1 - I] := T;
+  end;
+end;
+
+procedure Conjugate(X: PComplex; const Len: Integer);
+var
+  I: Integer;
+begin
+  for I := 0 to Len - 1 do X[I] := cong(X[I]);
+end;
+
 procedure FIRDesign(Coef: PDouble; const N: Integer; const AType: TFilterType;
   const OmegaC: Double; const Bandwidth: Double; const Wf: TWindowFunction;
   const WfParam: Double);
@@ -661,7 +684,7 @@ begin
   F := CreateFileStream(Fn);
   for I := 0 to Len - 1 do
   begin
-    S := Format('%2.8f, %2.8f' + #13#10, [P[I].re, P[I].im]);
+    S := Format('%2.8f + %2.8f I' + #13#10, [P[I].re, P[I].im]);
     F.Write(S[1], Length(S));
   end;
   F.Free;

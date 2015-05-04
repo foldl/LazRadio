@@ -234,7 +234,7 @@ end;
 
 procedure TMainForm.FormShow(Sender: TObject);
 begin
-  OpenProject('.\examples\rds-debug.lzr');
+  OpenProject('.\examples\lte.lzr');
 end;
 
 procedure TMainForm.PanelCodeExecute(Sender: TObject);

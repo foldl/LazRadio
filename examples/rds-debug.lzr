@@ -16,19 +16,22 @@ var
   sq: Squelch;
 
 begin
-  src => iqcor => f1 => mixer1 => re1 => fd => sq => u; // => f2 => mixer2 => re2 => rds => u;
+  src => iqcor => f1 => mixer1 => re1 => fd => fm;
+
+  fm :> rds;
+  fm[1] -> [0]rds;
 
   iqcor => s;
   s :> f1;
   s :> mixer1;
-  sq => s2;
+  re2 => scope;
   //re2 => s2;
   //re2 => scope;
 
   re1 ! {RM_RESAMPLING_CFG, 200000, 90000};
   re2 ! {RM_RESAMPLING_CFG, 9500, 2500};
 
-  mixer2 ! {RM_FREQMIXER_SET_FREQ, 5700, 0};
+  mixer2 ! {RM_FREQMIXER_SET_FREQ, 57000, 0};
 
   f1     ! {RM_SET_FEATURE, RM_FEATURE_FREQ, 2048000}
          ! {RM_FILTER_CONFIG, FILTER_TAPS, 200}
@@ -41,6 +44,6 @@ begin
   s2 ! {RM_SPECTRUM_CFG, SET_SPAN, 100000}
      ! {RM_SPECTRUM_CFG, SET_CENTER_FREQ, 50000};
 
-  src ! {RM_DUMP_PLAYER_START, 'D:\baiduyundownload\90.0MHz.dump', 0};
+  src ! {RM_DUMP_PLAYER_START, 'e:\lte_dump.dump', 0};
   //src ! {RM_DUMP_PLAYER_START, 'e:\90.0MHz.dump', 0};
 end.

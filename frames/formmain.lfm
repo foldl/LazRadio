@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 0
+  Left = 387
   Height = 700
-  Top = 0
+  Top = 146
   Width = 1008
   Caption = 'LazRadio'
   ClientHeight = 680
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.4.0.1'
   WindowState = wsMaximized
   object Panel1: TPanel
     Left = 0
@@ -659,6 +659,7 @@ object MainForm: TMainForm
     end
     object ToolButton1: TToolButton
       Left = 103
+      Height = 22
       Top = 2
       Width = 5
       Caption = 'ToolButton1'
@@ -938,6 +939,7 @@ object MainForm: TMainForm
       Category = 'System'
       Caption = 'Reset'
       OnExecute = SystemResetExecute
+      ShortCut = 113
     end
     object SystemCheck: TAction
       Category = 'System'

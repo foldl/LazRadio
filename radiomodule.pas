@@ -47,7 +47,7 @@ type
 
   TRadioDataStream = class
   const
-    BLOCK_NUM = 8;
+    BLOCK_NUM = 3;
   private
     FName: string;
     FBlockSize: Integer;
@@ -1114,10 +1114,11 @@ var
   I: Integer;
   P: PDataStreamRec;
 begin
-  TRadioLogger.Report(llVerbose, '%d EnsureBlockNumber %d', [PtrUInt(Self), AtLeast]);
   I := High(FBuffers) + 1;
   if I < AtLeast then
   begin
+    TRadioLogger.Report(llWarn, '%d EnsureBlockNumber %d', [PtrUInt(Self), AtLeast]);
+
     Lock;
     SetLength(FBuffers, AtLeast);
     while I < AtLeast do

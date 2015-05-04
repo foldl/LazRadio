@@ -7,7 +7,7 @@ object SpectrumForm: TSpectrumForm
   ClientHeight = 601
   ClientWidth = 772
   Position = poMainFormCenter
-  LCLVersion = '1.2.4.0'
+  LCLVersion = '1.4.0.1'
   object Panel1: TPanel
     Left = 660
     Height = 601
@@ -24,7 +24,7 @@ object SpectrumForm: TSpectrumForm
       Width = 110
       Align = alTop
       Caption = 'Y-axis'
-      ClientHeight = 125
+      ClientHeight = 123
       ClientWidth = 106
       TabOrder = 0
       object LabeledEdit2: TLabeledEdit
@@ -84,7 +84,7 @@ object SpectrumForm: TSpectrumForm
       Width = 110
       Align = alTop
       Caption = 'X-axis'
-      ClientHeight = 125
+      ClientHeight = 123
       ClientWidth = 106
       TabOrder = 1
       object LabeledEdit3: TLabeledEdit
@@ -150,7 +150,7 @@ object SpectrumForm: TSpectrumForm
       Top = 296
       Width = 108
       Caption = 'Misc.'
-      ClientHeight = 103
+      ClientHeight = 101
       ClientWidth = 104
       TabOrder = 2
       object Label1: TLabel
@@ -207,6 +207,7 @@ object SpectrumForm: TSpectrumForm
           '65536'
           '32768'
           '16384'
+          '2048'
           '1024'
           '512'
         )
@@ -230,7 +231,7 @@ object SpectrumForm: TSpectrumForm
       ChildSizing.ShrinkVertical = crsScaleChilds
       ChildSizing.Layout = cclLeftToRightThenTopToBottom
       ChildSizing.ControlsPerLine = 1
-      ClientHeight = 103
+      ClientHeight = 101
       ClientWidth = 103
       Items.Strings = (
         '1 (+1001)'
@@ -262,9 +263,9 @@ object SpectrumForm: TSpectrumForm
       Width = 658
       Align = alTop
       OnMouseDown = PaintBox1MouseDown
+      OnMouseLeave = PaintBox1MouseLeave
       OnMouseMove = PaintBox1MouseMove
       OnMouseUp = PaintBox1MouseUp
-      OnMouseLeave = PaintBox1MouseLeave
     end
     object PaintBox2: TPaintBox
       Left = 1
