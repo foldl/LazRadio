@@ -178,7 +178,7 @@ begin
   for I := 0 to High(FCoeff) do
     T[I]:= FCoeff[I];
   P := BuildFFTPlan(High(T) + 1, False);
-  FFT(P, @T[0], @A[0]);
+  Transform(P, @T[0], @A[0]);
   FinalizePlan(P);
   F0 := FRate / (High(T) + 1);
 

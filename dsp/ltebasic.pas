@@ -93,14 +93,23 @@ begin
   N := IfThen(RBSC = 12, 2048, 4096);
   FillChar(X[0], N * SizeOf(Complex), 0);
   I := DLRB * RBSC div 2;
+  Move(A[I], X[1], I * SizeOf(Complex));
+  Move(A[0], X[N - I], I * SizeOf(Complex));
+  if N = 2048 then
+    GenFFT.Transform(IFFT2048, X, S)
+  else
+    GenFFT.Transform(IFFT4096, X, S);
+  {
+  I := DLRB * RBSC div 2;
   Move(A[0], X[N div 2 - I], I * SizeOf(Complex));
   Move(A[I], X[N div 2 + 1], I * SizeOf(Complex));
   if N = 2048 then
-    GenFFT.FFT(IFFT2048, X, S)
+    GenFFT.Transform(IFFT2048, X, S)
   else
-    GenFFT.FFT(IFFT4096, X, S);
+    GenFFT.Transform(IFFT4096, X, S);
   for J := 0 to N - 1 do
     if Odd(J) then S[J] := -S[J];
+  }
 end;
 
 procedure Init;

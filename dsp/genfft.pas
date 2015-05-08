@@ -21,7 +21,7 @@ procedure ChangePlan(Plan: PFFTPlan; const N: Integer;
                       const Inverse: Boolean);
 procedure FinalizePlan(P: PFFTPlan);
 
-procedure FFT(Plan: PFFTPlan;
+procedure Transform(Plan: PFFTPlan;
               Input: PComplex;
               Output: PComplex);
 
@@ -112,7 +112,7 @@ begin
   LeaveCriticalsection(PlanCS);
 end;
 
-procedure FFT(Plan: PFFTPlan; Input: PComplex; Output: PComplex);
+procedure Transform(Plan: PFFTPlan; Input: PComplex; Output: PComplex);
 begin
   FFTProvider.FFT(Plan, Input, Output);
 end;

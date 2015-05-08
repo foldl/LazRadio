@@ -33,7 +33,7 @@ type
 implementation
 
 uses
-  LteBasic, SignalBasic;
+  LteBasic, SignalBasic, GenFFT;
 
 { TLteSync }
 
@@ -43,14 +43,14 @@ var
   I, J: Integer;
   O: PComplex;
 begin
-  if Index <> 0 then Exit;
+  if Index <> 1 then Exit;
   DefOutput.BufferSize := Len;
   O := Alloc(DefOutput, I);
   if not Assigned(O) then Exit;
   for J := 0 to Len - 1 do
   begin
-    O[I].re := cmod(P[I]);
-    O[I].im := 0;
+    O[J].re := cmod(P[J]);
+    O[J].im := 0;
   end;
   //Move(P^, O^, Len * SizeOf(Complex));
   DefOutput.Broadcast(I, FDataListeners);
@@ -66,7 +66,6 @@ procedure TLteSync.ReceiveCorrelationData1(const P: PComplex; const Len: Integer
   );
 begin
   ReceiveCorrelationData(1, P, Len);
-
 end;
 
 procedure TLteSync.ReceiveCorrelationData2(const P: PComplex; const Len: Integer
@@ -87,26 +86,32 @@ var
   I, D: Integer;
   DecimM, InterpL: Integer;
   A: array [0..PSS_RB_NUM * SUB_CARRIER_PER_RB - 1] of Complex;
-  S: array [0..2047] of Complex;
+  S: array [0..150] of Complex;
   Y: array [0..2047] of Complex;
+  P: PFFTPlan;
 begin
   if FRate = Rate then Exit;
   if (Rate < 100) or (Rate > LteBasic.FS) then Exit;
   FRate := Rate;
-  D := Int64(Length(S)) * FRate div LteBasic.FS;
+  D := Round(Int64(2048) * FRate / LteBasic.FS);
+  P := GenFFT.BuildFFTPlan(D, True);
+  FillChar(S[0], Length(S) * SizeOf(S[0]), 0);
   for I := 0 to High(LteBasic.PSS_SEQ) do
   begin
-    FillChar(A[0], Length(A) * SizeOf(A[0]), 0);
-    MapPSSToA(I, @A[0], PSS_RB_NUM, SUB_CARRIER_PER_RB);
-    OFDMGenerate(A, PSS_RB_NUM, SUB_CARRIER_PER_RB, @S[0]);
-    Reverse(@S[0], Length(S));
-    Conjugate(@S[0], Length(S));
+    Move(LteBasic.PSS_SEQ[I][0],  S[1], 31 * SizeOf(Complex));
+    Move(LteBasic.PSS_SEQ[I][31], S[D - 31], 31 * SizeOf(Complex));
+    GenFFT.Transform(P, @S[0], @Y[0]);
 
-    Xpolate(PComplex(@S[0]), @Y[0], Length(S), D);
-    DumpData(PComplex(@Y[0]), D, Format('e:\%d.txt', [I]));
+    //DumpData(PComplex(@Y[0]), D, Format('e:\s-%d.txt', [I]));
+
+    Reverse(@Y[0], D);
+    Conjugate(@Y[0], D);
+
+    //DumpData(PComplex(@Y[0]), D, Format('e:\r-%d.txt', [I]));
 
     FFilters[I].SetFIR(PComplex(@Y[0]), D);
   end;
+  GenFFT.FinalizePlan(P);
   Result := inherited;
 end;
 

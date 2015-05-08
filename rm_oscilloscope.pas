@@ -307,7 +307,7 @@ var
   I: Integer;
   MI, MA: Double;
   YRange: Integer;
-  Dual: Boolean;
+  Dual: Boolean = False;
   Y2Pixes: Double;
 begin
   if FChMode = OSCILLOSCOPE_CHANNEL_XY then
@@ -463,7 +463,7 @@ begin
     begin
       X := MidX + Round(P[I].re / FYMax * XRange);
       Y := MidY + Round(P[I].im / FYMax * YRange);
-      RadialPie(X - 1, Y - 1, X + 1, Y + 1, 0, 360 * 16);
+      Line(X - 1, Y - 1, X + 1, Y - 1);
     end;
   end;
 

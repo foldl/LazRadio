@@ -156,10 +156,10 @@ begin
   FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
   for I := 0 to Len - 1 do
     FBuf[I].re := P[I].re;
-  FFT(FFPlan, @FBuf[0], @FBuf[0]);
+  Transform(FFPlan, @FBuf[0], @FBuf[0]);
   for I := 0 to Len - 1 do
     FBuf[I] := FBuf[I] * FHFIR[I];
-  FFT(FIPlan, @FBuf[0], @FBuf[0]);
+  Transform(FIPlan, @FBuf[0], @FBuf[0]);
   for I := 0 to Len - 1 do
     FRes[I].re := FBuf[I].re;
 
@@ -168,10 +168,10 @@ begin
     FillChar(FBuf[0], Len * SizeOf(FBuf[0]), 0);
     for I := 0 to Len - 1 do
       FBuf[I].re := P[I].im;
-    FFT(FFPlan, @FBuf[0], @FBuf[0]);
+    Transform(FFPlan, @FBuf[0], @FBuf[0]);
     for I := 0 to Len - 1 do
       FBuf[I] := FBuf[I] * FHFIR[I];
-    FFT(FIPlan, @FBuf[0], @FBuf[0]);
+    Transform(FIPlan, @FBuf[0], @FBuf[0]);
     for I := 0 to Len - 1 do
       FRes[I].im := FBuf[I].re;
   end;
@@ -325,7 +325,7 @@ begin
   end;
   SetLength(T, Len);
   ModArg(P, @T[0], Len);
-  I := NextFastSize(2 * Len - 1);
+  I := NextFastSize(Max(20480, 2 * Len - 1));
   FRegulator.Size := I;
   SetLength(FHFIR, I);
   SetLength(FBuf, I);
@@ -334,7 +334,7 @@ begin
   FillChar(FBuf[0], I * SizeOf(FHFIR[0]), 0);
   Move(P^, FBuf[0], Len * SizeOf(FHFIR[0]));
   FFPlan := BuildFFTPlan(I, False);
-  FFT(FFPlan, @FBuf[0], @FHFIR[0]);
+  Transform(FFPlan, @FBuf[0], @FHFIR[0]);
   FIPlan := BuildFFTPlan(I, True);
   FRegulator.Overlap := Len - 1;
   FTaps := Len;
@@ -357,10 +357,10 @@ begin
       Exit;
     end;
 
-    FFT(FFPlan, P, @FBuf[0]);
+    Transform(FFPlan, P, @FBuf[0]);
     for I := 0 to Len - 1 do
       FBuf[I] := FBuf[I] * FHFIR[I];
-    FFT(FIPlan, @FBuf[0], @FRes[0]);
+    Transform(FIPlan, @FBuf[0], @FRes[0]);
     I := FTaps - 1;
     SendToNext(@FRes[I], Len - I);
   end
@@ -392,7 +392,7 @@ begin
   else begin
     SetLength(T, Len);
     X := BuildFFTPlan(Len, True);
-    FFT(X, P, @T[0]);
+    Transform(X, P, @T[0]);
     FinalizePlan(X);
     SetTimeDomainFIR(@T[0], Len);
   end;

@@ -745,7 +745,7 @@ begin
 
   FillByte(FLine[0], (High(FLine) + 1) * SizeOf(FLine[0]), 0);
 
-  FFT(FFFTPlan, P, @FF[0]);
+  Transform(FFFTPlan, P, @FF[0]);
   SpectrumPower(@FF[0], @FPower[0], FFFTSize);
 
   F0 := 1;

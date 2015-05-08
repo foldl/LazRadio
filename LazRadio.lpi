@@ -70,10 +70,12 @@
         <ComponentName Value="RTLForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <UnitName Value="formrtl"/>
       </Unit4>
       <Unit5>
         <Filename Value="rm_rtl.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_rtl"/>
       </Unit5>
       <Unit6>
         <Filename Value="async.pas"/>
@@ -94,6 +96,7 @@
       <Unit10>
         <Filename Value="rm_spectrum.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_spectrum"/>
       </Unit10>
       <Unit11>
         <Filename Value="rm_timer.pas"/>
@@ -156,11 +159,11 @@
         <ComponentName Value="FilterForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <UnitName Value="formfilter"/>
       </Unit22>
       <Unit23>
         <Filename Value="rm_fm.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="rm_fm"/>
       </Unit23>
       <Unit24>
         <Filename Value="rm_pll.pas"/>
@@ -173,6 +176,7 @@
       <Unit26>
         <Filename Value="dsp\genfft.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="GenFFT"/>
       </Unit26>
       <Unit27>
         <Filename Value="dsp\fftw.pas"/>
@@ -239,6 +243,7 @@
       <Unit41>
         <Filename Value="rm_oscilloscope.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="rm_oscilloscope"/>
       </Unit41>
       <Unit42>
         <Filename Value="frames\formoscilloscope.pas"/>

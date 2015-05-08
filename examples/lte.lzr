@@ -11,5 +11,8 @@ begin
   source => s1;
   lte => scope;
 
+  //lte => scope;
+
+
   source ! {RM_DUMP_PLAYER_START, 'e:\lte_dump.dump', 0};
 end.
